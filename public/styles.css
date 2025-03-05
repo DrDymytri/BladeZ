@@ -1,0 +1,436 @@
+/* Global Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+}
+header {
+  background: #000000;
+  color: #fff;
+  padding: 20px;
+  text-align: center;
+  border: 2px solid red;
+}
+header nav a {
+  color: #fff;
+  margin-right: 15px;
+  text-decoration: none;
+  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
+    "Lucida Sans", Arial, sans-serif;
+  font-size: 24px;
+}
+
+#admin-login {
+  padding: 15px; /* Space inside the login box */
+  background-color: #f8f9fa; /* Light background color */
+  border-bottom: 1px solid #ddd; /* Optional separator line */
+  text-align: center; /* Center the content */
+}
+
+#admin-login h2 {
+  margin: 0 0 10px; /* Add spacing below the heading */
+  font-size: 1.5rem; /* Adjust font size */
+}
+
+#admin-login input {
+  margin: 5px; /* Add some space between inputs */
+  padding: 10px; /* Make inputs visually appealing */
+  width: 200px; /* Set a consistent width for the inputs */
+  border: 1px solid #ccc; /* Border for inputs */
+  border-radius: 4px; /* Smooth edges */
+}
+
+#admin-login button {
+  padding: 10px 20px;
+  background-color: #007bff; /* Button color */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#admin-login button:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+}
+
+main {
+  padding: 20px;
+}
+
+h1,
+h2 {
+  color: #7d2323;
+  font-family: "MedievalSharp", serif;
+  font-size: 72px;
+  padding: 5px;
+  margin: 0;
+  text-shadow: 0.125px 0.25px rgb(255, 0, 0), 0.25px 0.5px rgb(255, 0, 0),
+    0.375px 0.75px rgb(255, 0, 0), 0.5px 1px rgb(255, 0, 0),
+    0.625px 1.25px rgb(255, 0, 0), 0.75px 1.5px rgb(255, 0, 0);
+}
+
+.productTitle {
+  font-family: serif;
+  font-size: 36px;
+  color: black;
+  text-shadow: 0.125px 0.25px rgb(116, 85, 85), 0.25px 0.5px rgb(116, 85, 85),
+    0.375px 0.75px rgb(116, 85, 85), 0.5px 1px rgb(116, 85, 85),
+    0.625px 1.25px rgb(116, 85, 85), 0.75px 1.5px rgb(116, 85, 85);
+}
+/* Grid container for product cards */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 20px auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+/* Product Card Styles */
+.card {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-5px);
+}
+.card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+.card-content {
+  padding: 15px;
+}
+.card-title {
+  font-size: 1.2em;
+  margin: 0 0 10px;
+}
+.card-description {
+  font-size: 0.9em;
+  color: #555;
+  margin-bottom: 15px;
+}
+.card-price {
+  font-size: 1em;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+.card-button {
+  display: inline-block;
+  padding: 10px 15px;
+  background: #007bff;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+.card-button:hover {
+  background: #0056b3;
+}
+
+/* Table Styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+table,
+th,
+td {
+  border: 2px solid #ccc;
+}
+th,
+td {
+  padding: 2px;
+  text-align: center;
+}
+
+.actions-columns {
+  width: 40px;
+}
+
+/* Style for the pop-up message box */
+.popup-message {
+  position: fixed; /* Keeps the box in a fixed position relative to the screen */
+  top: 50%; /* Moves the box to the center vertically */
+  left: 50%; /* Moves the box to the center horizontally */
+  transform: translate(-50%, -50%); /* Centers the box perfectly */
+  z-index: 1000; /* Ensures it appears above other elements */
+
+  /* Optional additional styles for the pop-up */
+  background-color: white; /* Background color */
+  border: 1px solid #ccc; /* Border for the box */
+  padding: 20px; /* Space inside the box */
+  border-radius: 8px; /* Rounded corners for a smooth look */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for elevation */
+  text-align: center; /* Aligns text and button centrally */
+}
+
+/* Form Styles */
+form label {
+  display: block;
+  margin-bottom: 5px;
+}
+form input[type="text"],
+form input[type="number"],
+form input[type="email"],
+form input[type="password"],
+form textarea,
+form select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+tbody button {
+  background: linear-gradient(
+    to right,
+    rgb(60, 137, 209),
+    rgb(18, 67, 112),
+    rgb(13, 41, 66),
+    rgb(18, 67, 112),
+    rgb(60, 137, 209)
+  );
+  color: white;
+  background-blend-mode: screen;
+  filter: brightness(1.1);
+  text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black,
+    0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+  padding: 4px, 6px;
+  margin: 2px;
+  width: 100px;
+  height: 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 5px 20px rgb(0, 8, 14), inset 0 1px 2px #cde4ffbc,
+    inset 0 -1px 2px white;
+  transition: transform 0.2s, background 0.3s;
+}
+
+#addProductBtn {
+  background: linear-gradient(
+    to right,
+    rgb(85, 209, 60),
+    rgb(29, 112, 18),
+    rgb(15, 66, 13),
+    rgb(26, 112, 18),
+    rgb(65, 209, 60)
+  );
+  color: white;
+  background-blend-mode: screen;
+  filter: brightness(1.1);
+  text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black,
+    0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+  padding: 4px, 6px;
+  margin: 2px;
+  width: 100px;
+  height: 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 5px 20px rgb(0, 8, 14), inset 0 1px 2px #cde4ffbc,
+    inset 0 -1px 2px white;
+  transition: transform 0.2s, background 0.3s;
+}
+
+#updateProductBtn {
+  background: linear-gradient(
+    to right,
+    rgb(209, 207, 60),
+    rgb(112, 110, 18),
+    rgb(66, 63, 13),
+    rgb(112, 106, 18),
+    rgb(199, 209, 60)
+  );
+  color: white;
+  background-blend-mode: screen;
+  filter: brightness(1.1);
+  text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black,
+    0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+  padding: 4px, 6px;
+  margin: 2px;
+  width: 100px;
+  height: 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 5px 20px rgb(0, 8, 14), inset 0 1px 2px #cde4ffbc,
+    inset 0 -1px 2px white;
+  transition: transform 0.2s, background 0.3s;
+}
+
+.deleteBtn {
+  background: linear-gradient(
+    to right,
+    rgb(209, 60, 60),
+    rgb(112, 18, 18),
+    rgb(66, 13, 13),
+    rgb(112, 18, 18),
+    rgb(209, 60, 60)
+  );
+  color: white;
+  background-blend-mode: screen;
+  filter: brightness(1.1);
+  text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black,
+    0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+  padding: 4px, 6px;
+  margin: 2px;
+  width: 100px;
+  height: 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 5px 20px rgb(0, 8, 14), inset 0 1px 2px #cde4ffbc,
+    inset 0 -1px 2px white;
+  transition: transform 0.2s, background 0.3s;
+}
+
+tbody button:hover {
+  box-shadow: 0 0 30px white;
+  color: rgb(104, 215, 255);
+}
+
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+nav ul li {
+  display: inline;
+  margin: 0 10px;
+}
+
+nav ul li a {
+  color: white;
+  text-decoration: none;
+}
+
+/* Product Grid */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Product Card */
+.product-card {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  box-shadow: 0 0 12px rgb(43, 43, 43);
+  border: 2px solid black;
+}
+
+.product-card img {
+  cursor: pointer;
+  width: 100%;
+  max-height: auto;
+  object-fit: fill;
+  border-radius: 8px;
+}
+
+.product-card h3 {
+  margin: 10px 0;
+  font-size: 24px;
+}
+
+.product-card p {
+  color: #000000;
+  font-size: 18px;
+}
+
+.product-card button {
+  padding: 5px;
+  margin-bottom: 5px;
+  margin-top: 5px;
+  border-top: 4px solid rgb(189, 209, 230);
+  border-bottom: 4px solid rgb(121, 141, 160);
+  border-right: 4px solid rgb(149, 172, 190);
+  border-left: 4px solid rgb(156, 175, 194);
+  /* box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466); */
+  outline: 1px solid black;
+  background: linear-gradient(
+    to right,
+    #ff000088,
+    #a10000,
+    #8b0000,
+    #a10000,
+    #ff000088
+  );
+  /* border-radius: 1px; */
+  box-sizing: border-box;
+  font-family: serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: aliceblue;
+  text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black,
+    0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+  box-shadow: 0 0 15px 1px aliceblue;
+  cursor: pointer;
+}
+
+.product-card button:hover {
+  background: #0056b3;
+}
+
+/* Fullscreen Image Modal */
+#image-modal {
+  display: none; /* Hidden by default */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8); /* Semi-transparent black backdrop */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's above other elements */
+}
+
+#image-modal img {
+  max-width: 90%; /* Prevent image from overflowing the screen */
+  max-height: 90%; /* Maintain aspect ratio and fit within the screen */
+  cursor: pointer; /* Indicate the image is clickable */
+  border-radius: 8px; /* Add some smooth corners */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow */
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 1px;
+  background: #000000;
+  color: white;
+  margin-top: 5px;
+  font-size: 18px;
+  margin: 0;
+}

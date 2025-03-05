@@ -1,0 +1,64 @@
+.aboutBody {
+  /* background-color: palegoldenrod; */
+  background-image: url(./images/Old-Floral-Parchment-Texture.jpg);
+}
+
+.slogan {
+  font-size: 24px;
+}
+
+.heroTitle {
+  font-family: "MedievalSharp", serif;
+  justify-content: center;
+  text-align: center;
+  font-size: 48px;
+  color: black;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  text-shadow: none;
+}
+
+.heroSlogan {
+  font-family: "MedievalSharp", serif;
+  justify-content: center;
+  text-align: center;
+  font-size: 36px;
+  color: black;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.heroDesc p {
+  font-family: "MedievalSharp", serif;
+  justify-content: center;
+  text-align: left;
+  font-size: 36px;
+  color: black;
+  width: auto;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 25px;
+  padding-right: 25px;
+}
+
+.heroDesc p::first-letter {
+  font-size: 2.5em;
+}
+
+.Button {
+  display: "MedievalSharp", serif;
+  font-family: serif;
+  justify-content: right;
+  text-align: right;
+  font-size: 24px;
+  color: black;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
