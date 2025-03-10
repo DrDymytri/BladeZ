@@ -78,6 +78,12 @@
               <option value="">Loading...</option>
             </select>
           </div>
+          <div>
+            <label for="productDescriptor">Descriptor:</label>
+            <select id="productDescriptor" required>
+              <option value="">Loading...</option>
+            </select>
+          </div>
           <button type="button" id="addProductBtn">Add Product</button>
           <button type="button" id="updateProductBtn" style="display: none">
             Update Product
@@ -98,6 +104,55 @@
           </thead>
           <tbody>
             <!-- Products will be dynamically loaded -->
+          </tbody>
+        </table>
+      </section>
+
+      <section id="admin-events-section">
+        <h2>Event Management</h2>
+        <form id="event-form">
+          <input type="hidden" id="eventId" />
+          <div>
+            <label>Title:</label>
+            <input type="text" id="eventTitle" required />
+          </div>
+          <div>
+            <label>Description:</label>
+            <textarea id="eventDescription"></textarea>
+          </div>
+          <div>
+            <label>Start Date:</label>
+            <input type="datetime-local" id="eventStartDate" required />
+          </div>
+          <div>
+            <label>End Date:</label>
+            <input type="datetime-local" id="eventEndDate" required />
+          </div>
+          <div>
+            <label>Website:</label>
+            <input type="url" id="eventWebsite" />
+          </div>
+          <div>
+            <label>Location:</label>
+            <input type="text" id="eventLocation" />
+          </div>
+          <button id="addEventButton">Add Event</button>
+          <button id="updateEventButton" style="display: none">
+            Update Event
+          </button>
+        </form>
+        <h3>Event List</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Date</th>
+              <th>Location</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="eventTableBody">
+            <!-- Events will be dynamically loaded here -->
           </tbody>
         </table>
       </section>

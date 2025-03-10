@@ -212,10 +212,12 @@ async function handleProductFormSubmit(isUpdate) {
       parseInt(document.getElementById("productStock").value) || 0,
     category_id:
       parseInt(document.getElementById("productCategory").value) || null,
+    descriptor_id:
+      parseInt(document.getElementById("productDescriptor").value) || null,
   };
 
-  if (!productData.name || !productData.price || !productData.category_id) {
-    alert("Name, price, and category are required.");
+  if (!productData.name || !productData.price || !productData.category_id || !productData.descriptor_id) {
+    alert("Name, price, category, and descriptor are required.");
     return;
   }
 
@@ -249,4 +251,129 @@ async function handleProductFormSubmit(isUpdate) {
     console.error("Error saving product:", error);
     alert("Failed to save product. Please check the inputs and try again.");
   }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadAdminEvents();
+});
+
+// Load Events
+async function loadAdminEvents() {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await fetch("/admin/events", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const events = await response.json();
+    const tbody = document.getElementById("eventTableBody");
+    tbody.innerHTML = events
+      .map(
+        (event) => `
+      <tr id="event-${event.id}" 
+          data-id="${event.id}" 
+          data-title="${event.title}" 
+          data-description="${event.description}"
+          data-start="${new Date(event.event_start_date).toISOString()}" 
+          data-end="${new Date(event.event_end_date).toISOString()}" 
+          data-website="${event.event_website}" 
+          data-location="${event.location}">
+        <td>${event.title}</td>
+        <td>${new Date(event.event_start_date).toLocaleString()}</td>
+        <td>${event.location}</td>
+        <td>
+          <button onclick="editEvent(${event.id})">Edit</button>
+          <button onclick="deleteEvent(${event.id})" class="deleteBtn">Delete</button>
+        </td>
+      </tr>
+    `
+      )
+      .join("");
+  } catch (error) {
+    console.error("Error loading events:", error);
+  }
+}
+
+// Add or Update Event
+document.getElementById("event-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const token = localStorage.getItem("token");
+  const id = document.getElementById("eventId").value;
+  const eventData = {
+    title: document.getElementById("eventTitle").value,
+    description: document.getElementById("eventDescription").value,
+    event_start_date: new Date(document.getElementById("eventStartDate").value).toISOString(),
+    event_end_date: new Date(document.getElementById("eventEndDate").value).toISOString(),
+    event_website: document.getElementById("eventWebsite").value,
+    location: document.getElementById("eventLocation").value,
+  };
+
+  const method = id ? "PUT" : "POST";
+  const url = id ? `/admin/events/${id}` : "/admin/events";
+
+  try {
+    await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(eventData),
+    });
+    document.getElementById("event-form").reset();
+    loadAdminEvents();
+  } catch (error) {
+    console.error("Error saving event:", error);
+  }
+});
+
+// Edit Event
+function editEvent(id) {
+  const event = document.getElementById(`event-${id}`);
+  document.getElementById("eventId").value = id;
+  document.getElementById("eventTitle").value = event.dataset.title;
+  document.getElementById("eventDescription").value = event.dataset.description;
+
+  // Format the start and end dates to 'YYYY-MM-DDTHH:MM' in local time
+  const startDate = new Date(event.dataset.start);
+  const endDate = new Date(event.dataset.end);
+
+  document.getElementById("eventStartDate").value = formatLocalDateTime(startDate);
+  document.getElementById("eventEndDate").value = formatLocalDateTime(endDate);
+  document.getElementById("eventWebsite").value = event.dataset.website;
+  document.getElementById("eventLocation").value = event.dataset.location;
+
+  toggleEventButtons(true); // Switch to "Update Event" mode
+}
+
+// Helper function to format date to 'YYYY-MM-DDTHH:MM' in local time
+function formatLocalDateTime(date) {
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().slice(0, 16);
+}
+
+// Delete Event
+async function deleteEvent(id) {
+  if (!confirm("Delete this event?")) return;
+  const token = localStorage.getItem("token");
+  try {
+    const response = await fetch(`/admin/events/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.ok) {
+      document.getElementById(`event-${id}`).remove();
+      alert("Event deleted successfully!");
+    } else {
+      throw new Error("Failed to delete event.");
+    }
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    alert("Failed to delete event.");
+  }
+}
+
+function toggleEventButtons(edit) {
+  document.getElementById("addEventButton").style.display = edit ? "none" : "inline";
+  document.getElementById("updateEventButton").style.display = edit ? "inline" : "none";
 }

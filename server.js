@@ -37,6 +37,83 @@ const dbConfig = {
 console.log("🔍 Checking dbConfig:", dbConfig);
 
 // Establish a connection when the app starts
+const pool = new sql.ConnectionPool(dbConfig);
+pool.connect(err => {
+  if (err) {
+    console.error('❌ Database connection failed:', err);
+  } else {
+    console.log('✅ Database connected successfully');
+  }
+});
+
+// Utility: Create SQL connection
+async function getConnection() {
+  return await sql.connect(dbConfig);
+}
+
+// Get all categories
+app.get('/api/categories', async (req, res) => {
+  try {
+    const pool = await getConnection();
+    const result = await pool.request().query('SELECT id, name FROM Categories');
+    res.json(result.recordset);
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
+// Get sub-categories by category ID
+app.get('/api/subcategories', async (req, res) => {
+  const { categoryId } = req.query;
+  try {
+    const pool = await getConnection();
+    const result = await pool.request()
+      .input('categoryId', sql.Int, categoryId)
+      .query('SELECT SubCategoryID AS id, SubCategoryName AS name FROM SubCategories WHERE CategoryID = @categoryId');
+    res.json(result.recordset);
+  } catch (error) {
+    console.error('Error fetching sub-categories:', error);
+    res.status(500).json({ error: 'Failed to fetch sub-categories' });
+  }
+});
+
+// Get descriptors by sub-category ID
+app.get('/api/descriptors', async (req, res) => {
+  const { subCategoryId } = req.query;
+  try {
+    const pool = await getConnection();
+    const result = await pool.request()
+      .input('subCategoryId', sql.Int, subCategoryId)
+      .query('SELECT DescriptorID AS id, DescriptorName AS name FROM Descriptors WHERE SubCategoryID = @subCategoryId');
+    res.json(result.recordset);
+  } catch (error) {
+    console.error('Error fetching descriptors:', error);
+    res.status(500).json({ error: 'Failed to fetch descriptors' });
+  }
+});
+
+// Get products by descriptor ID
+app.get('/api/products', async (req, res) => {
+  const { descriptorId } = req.query;
+  if (!descriptorId || isNaN(descriptorId)) {
+    return res.status(400).json({ error: 'Invalid descriptorId' });
+  }
+  console.log("Fetching products for descriptorId:", descriptorId); // Debugging line
+  try {
+    const pool = await getConnection();
+    const result = await pool.request()
+      .input('descriptorId', sql.Int, descriptorId)
+      .query('SELECT id, name, description, price, image_url FROM Products WHERE DescriptorID = @descriptorId');
+    console.log("Products fetched:", result.recordset); // Debugging line
+    res.json(result.recordset);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+// Establish a connection when the app starts
 async function connectDB() {
   try {
     await sql.connect(dbConfig);
@@ -45,11 +122,6 @@ async function connectDB() {
   } catch (err) {
     console.error("❌ Database connection failed:", err);
   }
-}
-
-// Utility: Create SQL connection
-async function getConnection() {
-  return await sql.connect(dbConfig);
 }
 
 // 🟢 Function to check and create an admin account
@@ -118,8 +190,6 @@ app.post("/register-admin", async (req, res) => {
         .status(400)
         .json({ error: "Email and password are required." });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    let pool = await getConnection();
     await pool
       .request()
       .input("email", sql.NVarChar, email)
@@ -573,6 +643,114 @@ app.get("/api/products", async (req, res) => {
   }
 });
 
+// Fetch all events
+app.get("/admin/events", authenticateToken, async (req, res) => {
+  try {
+    let pool = await getConnection();
+    let result = await pool
+      .request()
+      .query("SELECT * FROM events ORDER BY event_start_date ASC");
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error fetching events:", err);
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
+});
+
+// Add a new event
+app.post("/admin/events", authenticateToken, async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      event_start_date,
+      event_end_date,
+      event_website,
+      location,
+    } = req.body;
+    let pool = await getConnection();
+    await pool
+      .request()
+      .input("title", sql.NVarChar, title)
+      .input("description", sql.Text, description)
+      .input("event_start_date", sql.DateTime, event_start_date)
+      .input("event_end_date", sql.DateTime, event_end_date)
+      .input("event_website", sql.NVarChar, event_website)
+      .input("location", sql.NVarChar, location)
+      .query(`INSERT INTO events (title, description, event_start_date, event_end_date, event_website, location) 
+              VALUES (@title, @description, @event_start_date, @event_end_date, @event_website, @location)`);
+    res.json({ message: "Event added successfully!" });
+  } catch (err) {
+    console.error("Error adding event:", err);
+    res.status(500).json({ error: "Failed to add event" });
+  }
+});
+
+// Update an existing event
+app.put("/admin/events/:id", authenticateToken, async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      event_start_date,
+      event_end_date,
+      event_website,
+      location,
+    } = req.body;
+    const id = req.params.id;
+    let pool = await getConnection();
+    await pool
+      .request()
+      .input("id", sql.Int, id)
+      .input("title", sql.NVarChar, title)
+      .input("description", sql.Text, description)
+      .input("event_start_date", sql.DateTime, event_start_date)
+      .input("event_end_date", sql.DateTime, event_end_date)
+      .input("event_website", sql.NVarChar, event_website)
+      .input("location", sql.NVarChar, location)
+      .query(`UPDATE events SET title = @title, description = @description, event_start_date = @event_start_date, 
+              event_end_date = @event_end_date, event_website = @event_website, location = @location 
+              WHERE id = @id`);
+    res.json({ message: "Event updated successfully!" });
+  } catch (err) {
+    console.error("Error updating event:", err);
+    res.status(500).json({ error: "Failed to update event" });
+  }
+});
+
+// Delete an event
+app.delete("/admin/events/:id", authenticateToken, async (req, res) => {
+  try {
+    const id = req.params.id;
+    let pool = await getConnection();
+    await pool
+      .request()
+      .input("id", sql.Int, id)
+      .query("DELETE FROM events WHERE id = @id");
+    res.json({ message: "Event deleted successfully!" });
+  } catch (err) {
+    console.error("Error deleting event:", err);
+    res.status(500).json({ error: "Failed to delete event" });
+  }
+});
+
+// API route to get public events
+app.get("/api/events", async (req, res) => {
+  try {
+    let pool = await sql.connect(dbConfig);
+    let result = await pool
+      .request()
+      .query(
+        "SELECT title, description, event_start_date, event_end_date, event_website, location FROM events ORDER BY event_start_date ASC"
+      );
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Database error:", err);
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
+});
+
+
 // -----------------------
 // Stripe Payment Intent Endpoint
 // app.post("/create-payment-intent", authenticateToken, async (req, res) => {
@@ -593,5 +771,5 @@ app.get("/api/products", async (req, res) => {
 // });
 
 app.listen(PORT, () => {
-  console.log("Server running on http://localhost:${PORT}");
+  console.log('Server running on http://localhost:${PORT}');
 });

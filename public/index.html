@@ -37,12 +37,36 @@
               ><i class="fas fa-info-circle"></i> About Us!</a
             >
           </li>
+          <li>
+            <a href="events.html"><i class="fas fa-calendar"></i> Events</a>
+          </li>
         </ul>
       </nav>
     </header>
 
     <main>
       <h2 class="productTitle">Our Latest Products: Everything Martial Arts</h2>
+      
+      <!-- Filtering Options -->
+      <div>
+        <label for="categorySelect">Category:</label>
+        <select id="categorySelect">
+          <option value="">Select Category</option>
+        </select>
+      </div>
+      <div>
+        <label for="subCategorySelect">Sub-Category:</label>
+        <select id="subCategorySelect">
+          <option value="">Select Sub-Category</option>
+        </select>
+      </div>
+      <div>
+        <label for="descriptorSelect">Descriptor:</label>
+        <select id="descriptorSelect">
+          <option value="">Select Descriptor</option>
+        </select>
+      </div>
+
       <div id="product-container" class="product-grid">
         <!-- Products will be dynamically inserted here -->
       </div>
@@ -58,5 +82,6 @@
 
     <script src="products.js"></script>
     <script src="image-modal.js"></script>
+    <script src="filter.js"></script> <!-- Include the filter.js script -->
   </body>
 </html>

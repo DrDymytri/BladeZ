@@ -1,31 +1,36 @@
-document.addEventListener("DOMContentLoaded", function () {
-  fetch("/api/products")
-    .then((response) => response.json())
-    .then((products) => {
-      const container = document.getElementById("product-container");
-      container.innerHTML = ""; // Clear any previous content
-
-      products.forEach((product) => {
-        const card = document.createElement("div");
-        card.classList.add("product-card");
-
-        card.innerHTML = `
-                  <img src="${product.image_url}" alt="${product.name}">
-                  <h3>${product.name}</h3>
-                  <p>${product.description}</p>
-                  <p><strong>Price: $${product.price}</strong></p>
-                  <button onclick="addToCart(${product.id}, '${product.name}', ${product.price})">Add to Cart</button>
-              `;
-
-        container.appendChild(card);
-      });
-    })
-    .catch((error) => {
-      console.error("Error loading products:", error);
-      document.getElementById("product-container").innerHTML =
-        "<p>Failed to load products.</p>";
-    });
+document.addEventListener("DOMContentLoaded", () => {
+  loadProducts();
 });
+
+async function loadProducts() {
+  try {
+    const response = await fetch("/api/products");
+    if (!response.ok) {
+      throw new Error("Failed to fetch products");
+    }
+    const products = await response.json();
+    displayProducts(products);
+  } catch (error) {
+    console.error("Error loading products:", error);
+    alert("Failed to load products. Please try again later.");
+  }
+}
+
+function displayProducts(products) {
+  const productContainer = document.getElementById("product-container");
+  productContainer.innerHTML = products
+    .map(
+      (p) =>
+        `<div class="product-item">
+          <img src="${p.image_url}" alt="${p.name}" />
+          <h3>${p.name}</h3>
+          <p>${p.description}</p>
+          <p class="price"><strong>Price:</strong> <em>$${p.price.toFixed(2)}</em></p>
+          <button class="add-to-cart" onclick="addToCart(${p.id}, '${p.name}', ${p.price})">Add to Cart</button>
+        </div>`
+    )
+    .join("");
+}
 
 function addToCart(id, name, price) {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
