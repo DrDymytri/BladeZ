@@ -58,73 +58,96 @@ async function loadProducts(descriptorId) {
   }
 }
 
-// Set up event listeners for the dropdowns
+// Set up event listeners for the buttons
 function setupFilterListeners() {
-  document.getElementById("categorySelect").addEventListener("change", (e) => {
-    const categoryId = e.target.value; // Get selected category ID
-    if (categoryId) {
-      loadSubCategories(categoryId); // Load sub-categories for the selected category
-    } else {
-      resetDropdown("subCategorySelect", "Select Sub-Category");
-      resetDropdown("descriptorSelect", "Select Descriptor");
+  document.getElementById("category-label").addEventListener("click", () => {
+    toggleListDisplay("categorySelect");
+  });
+
+  document.getElementById("categorySelect").addEventListener("click", (e) => {
+    if (e.target.tagName === "LI") {
+      const categoryId = e.target.dataset.value;
+      const categoryName = e.target.textContent;
+      loadSubCategories(categoryId);
+      document.getElementById("subcategory-container").style.display = "flex";
+      document.getElementById("subcategory-arrow").style.display = "inline";
+      document.getElementById("categorySelect").style.display = "none";
+      document.getElementById("category-selection").textContent = `(${categoryName})`;
     }
   });
 
-  document.getElementById("subCategorySelect").addEventListener("change", (e) => {
-    const subCategoryId = e.target.value; // Get selected sub-category ID
-    if (subCategoryId) {
-      loadDescriptors(subCategoryId); // Load descriptors for the selected sub-category
-    } else {
-      resetDropdown("descriptorSelect", "Select Descriptor");
+  document.getElementById("subcategory-label").addEventListener("click", () => {
+    toggleListDisplay("subCategorySelect");
+  });
+
+  document.getElementById("subCategorySelect").addEventListener("click", (e) => {
+    if (e.target.tagName === "LI") {
+      const subCategoryId = e.target.dataset.value;
+      const subCategoryName = e.target.textContent;
+      loadDescriptors(subCategoryId);
+      document.getElementById("descriptor-container").style.display = "flex";
+      document.getElementById("descriptor-arrow").style.display = "inline";
+      document.getElementById("subCategorySelect").style.display = "none"; // Ensure the list retracts
+      document.getElementById("subcategory-selection").textContent = `(${subCategoryName})`;
     }
   });
 
-  document.getElementById("descriptorSelect").addEventListener("change", (e) => {
-    const descriptorId = e.target.value; // Get selected descriptor ID
-    if (descriptorId) {
-      loadProducts(descriptorId); // Load products for the selected descriptor
+  document.getElementById("descriptor-label").addEventListener("click", () => {
+    toggleListDisplay("descriptorSelect");
+  });
+
+  document.getElementById("descriptorSelect").addEventListener("click", (e) => {
+    if (e.target.tagName === "LI") {
+      const descriptorId = e.target.dataset.value;
+      const descriptorName = e.target.textContent;
+      loadProducts(descriptorId);
+      document.getElementById("descriptorSelect").style.display = "none";
+      document.getElementById("descriptor-selection").textContent = `(${descriptorName})`;
     }
   });
 }
 
-// Populate the categories dropdown
+// Toggle the display of the list
+function toggleListDisplay(listId) {
+  const list = document.getElementById(listId);
+  list.style.display = list.style.display === "block" ? "none" : "block";
+}
+
+// Populate the categories list
 function populateCategorySelect(categories) {
   const categorySelect = document.getElementById("categorySelect");
-  categorySelect.innerHTML = `<option value="">Select Category</option>`;
-  categorySelect.innerHTML += categories
-    .map((c) => `<option value="${c.id}">${c.name}</option>`)
+  categorySelect.innerHTML = `<li data-value="">Select Category</li>` + categories
+    .map((c) => `<li data-value="${c.id}">${c.name}</li>`)
     .join("");
 }
 
-// Populate the sub-categories dropdown
+// Populate the sub-categories list
 function populateSubCategorySelect(subCategories) {
   const subCategorySelect = document.getElementById("subCategorySelect");
-  subCategorySelect.innerHTML = `<option value="">Select Sub-Category</option>`;
-  subCategorySelect.innerHTML += subCategories
-    .map((sc) => `<option value="${sc.id}">${sc.name}</option>`)
+  subCategorySelect.innerHTML = `<li data-value="">Select Sub-Category</li>` + subCategories
+    .map((sc) => `<li data-value="${sc.id}">${sc.name}</li>`)
     .join("");
 }
 
-// Populate the descriptors dropdown
+// Populate the descriptors list
 function populateDescriptorSelect(descriptors) {
   const descriptorSelect = document.getElementById("descriptorSelect");
-  descriptorSelect.innerHTML = `<option value="">Select Descriptor</option>`;
-  descriptorSelect.innerHTML += descriptors
-    .map((d) => `<option value="${d.id}">${d.name}</option>`)
+  descriptorSelect.innerHTML = `<li data-value="">Select Descriptor</li>` + descriptors
+    .map((d) => `<li data-value="${d.id}">${d.name}</li>`)
     .join("");
 }
 
-// Display products dynamically
 function displayProducts(products) {
   const productContainer = document.getElementById("product-container");
   productContainer.innerHTML = products
     .map(
       (p) =>
         `<div class="product-item">
+          <img src="${p.image_url}" alt="${p.name}" />
           <h3>${p.name}</h3>
           <p>${p.description}</p>
-          <p>Price: $${p.price.toFixed(2)}</p>
-          <img src="${p.image_url}" alt="${p.name}" />
+          <p class="price"><strong>Price:</strong> <em>$${p.price.toFixed(2)}</em></p>
+          <button class="add-to-cart" onclick="addToCart(${p.id}, '${p.name}', ${p.price})">Add to Cart</button>
         </div>`
     )
     .join("");
@@ -133,5 +156,5 @@ function displayProducts(products) {
 // Reset dropdowns
 function resetDropdown(dropdownId, placeholderText) {
   const dropdown = document.getElementById(dropdownId);
-  dropdown.innerHTML = `<option value="">${placeholderText}</option>`;
+  dropdown.innerHTML = `<li data-value="">${placeholderText}</li>`;
 }

@@ -279,7 +279,7 @@ async function loadAdminEvents() {
           data-location="${event.location}">
         <td>${event.title}</td>
         <td>${new Date(event.event_start_date).toLocaleString()}</td>
-        <td>${event.location}</td>
+        <td><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank">${event.location}</a></td>
         <td>
           <button onclick="editEvent(${event.id})">Edit</button>
           <button onclick="deleteEvent(${event.id})" class="deleteBtn">Delete</button>

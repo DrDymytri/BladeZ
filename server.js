@@ -643,6 +643,19 @@ app.get("/api/products", async (req, res) => {
   }
 });
 
+// Get featured products
+app.get('/api/featured-products', async (req, res) => {
+  try {
+    const pool = await getConnection();
+    const result = await pool.request()
+      .query('SELECT id, name, description, price, image_url FROM Products WHERE featured = 1');
+    res.json(result.recordset);
+  } catch (error) {
+    console.error('Error fetching featured products:', error);
+    res.status(500).json({ error: 'Failed to fetch featured products' });
+  }
+});
+
 // Fetch all events
 app.get("/admin/events", authenticateToken, async (req, res) => {
   try {

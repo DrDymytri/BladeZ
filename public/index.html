@@ -48,23 +48,24 @@
       <h2 class="productTitle">Our Latest Products: Everything Martial Arts</h2>
       
       <!-- Filtering Options -->
-      <div>
-        <label for="categorySelect">Category:</label>
-        <select id="categorySelect">
-          <option value="">Select Category</option>
-        </select>
-      </div>
-      <div>
-        <label for="subCategorySelect">Sub-Category:</label>
-        <select id="subCategorySelect">
-          <option value="">Select Sub-Category</option>
-        </select>
-      </div>
-      <div>
-        <label for="descriptorSelect">Descriptor:</label>
-        <select id="descriptorSelect">
-          <option value="">Select Descriptor</option>
-        </select>
+      <div id="filter-container">
+        <div id="category-container" class="filter-item">
+          <button id="category-label" class="filter-label">Category</button>
+          <span id="category-selection" class="filter-selection"></span>
+          <ul id="categorySelect" class="filter-list" style="display: none;"></ul>
+        </div>
+        <span class="filter-separator">--</span>
+        <div id="subcategory-container" class="filter-item" style="display: none;">
+          <button id="subcategory-label" class="filter-label">Sub-Category</button>
+          <span id="subcategory-selection" class="filter-selection"></span>
+          <ul id="subCategorySelect" class="filter-list" style="display: none;"></ul>
+        </div>
+        <span class="filter-separator" id="subcategory-arrow" style="display: none;">--</span>
+        <div id="descriptor-container" class="filter-item" style="display: none;">
+          <button id="descriptor-label" class="filter-label">Descriptor</button>
+          <span id="descriptor-selection" class="filter-selection"></span>
+          <ul id="descriptorSelect" class="filter-list" style="display: none;"></ul>
+        </div>
       </div>
 
       <div id="product-container" class="product-grid">

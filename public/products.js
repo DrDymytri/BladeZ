@@ -1,6 +1,20 @@
 document.addEventListener("DOMContentLoaded", () => {
-  loadProducts();
+  loadFeaturedProducts();
 });
+
+async function loadFeaturedProducts() {
+  try {
+    const response = await fetch("/api/featured-products");
+    if (!response.ok) {
+      throw new Error("Failed to fetch featured products");
+    }
+    const products = await response.json();
+    displayProducts(products);
+  } catch (error) {
+    console.error("Error loading featured products:", error);
+    displayErrorMessage("Failed to load featured products. Please try again later.");
+  }
+}
 
 async function loadProducts() {
   try {
@@ -12,7 +26,7 @@ async function loadProducts() {
     displayProducts(products);
   } catch (error) {
     console.error("Error loading products:", error);
-    alert("Failed to load products. Please try again later.");
+    displayErrorMessage("Failed to load products. Please try again later.");
   }
 }
 
@@ -30,6 +44,11 @@ function displayProducts(products) {
         </div>`
     )
     .join("");
+}
+
+function displayErrorMessage(message) {
+  const productContainer = document.getElementById("product-container");
+  productContainer.innerHTML = `<div class="error-message">${message}</div>`;
 }
 
 function addToCart(id, name, price) {
