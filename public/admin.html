@@ -17,7 +17,10 @@
   </head>
   <body>
     <header>
-      <h1>Admin Panel - Point FX BladeZ</h1>
+      <div style="display: flex; align-items: center;">
+        <img src="./Images/Logo only.gif" alt="Logo" style="height: auto; width: 150px; margin-right: 10px;">
+        <h1 class="businessName">Admin Panel - Point FX BladeZ</h1>
+      </div>
       <!-- Placeholder for Admin Login -->
       <div id="admin-login" style="display: none"></div>
 
@@ -75,6 +78,12 @@
           <div>
             <label for="productCategory">Category:</label>
             <select id="productCategory" required>
+              <option value="">Loading...</option>
+            </select>
+          </div>
+          <div>
+            <label for="productSubCategory">Sub-Category:</label>
+            <select id="productSubCategory" required>
               <option value="">Loading...</option>
             </select>
           </div>

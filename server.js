@@ -469,6 +469,8 @@ app.post("/admin/products", authenticateToken, async (req, res) => {
       image_url,
       stock_quantity,
       category_id,
+      sub_category_id,
+      descriptor_id,
       featured,
     } = req.body;
     if (!name || !price || !category_id) {
@@ -486,9 +488,11 @@ app.post("/admin/products", authenticateToken, async (req, res) => {
       .input("image_url", sql.NVarChar, image_url)
       .input("stock_quantity", sql.Int, stock_quantity)
       .input("category_id", sql.Int, category_id)
+      .input("SubCategoryID", sql.Int, sub_category_id)
+      .input("DescriptorID", sql.Int, descriptor_id)
       .input("featured", sql.Bit, featured ? 1 : 0).query(`
-        INSERT INTO products (name, description, price, image_url, stock_quantity, category_id, featured) 
-        VALUES (@name, @description, @price, @image_url, @stock_quantity, @category_id, @featured)
+        INSERT INTO products (name, description, price, image_url, stock_quantity, category_id, SubCategoryID, DescriptorID, featured) 
+        VALUES (@name, @description, @price, @image_url, @stock_quantity, @category_id, @SubCategoryID, @DescriptorID, @featured)
       `);
 
     res.json({ message: "✅ Product added successfully!" });
@@ -519,7 +523,7 @@ app.get("/admin/products/:id", authenticateToken, async (req, res) => {
 // Update a product (admin)
 app.put("/admin/products/:id", authenticateToken, async (req, res) => {
   try {
-    const { name, description, price, image_url, stock_quantity, category_id } =
+    const { name, description, price, image_url, stock_quantity, category_id, sub_category_id, descriptor_id } =
       req.body;
     const id = req.params.id;
     let pool = await getConnection();
@@ -532,8 +536,10 @@ app.put("/admin/products/:id", authenticateToken, async (req, res) => {
       .input("image_url", sql.NVarChar, image_url)
       .input("stock_quantity", sql.Int, stock_quantity)
       .input("category_id", sql.Int, category_id)
+      .input("SubCategoryID", sql.Int, sub_category_id)
+      .input("DescriptorID", sql.Int, descriptor_id)
       .query(
-        "UPDATE products SET name = @name, description = @description, price = @price, image_url = @image_url, stock_quantity = @stock_quantity, category_id = @category_id WHERE id = @id"
+        "UPDATE products SET name = @name, description = @description, price = @price, image_url = @image_url, stock_quantity = @stock_quantity, category_id = @category_id, SubCategoryID = @SubCategoryID, DescriptorID = @DescriptorID WHERE id = @id"
       );
     res.json({ message: "Product updated successfully!" });
   } catch (err) {

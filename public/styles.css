@@ -59,25 +59,37 @@ main {
   padding: 20px;
 }
 
-h1,
-h2 {
-  color: #7d2323;
+.businessName {
+  color: red;
   font-family: "MedievalSharp", serif;
   font-size: 72px;
+  text-align: center;
+  padding: 5px;
+  margin: 0;
+  text-shadow: 0.125px 0.25px gold, 0.25px 0.5px gold,
+    0.375px 0.75px gold, 0.5px 1px white,
+    0.625px 1.25px white, 0.75px 1.5px white;
+}
+
+h1,
+h2 {
+  color: black;
+  font-family: "MedievalSharp", serif;
+  font-size: 36px;
   padding: 5px;
   margin: 0;
   text-shadow: 0.125px 0.25px rgb(255, 0, 0), 0.25px 0.5px rgb(255, 0, 0),
-    0.375px 0.75px rgb(255, 0, 0), 0.5px 1px rgb(255, 0, 0),
-    0.625px 1.25px rgb(255, 0, 0), 0.75px 1.5px black;
+    0.375px 0.75px rgb(255, 0, 0), 0.5px 1px white,
+    0.625px 1.25px white, 0.75px 1.5px white;
 }
 
 .productTitle {
   font-family: serif;
   font-size: 36px;
   color: black;
-  text-shadow: 0.125px 0.25px rgb(116, 85, 85), 0.25px 0.5px rgb(116, 85, 85),
-    0.375px 0.75px rgb(116, 85, 85), 0.5px 1px rgb(116, 85, 85),
-    0.625px 1.25px rgb(116, 85, 85), 0.75px 1.5px rgb(116, 85, 85);
+  text-shadow: 0.125px 0.25px red, 0.25px 0.5px red,
+    0.375px 0.75px red, 0.5px 1px white,
+    0.625px 1.25px white, 0.75px 1.5px white;
 }
 
 /* Table Styles */
@@ -348,6 +360,7 @@ nav ul li a {
   overflow: hidden;
   transition: transform 0.2s;
   text-align: center;
+  position: relative;
 }
 
 .product-item:hover {
@@ -512,7 +525,7 @@ footer {
 #filter-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 2px;
   margin-bottom: 20px;
   padding: 5px;
 }
@@ -531,15 +544,6 @@ footer {
   border: none;
   color: blue;
   text-decoration: underline;
-}
-
-.filter-arrow {
-  font-weight: bold;
-}
-
-.filter-separator {
-  font-weight: bold;
-  margin: 0 10px;
 }
 
 .filter-list {
@@ -568,4 +572,16 @@ footer {
   font-style: italic;
   margin-left: 5px;
   color: #555;
+}
+
+.featured-label {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 5px;
+  border-radius: 3px;
+  font-style: italic;
+  font-weight: bold;
+  color: #ff0000;
 }

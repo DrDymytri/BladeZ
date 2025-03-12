@@ -35,6 +35,7 @@ async function refreshAccessToken() {
   } catch (error) {
     localStorage.removeItem("token");
     showAdminLoginModal();
+    location.reload(); // Refresh the page to ensure fresh data
   }
 }
 
@@ -79,6 +80,7 @@ function showAdminLoginModal() {
         localStorage.setItem("token", data.token); // Save the token
         loginSection.style.display = "none"; // Hide the login section after successful login
         initAdminFunctions(); // Initialize admin panel functionality
+        location.reload(); // Refresh the page to ensure fresh data
       } else {
         const errorData = await res.json();
         alert(errorData.error || "Login failed. Check your credentials.");
@@ -96,6 +98,7 @@ function showAdminLoginModal() {
 function initAdminFunctions() {
   loadAdminProducts();
   loadCategories();
+  setupCategoryChangeListener();
 }
 
 async function loadAdminProducts() {
@@ -131,16 +134,64 @@ async function loadAdminProducts() {
 
 async function loadCategories() {
   try {
-    const response = await fetch("/categories");
+    const response = await fetch("/api/categories");
     const categories = await response.json();
 
     const categorySelect = document.getElementById("productCategory");
-    categorySelect.innerHTML = categories
+    categorySelect.innerHTML = `<option value="">Select Category</option>` + categories
       .map((c) => `<option value="${c.id}">${c.name}</option>`)
       .join("");
   } catch (error) {
     console.error("Error loading categories:", error);
   }
+}
+
+async function loadSubCategories(categoryId) {
+  try {
+    const response = await fetch(`/api/subcategories?categoryId=${categoryId}`);
+    const subCategories = await response.json();
+
+    const subCategorySelect = document.getElementById("productSubCategory");
+    subCategorySelect.innerHTML = `<option value="">Select Sub-Category</option>` + subCategories
+      .map((sc) => `<option value="${sc.id}">${sc.name}</option>`)
+      .join("");
+  } catch (error) {
+    console.error("Error loading sub-categories:", error);
+    const subCategorySelect = document.getElementById("productSubCategory");
+    subCategorySelect.innerHTML = `<option value="">Failed to load sub-categories</option>`;
+  }
+}
+
+async function loadDescriptors(subCategoryId) {
+  try {
+    if (!subCategoryId || isNaN(subCategoryId)) {
+      throw new Error("Invalid subCategoryId");
+    }
+    const response = await fetch(`/api/descriptors?subCategoryId=${subCategoryId}`);
+    const descriptors = await response.json();
+
+    const descriptorSelect = document.getElementById("productDescriptor");
+    descriptorSelect.innerHTML = `<option value="">Select Descriptor</option>` + descriptors
+      .map((d) => `<option value="${d.id}">${d.name}</option>`)
+      .join("");
+  } catch (error) {
+    console.error("Error loading descriptors:", error);
+    const descriptorSelect = document.getElementById("productDescriptor");
+    descriptorSelect.innerHTML = `<option value="">Failed to load descriptors</option>`;
+  }
+}
+
+function setupCategoryChangeListener() {
+  document.getElementById("productCategory").addEventListener("change", async (e) => {
+    const categoryId = e.target.value;
+    await loadSubCategories(categoryId);
+    document.getElementById("productSubCategory").dispatchEvent(new Event('change'));
+  });
+
+  document.getElementById("productSubCategory").addEventListener("change", async (e) => {
+    const subCategoryId = parseInt(e.target.value, 10);
+    await loadDescriptors(subCategoryId);
+  });
 }
 
 async function editProduct(id) {
@@ -157,6 +208,10 @@ async function editProduct(id) {
     document.getElementById("productImage").value = product.image_url || "";
     document.getElementById("productStock").value = product.stock_quantity;
     document.getElementById("productCategory").value = product.category_id;
+    await loadSubCategories(product.category_id);
+    document.getElementById("productSubCategory").value = product.SubCategoryID;
+    await loadDescriptors(product.SubCategoryID);
+    document.getElementById("productDescriptor").value = product.DescriptorID;
 
     toggleButtons(true);
   } catch (error) {
@@ -193,63 +248,60 @@ function toggleButtons(edit) {
 function setupFormListeners() {
   document
     .getElementById("addProductBtn")
-    .addEventListener("click", () => handleProductFormSubmit(false));
+    .addEventListener("click", (e) => handleProductFormSubmit(e, false));
   document
     .getElementById("updateProductBtn")
-    .addEventListener("click", () => handleProductFormSubmit(true));
+    .addEventListener("click", (e) => handleProductFormSubmit(e, true));
 }
 
-async function handleProductFormSubmit(isUpdate) {
+async function handleProductFormSubmit(e, isEdit) {
+  e.preventDefault();
   const token = localStorage.getItem("token");
-  const id = document.getElementById("productId").value || null;
 
+  const id = document.getElementById("productId").value || null;
   const productData = {
-    name: document.getElementById("productName").value.trim(),
-    description: document.getElementById("productDescription").value.trim(),
+    name: document.getElementById("productName").value,
+    description: document.getElementById("productDescription").value,
     price: parseFloat(document.getElementById("productPrice").value) || 0,
-    image_url: document.getElementById("productImage").value.trim(),
-    stock_quantity:
-      parseInt(document.getElementById("productStock").value) || 0,
-    category_id:
-      parseInt(document.getElementById("productCategory").value) || null,
-    descriptor_id:
-      parseInt(document.getElementById("productDescriptor").value) || null,
+    image_url: document.getElementById("productImage").value,
+    stock_quantity: parseInt(document.getElementById("productStock").value) || 0,
+    category_id: parseInt(document.getElementById("productCategory").value) || null,
+    sub_category_id: parseInt(document.getElementById("productSubCategory").value) || null,
+    descriptor_id: parseInt(document.getElementById("productDescriptor").value) || null,
+    featured: document.getElementById("productFeatured") ? document.getElementById("productFeatured").checked : false,
   };
 
-  if (!productData.name || !productData.price || !productData.category_id || !productData.descriptor_id) {
-    alert("Name, price, category, and descriptor are required.");
+  if (!productData.name || !productData.price || !productData.category_id) {
+    alert("⚠️ Name, price, and category are required.");
     return;
   }
 
-  try {
-    const url = isUpdate ? `/admin/products/${id}` : "/admin/products";
-    const method = isUpdate ? "PUT" : "POST";
+  console.log("Saving Product:", productData); // Debugging
 
-    const response = await fetch(url, {
+  const method = isEdit ? "PUT" : "POST";
+  const url = isEdit ? `/admin/products/${id}` : "/admin/products";
+
+  try {
+    const res = await fetch(url, {
       method,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: "Bearer " + token,
       },
       body: JSON.stringify(productData),
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to save product.");
-    }
+    const result = await res.json();
+    console.log("Product Save Response:", result); // Debugging
 
-    alert(
-      isUpdate
-        ? "✅ Product updated successfully!"
-        : "✅ Product added successfully!"
-    );
+    if (!res.ok) throw new Error(result.error || "Failed to save product");
 
+    alert(result.message || "Product saved successfully!");
     document.getElementById("product-form").reset();
-    toggleButtons(false); // Switch back to "Add Product" mode
-    loadAdminProducts(); // Reload product list
+    loadAdminProducts();
   } catch (error) {
-    console.error("Error saving product:", error);
-    alert("Failed to save product. Please check the inputs and try again.");
+    console.error("❌ Error saving product:", error);
+    alert("Failed to save product. Please check the server.");
   }
 }
 

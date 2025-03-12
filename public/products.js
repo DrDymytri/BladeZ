@@ -36,6 +36,7 @@ function displayProducts(products) {
     .map(
       (p) =>
         `<div class="product-item">
+          ${p.featured == 1 ? '<div class="featured-label"><em>Featured Item</em></div>' : ''}
           <img src="${p.image_url}" alt="${p.name}" />
           <h3>${p.name}</h3>
           <p>${p.description}</p>
