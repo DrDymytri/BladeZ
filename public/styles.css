@@ -406,10 +406,8 @@ nav ul li a {
   border-bottom: 4px solid rgb(121, 141, 160);
   border-right: 4px solid rgb(149, 172, 190);
   border-left: 4px solid rgb(156, 175, 194);
-  /* box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466); */
   outline: 1px solid black;
   background: linear-gradient(to right, #ff000088, #a10000, #8b0000, #a10000, #ff000088);
-  /* border-radius: 1px; */
   box-sizing: border-box;
   font-family: serif;
   font-size: 20px;
