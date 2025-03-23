@@ -2,8 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cart - Point FX BladeZ</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="admin.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,22 +19,39 @@
   </head>
   <body>
     <header>
-      <img src="./Images/Logo only.gif" alt="Logo" style="height: auto; width: 150px; margin-right: 10px;">
-      <h1 class="businessName">Shopping Cart</h1>
+      <div class="logo-container">
+        <img src="./Images/Logo only.gif" alt="Logo" class="responsive-logo" />
+      </div>
+      <h1 class="businessName">Point FX BladeZ</h1>
       <nav>
-        <a href="index.html"
-          ><i class="material-icons">inventory</i> Products</a
-        >
-        <a href="checkout.html">Checkout</a>
+        <ul class="responsive-nav">
+          <li>
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+          </li>
+          <li>
+            <a href="products.html"><i class="fas fa-store"></i> Products</a>
+          </li>
+          <li>
+            <a href="checkout.html"><i class="fas fa-credit-card"></i> Checkout</a>
+          </li>
+        </ul>
       </nav>
     </header>
     <main>
-      <div id="cart-container"></div>
-      <div id="cart-total"></div>
-      <button onclick="window.location.href='checkout.html'">
-        Proceed to Checkout
-      </button>
+      <section id="cart-section">
+        <h2>Your Cart</h2>
+        <div id="cart-container" class="cart-items-container">
+          <!-- Cart items will be dynamically loaded here -->
+        </div>
+        <div id="cart-summary">
+          <p>Total: $<span id="cart-total">0.00</span></p>
+          <a href="checkout.html" class="checkout-button">Proceed to Checkout</a>
+        </div>
+      </section>
     </main>
-    <script src="script.js"></script>
+    <footer>
+      <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
+    </footer>
+    <script src="cart.js"></script>
   </body>
 </html>

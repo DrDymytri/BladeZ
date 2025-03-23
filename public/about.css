@@ -1,35 +1,20 @@
 .aboutBody {
-  /* background-color: palegoldenrod; */
   background-image: url(./images/Old-Floral-Parchment-Texture.jpg);
-}
-
-.slogan {
-  font-size: 24px;
-}
-
-.heroTitle {
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  background-color: #f4f4f4;
   font-family: "MedievalSharp", serif;
-  justify-content: center;
+  padding: 20px;
+  margin-top: 300px; /* Adjusted to match the height of the header */
+}
+
+.opener {
   text-align: center;
-  font-size: 48px;
-  color: black;
-  width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-  text-shadow: none;
+  margin: 20px auto;
 }
 
 .heroSlogan {
-  font-family: "MedievalSharp", serif;
-  justify-content: center;
-  text-align: center;
-  font-size: 36px;
-  color: black;
-  width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
+  font-size: 1.2em;
+  margin-bottom: 20px;
 }
 
 .heroDesc p {
@@ -44,6 +29,11 @@
   margin-right: auto;
   padding-left: 25px;
   padding-right: 25px;
+  max-width: 100%; /* Ensure text fits within the viewport */
+  word-wrap: break-word; /* Break long words */
+  overflow-wrap: break-word;
+  margin: 10px 0;
+  line-height: 1.6;
 }
 
 .heroDesc p::first-letter {
@@ -61,4 +51,34 @@
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  body.aboutBody {
+    padding: 10px;
+  }
+
+  header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  header .logo-container img {
+    width: 100px;
+    margin: 5px;
+  }
+
+  header h1.businessName {
+    font-size: 24px;
+  }
+
+  header p.slogan {
+    font-size: 14px;
+  }
+
+  nav a {
+    font-size: 14px;
+    padding: 5px;
+  }
 }

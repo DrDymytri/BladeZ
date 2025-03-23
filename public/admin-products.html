@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Products - Point FX BladeZ</title>
+    <link rel="stylesheet" href="admin-products.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+  </head>
+  <body>
+    <nav class="Tabs">
+      <a href="index.html"><i class="fas fa-home"></i> Products</a>
+      <a href="admin-products.html"><i class="fas fa-box-open"></i> Product Management</a>
+      <a href="admin-orders.html"><i class="fas fa-box-open"></i> Orders</a>
+      <a href="admin-events.html"><i class="fas fa-calendar"></i> Events</a>
+      <a href="admin-media.html"><i class="fas fa-photo-video"></i> Media</a>
+    </nav>
+    <main>
+      <h1>Product Management</h1>
+      <form id="productForm">
+        <div class="search-pagination-container">
+          <input type="text" id="productSearch" placeholder="Search products..." />
+        </div>
+        <input type="hidden" id="productId" name="productId" />
+        <div class="form-row">
+          <input type="text" id="productName" name="productName" placeholder="Product Name" required />
+          <input type="number" id="productPrice" name="productPrice" placeholder="Price" required />
+        </div>
+        <div class="form-row">
+          <input type="number" id="productStock" name="productStock" placeholder="Stock Quantity" required />
+          <input type="text" id="productImageUrl" name="productImageUrl" placeholder="Image URL" />
+        </div>
+        <div class="form-row">
+          <select id="productCategory" name="productCategory" required>
+            <option value="">Select Category</option>
+          </select>
+          <select id="productSubCategory" name="productSubCategory">
+            <option value="">Select Subcategory</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <select id="productTag" name="productTag">
+            <option value="">Select Tag</option>
+          </select>
+          <label>
+            <input type="checkbox" id="productShowcase" name="productShowcase" />
+            Showcase
+          </label>
+        </div>
+        <div class="form-row">
+          <textarea id="productDescription" name="productDescription" placeholder="Description" required></textarea>
+        </div>
+        <div class="form-buttons">
+          <button type="submit" id="addProductBtn">Add Product</button>
+          <button type="button" id="updateProductBtn" style="display: none;">Update Product</button>
+        </div>
+      </form>
+      <div id="admin-products-container" class="product-cards-container">
+        <!-- Product cards will be dynamically loaded here -->
+      </div>
+      <div id="paginationControls" class="pagination-controls">
+        <!-- Pagination buttons will be dynamically added here -->
+      </div>
+    </main>
+    <footer>
+      <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
+    </footer>
+    <script src="admin-products.js"></script>
+  </body>
+</html>

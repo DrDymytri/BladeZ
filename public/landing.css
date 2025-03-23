@@ -1,0 +1,86 @@
+.landing-page {
+  background-image: url('./images/Warriors 13th century to current.webp'); /* Set the background image */
+  background-size: cover; /* Ensure the background covers the entire viewport */
+  background-position: center; /* Center the image */
+  background-repeat: no-repeat; /* Prevent the image from repeating */
+  height: 100vh; /* Set the height to fill the viewport */
+  width: 100vw; /* Set the width to fill the viewport */
+  display: flex; /* Use flexbox for alignment */
+  justify-content: center; /* Center horizontally */
+  align-items: flex-end; /* Align content to the bottom */
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent scrollbars */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.welcome-container {
+  text-align: center;
+  margin-bottom: 50px; /* Add some space from the bottom */
+  padding: 10px; /* Adjust padding for smaller screens */
+}
+
+.welcome-container h2 {
+  background-color: rgba(240, 248, 255, 0.282);
+  font-family: "MedievalSharp", serif;
+  font-size: 72px;
+  color: black;
+  text-shadow: 
+    -0.125px -0.25px rgb(222, 35, 35), 
+    -0.25px -0.5px rgb(222, 35, 35),
+    0.125px 0.25px rgb(222, 194, 35), 
+    0.25px 0.5px rgb(222, 194, 35), 
+    0.375px 0.75px black, 
+    0.5px 1px black, 
+    0.625px 1.25px rgb(222, 194, 35), 
+    0.75px 1.5px rgb(222, 194, 35);
+}
+
+.welcome-button {
+  width: auto;
+  font-family: "MedievalSharp", serif;width: auto;
+  text-decoration: none;
+  padding: 5px;
+  margin-bottom: 5px;
+  margin-top: 5px;
+  border-top: 4px solid rgb(189, 209, 230);
+  border-bottom: 4px solid rgb(121, 141, 160);
+  border-right: 4px solid rgb(149, 172, 190);
+  border-left: 4px solid rgb(156, 175, 194);
+  /* box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466); */
+  outline: 1px solid black;
+  background: linear-gradient(to right, #ff000088, #a10000, #8b0000, #a10000, #ff000088);
+  /* border-radius: 1px; */
+  box-sizing: border-box;
+  font-family: serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: aliceblue;
+  text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black, 0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+  box-shadow: 0 0 15px 1px aliceblue;
+}
+
+.welcome-button:hover {
+  background-color: #0056b3;
+}
+
+.GeneralStatement {
+  display: inline-block;
+  font-family: "MedievalSharp", serif;
+  font-size: 24px;
+  color: aliceblue;  
+  background-color: rgba(255, 0, 0, 0.192);
+
+  text-shadow: 
+    -0.125px -0.25px black, 
+    -0.25px -0.5px black,
+    0.125px 0.25px black, 
+    0.25px 0.5px black, 
+    0.375px 0.75px black, 
+    0.5px 1px black, 
+    0.625px 1.25px black, 
+    0.75px 1.5px black;
+  padding: 5px;
+  margin-top: 10px;
+  border-radius: 5px;
+}

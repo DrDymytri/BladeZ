@@ -2,7 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Panel - Point FX BladeZ</title>
+    <link rel="icon" href="./Images/FNRhwx4X0AE8MHM.jpg" type="image/png" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,155 +19,29 @@
   </head>
   <body>
     <header>
-      <div style="display: flex; align-items: center;">
-        <img src="./Images/Logo only.gif" alt="Logo" style="height: auto; width: 150px; margin-right: 10px;">
-        <h1 class="businessName">Admin Panel - Point FX BladeZ</h1>
+      <div class="logo-container">
+        <img src="./Images/Logo only.gif" alt="Logo" class="responsive-logo" />
       </div>
-      <!-- Placeholder for Admin Login -->
-      <div id="admin-login" style="display: none"></div>
-
+      <h1 class="businessName">Point FX BladeZ</h1>
+      <p class="slogan">Premium BladeZ for the Modern Warrior</p>
       <nav>
-        <a href="index.html"><i class="fas fa-box-open"></i> Products</a>
+        <ul class="responsive-nav">
+          <li><a href="index.html"><i class="fas fa-box-open"></i> Products</a></li>
+          <li><a href="admin-products.html"><i class="fas fa-box-open"></i> Product Management</a></li>
+          <li><a href="admin-orders.html"><i class="fas fa-box-open"></i> Orders</a></li>
+          <li><a href="admin-events.html"><i class="fas fa-calendar"></i> Events</a></li>          
+          <li><a href="admin-media.html"><i class="fas fa-calendar"></i> Media</a></li>
+        </ul>
       </nav>
     </header>
-
     <main>
-      <!-- Orders Section -->
-      <section id="admin-orders-section">
-        <h2>All Orders</h2>
-        <table id="admin-orders-table">
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>User ID</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>Shipping</th>
-              <th>Update Shipping</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Orders will be dynamically loaded -->
-          </tbody>
-        </table>
+      <section id="admin-dashboard">
+        <h2>Welcome to the Admin Panel</h2>
+        <p>Select a section to manage:</p>
       </section>
-
-      <!-- Product Management Section -->
-      <section id="admin-products-section">
-        <h2>Product Management</h2>
-        <form id="product-form">
-          <input type="hidden" id="productId" />
-          <div>
-            <label for="productName">Name:</label>
-            <input type="text" id="productName" required />
-          </div>
-          <div>
-            <label for="productDescription">Description:</label>
-            <textarea id="productDescription"></textarea>
-          </div>
-          <div>
-            <label for="productPrice">Price:</label>
-            <input type="number" id="productPrice" step="0.01" required />
-          </div>
-          <div>
-            <label for="productImage">Image URL:</label>
-            <input type="text" id="productImage" />
-          </div>
-          <div>
-            <label for="productStock">Stock Quantity:</label>
-            <input type="number" id="productStock" required />
-          </div>
-          <div>
-            <label for="productCategory">Category:</label>
-            <select id="productCategory" required>
-              <option value="">Loading...</option>
-            </select>
-          </div>
-          <div>
-            <label for="productSubCategory">Sub-Category:</label>
-            <select id="productSubCategory" required>
-              <option value="">Loading...</option>
-            </select>
-          </div>
-          <div>
-            <label for="productDescriptor">Descriptor:</label>
-            <select id="productDescriptor" required>
-              <option value="">Loading...</option>
-            </select>
-          </div>
-          <button type="button" id="addProductBtn">Add Product</button>
-          <button type="button" id="updateProductBtn" style="display: none">
-            Update Product
-          </button>
-        </form>
-
-        <h3>Products List</h3>
-        <table id="admin-products-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Price</th>
-              <th>Stock</th>
-              <th>Category</th>
-              <th class="actions-column">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Products will be dynamically loaded -->
-          </tbody>
-        </table>
-      </section>
-
-      <section id="admin-events-section">
-        <h2>Event Management</h2>
-        <form id="event-form">
-          <input type="hidden" id="eventId" />
-          <div>
-            <label>Title:</label>
-            <input type="text" id="eventTitle" required />
-          </div>
-          <div>
-            <label>Description:</label>
-            <textarea id="eventDescription"></textarea>
-          </div>
-          <div>
-            <label>Start Date:</label>
-            <input type="datetime-local" id="eventStartDate" required />
-          </div>
-          <div>
-            <label>End Date:</label>
-            <input type="datetime-local" id="eventEndDate" required />
-          </div>
-          <div>
-            <label>Website:</label>
-            <input type="url" id="eventWebsite" />
-          </div>
-          <div>
-            <label>Location:</label>
-            <input type="text" id="eventLocation" />
-          </div>
-          <button id="addEventButton">Add Event</button>
-          <button id="updateEventButton" style="display: none">
-            Update Event
-          </button>
-        </form>
-        <h3>Event List</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Date</th>
-              <th>Location</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="eventTableBody">
-            <!-- Events will be dynamically loaded here -->
-          </tbody>
-        </table>
-      </section>
-    </main>
-    <script src="admin.js"></script>
+    </main>    
+    <footer>
+      <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
+    </footer>
   </body>
 </html>

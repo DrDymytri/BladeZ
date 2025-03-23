@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome - Point FX BladeZ</title>
-    <link rel="icon" href="./Images/FNRhwx4X0AE8MHM.jpg" type="image/png" />
+    <title>Images - Point FX BladeZ</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="images.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -28,35 +28,34 @@
         </div>
         <h1 class="businessName">Point FX BladeZ</h1>
         <p class="slogan">Premium BladeZ for the Modern Warrior</p>
-        <nav>
-          <ul class="responsive-nav">
-            <li><a href="cart.html"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count">0</span>)</a></li>
-            <li><a href="admin.html"><i class="fas fa-user-shield"></i> Admin</a></li>
-            <li><a href="about.html"><i class="fas fa-info-circle"></i> About Us!</a></li>
-            <li><a href="events.html"><i class="fas fa-calendar"></i> Events</a></li>
-          </ul>
-        </nav>
-      </div>
-      <div>
-        <img src="./images/Chinese warrior dragon in red and gold.PNG" alt="./images/default-image.jpg" class="header-image-mirrored" />
-      </div>
-    </header>
+      <nav>
+        <ul class="responsive-nav">
+          <li><a href="index.html"><i class="fas fa-box-open"></i> Products</a></li>
+          <li><a href="about.html"><i class="fas fa-info-circle"></i> About Us!</a></li>
+          <li><a href="videos.html"><i class="fas fa-video"></i> Videos</a></li>
+          <li><a href="events.html"><i class="fas fa-calendar"></i> Events</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div>
+      <img src="./images/Chinese warrior dragon in red and gold.PNG" alt="./images/default-image.jpg" class="header-image-mirrored" />
+    </div>
+  </header>
 
     <main>
-      <h2 class="productNote">Product Availability
-         - New Products Uploaded Daily
-      </h2>
-      <div id="product-container">
-        <!-- Products will be rendered here -->
-      </div>
+      <section>
+        <h2 class="ImageCollects">Our Collection of Images</h2>
+        <div id="imageGallery" class="images-grid">
+          <!-- Images will be dynamically populated here -->
+        </div>
+      </section>
     </main>
-
     <footer>
       <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
+      <p>
+        <a href="http://mdoasolutions.com">created by: MDOASolutions.com</a>
+      </p>
     </footer>
-
-    <script src="index.js"></script>
-    <script src="products.js"></script>
-    <script src="image-modal.js"></script>
+    <script src="images.js"></script>
   </body>
 </html>

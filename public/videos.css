@@ -1,0 +1,93 @@
+body {
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  background-color: #f9f9f9;
+  font-family: "MedievalSharp", serif;
+  background-image: url(./images/Old-Floral-Parchment-Texture.jpg);
+  margin: 0;
+  padding: 0;
+}
+
+.media-gallery {
+  display: flex;
+  flex-wrap: wrap; /* Allow items to wrap */
+  gap: 10px; /* Space between items */
+  justify-content: center; /* Center the items */
+  padding: 20px; /* Padding around the gallery */
+}
+
+.gallery-video {
+  width: 100%; /* Full width of the container */
+  height: auto; /* Maintain aspect ratio */
+  border-radius: 8px; /* Rounded corners for videos */
+}
+
+.videos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid with columns */
+  gap: 20px; /* Even spacing between cards */
+  padding: 20px;
+  justify-content: center; /* Center the grid */
+}
+
+.video-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-align: center;
+}
+
+.video-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.video-card video,
+.video-card iframe {
+  width: 100%;
+  height: 200px; /* Fixed height for consistency */
+  object-fit: cover; /* Ensure the video fits nicely */
+  border-bottom: 1px solid #ddd;
+}
+
+.video-card p {
+  font-size: 1em;
+  color: #333;
+  margin: 10px 0;
+  padding: 0 10px;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .videos-grid {
+    grid-template-columns: 1fr; /* Single column on smaller screens */
+  }
+}
+
+/* High-contrast mode styles */
+@media (forced-colors: active) {
+  .video-card {
+    border-color: Highlight;
+    background-color: Window;
+    color: WindowText;
+  }
+
+  .video-card video,
+  .video-card iframe {
+    border-bottom-color: Highlight;
+  }
+}
+
+.aboutBody {
+  background-color: #f9f9f9;
+  font-family: "MedievalSharp", serif;
+  padding: 20px;
+}
+
+#video-section h2 {
+  text-align: center;
+  font-size: 2em;
+  margin-bottom: 20px;
+}

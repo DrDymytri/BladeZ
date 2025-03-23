@@ -1,48 +1,114 @@
 document.addEventListener("DOMContentLoaded", () => {
-  loadEvents();
+  const eventsContainer = document.getElementById("events-container");
+
+  // Fetch events from the server
+  fetch("http://localhost:5000/api/events")
+    .then((response) => {
+      if (!response.ok) {
+        console.error(`Error: Received status ${response.status}`);
+        throw new Error("Failed to fetch events");
+      }
+      return response.json();
+    })
+    .then((events) => {
+      if (!events || events.length === 0) {
+        console.warn("No events found in the response.");
+        eventsContainer.innerHTML = "<p>No events available at the moment.</p>";
+        return;
+      }
+
+      events.forEach((event) => {
+        if (!event.event_start_date || !event.event_end_date || !event.title) {
+          console.warn("Invalid event data:", event);
+          return;
+        }
+
+        // Create event card
+        const eventCard = document.createElement("div");
+        eventCard.classList.add("event-card");
+
+        eventCard.innerHTML = `
+          <h3>${event.title}</h3>
+          <p>${event.description}</p>
+          <p><strong>Start:</strong> ${new Date(event.event_start_date).toLocaleString()}</p>
+          <p><strong>End:</strong> ${new Date(event.event_end_date).toLocaleString()}</p>
+          <p><strong>Location:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank">${event.location}</a></p>
+          ${
+            event.event_website
+              ? `<p><strong>Website:</strong> <a href="${event.event_website}" target="_blank">Visit Website</a></p>`
+              : ""
+          }
+        `;
+
+        // Append card to container
+        eventsContainer.appendChild(eventCard);
+      });
+    })
+    .catch((error) => {
+      console.error("Error fetching events:", error);
+      eventsContainer.innerHTML = "<p>Failed to load events. Please try again later.</p>";
+    });
 });
 
 async function loadEvents() {
   try {
-    const response = await fetch("/api/events");
-    if (!response.ok) {
-      throw new Error("Failed to fetch events");
-    }
-    const events = await response.json();
-    displayEvents(events);
+      const response = await fetch('http://localhost:5000/api/events');
+      if (!response.ok) throw new Error('Failed to fetch events');
+
+      const events = await response.json();
+      const eventsTableBody = document.querySelector('#admin-events-table tbody');
+      eventsTableBody.innerHTML = events.map(event => `
+          <tr>
+              <td>${event.title}</td>
+              <td>${new Date(event.event_start_date).toLocaleString()}</td>
+              <td>${new Date(event.event_end_date).toLocaleString()}</td>
+              <td>${event.location}</td>
+              <td>${event.description}</td>
+              <td>
+                  <button class="update-btn" data-id="${event.id}">Update</button>
+                  <button class="delete-btn" data-id="${event.id}">Delete</button>
+              </td>
+          </tr>
+      `).join('');
+
+      attachEventListeners();
   } catch (error) {
-    console.error("Error loading events:", error);
-    displayErrorMessage("Failed to load events. Please try again later.");
+      console.error('Error loading events:', error);
   }
 }
 
 function displayEvents(events) {
-  const eventsContainer = document.getElementById("eventsContainer");
-  eventsContainer.innerHTML = events
+  const eventContainer = document.getElementById("eventsContainer");
+  eventContainer.innerHTML = events
     .map(
       (event) => `
       <div class="event">
-        <h2 class="eventTitle">${event.title}</h2>
-        <p><strong>Start Date:</strong> ${new Date(event.event_start_date).toLocaleString()}</p>
-        <p><strong>End Date:</strong> ${new Date(event.event_end_date).toLocaleString()}</p>
-        <div class="divider"></div>
-        <p>${event.description}</p><br>
-        <div class="divider"></div>
-        <p><svg width="24" height="24" viewBox="0 0 24 24" focusable="false" class="xwyK1d NMm5M">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 
-            12c0-.61.08-1.21.21-1.78L8.99 15v1c0 1.1.9 2 2 2v1.93C7.06 19.43 4 16.07 4 
-            12zm13.89 5.4c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 
-            1-1V7h2c1.1 0 2-.9 2-2v-.41C17.92 5.77 20 8.65 20 12c0 2.08-.81 3.98-2.11 5.4z"></path></svg> 
-            <a href="${event.event_website}" target="_blank">${new URL(event.event_website).hostname}</a>
-        </p>
-        <p><i class="fas fa-map-marker-alt"></i> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank">${event.location}</a></p>
-      </div>
-    `
+        <h3 class="eventTitle">${event.title}</h3>
+        <p>${event.description}</p>
+        <p><strong>Start:</strong> ${new Date(event.event_start_date).toLocaleString()}</p>
+        <p><strong>End:</strong> ${new Date(event.event_end_date).toLocaleString()}</p>
+        <p><strong>Location:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank">${event.location}</a></p>
+        ${
+          event.event_website
+            ? `<p><a href="${event.event_website}" target="_blank">Event Website</a></p>`
+            : ""
+        }
+      </div>`
     )
     .join("");
 }
 
+function attachEventListeners() {
+    document.querySelectorAll('.update-btn').forEach(button => {
+        button.addEventListener('click', (event) => {
+            const eventId = event.target.dataset.id;
+            editEvent(eventId);
+        });
+    });
+  }
+
+  
 function displayErrorMessage(message) {
-  const eventsContainer = document.getElementById("eventsContainer");
-  eventsContainer.innerHTML = `<div class="error-message">${message}</div>`;
+  const eventContainer = document.getElementById("eventsContainer");
+  eventContainer.innerHTML = `<div class="error-message">${message}</div>`;
 }
