@@ -43,11 +43,27 @@
     </header>
 
     <main>
-      <h2 class="productNote">Product Availability
-         - New Products Uploaded Daily
-      </h2>
+      <div class="centered-container">
+        <form id="filter-form">
+          <select id="category-filter">
+            <option value="">All Categories</option>
+          </select>
+          <select id="subcategory-filter" disabled>
+            <option value="">All Subcategories</option>
+          </select>
+          <select id="descriptor-filter" disabled>
+            <option value="">All Descriptors</option>
+          </select>
+          <button type="button" id="apply-filters-btn">Apply Filters</button>
+          <button type="button" id="clear-filters-btn">Clear Filters</button>
+        </form>
+        <h2 class="productNote">Product Availability - New Products Uploaded Daily</h2>
+      </div>
       <div id="product-container">
-        <!-- Products will be rendered here -->
+        <!-- Dynamically rendered products will be inserted here -->
+      </div>
+      <div id="pagination-container">
+        <!-- Pagination controls will be rendered here -->
       </div>
     </main>
 

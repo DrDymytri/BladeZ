@@ -1,6 +1,11 @@
 let currentPage = 1;
 const productsPerPage = 60;
 let allProducts = [];
+let currentSort = { field: "name", order: "asc" }; // Default sort by name in ascending order
+let showOnlyShowcased = false; // State to track if only showcased products should be displayed
+let showcasedSortMode = "Yes"; // State to track showcased sort mode (Yes/No)
+let currentSortColumn = null;
+let currentSortOrder = "asc";
 
 document.addEventListener("DOMContentLoaded", () => {
     const productForm = document.getElementById("productForm");
@@ -9,6 +14,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const subcategorySelect = document.getElementById("productSubCategory");
     const tagSelect = document.getElementById("productTag");
     const searchInput = document.getElementById("productSearch");
+    const toggleShowcaseBtn = document.getElementById("toggleShowcaseBtn");
+    const lowStockBtn = document.getElementById("lowStockBtn");
+
+    if (!productForm) {
+        console.warn("Product form not found in the DOM. Exiting script.");
+        return; // Exit early if the form is not found
+    }
 
     if (categorySelect) {
         loadCategories();
@@ -128,14 +140,29 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    if (toggleShowcaseBtn) {
+        toggleShowcaseBtn.addEventListener("click", () => {
+            showOnlyShowcased = !showOnlyShowcased; // Toggle the state
+            toggleShowcaseBtn.textContent = showOnlyShowcased ? "Show All Products" : "Show Only Showcased";
+            renderProducts(allProducts); // Re-render products based on the new state
+        });
+    }
+
+    if (lowStockBtn) {
+        lowStockBtn.addEventListener("click", loadLowStockProducts);
+    }
+
     loadProducts();
+
+    // Load low-stock products on page load
+    loadLowStockProducts();
 });
 
 async function loadCategories() {
     try {
         const response = await fetch("http://localhost:5000/api/categories");
         const categories = await response.json();
-        populateDropdown(document.getElementById("productCategory"), categories, "Categoryid", "name");
+        populateDropdown(document.getElementById("productCategory"), categories, "id", "name"); // Use 'id' and 'name'
     } catch (error) {
         console.error("Error loading categories:", error);
     }
@@ -145,7 +172,7 @@ async function loadSubcategories(categoryId) {
     try {
         const response = await fetch(`http://localhost:5000/api/subcategories?categoryId=${categoryId}`);
         const subcategories = await response.json();
-        populateDropdown(document.getElementById("productSubCategory"), subcategories, "SubCategoryID", "SubCategoryName");
+        populateDropdown(document.getElementById("productSubCategory"), subcategories, "id", "name");
     } catch (error) {
         console.error("Error loading subcategories:", error);
     }
@@ -155,7 +182,7 @@ async function loadTags(subCategoryId) {
     try {
         const response = await fetch(`http://localhost:5000/api/descriptors?subCategoryId=${subCategoryId}`);
         const tags = await response.json();
-        populateDropdown(document.getElementById("productTag"), tags, "DescriptorID", "DescriptorName");
+        populateDropdown(document.getElementById("productTag"), tags, "id", "name");
     } catch (error) {
         console.error("Error loading tags:", error);
     }
@@ -182,7 +209,12 @@ function populateDropdown(selectElement, items, valueKey, textKey) {
 async function loadProducts() {
     try {
         const response = await fetch("http://localhost:5000/api/products");
-        const products = await response.json();
+        if (!response.ok) {
+            throw new Error("Failed to fetch products");
+        }
+
+        const data = await response.json();
+        const products = Array.isArray(data.products) ? data.products : data; // Ensure products is an array
         allProducts = products; // Populate the global allProducts array
         renderProducts(products);
     } catch (error) {
@@ -191,18 +223,38 @@ async function loadProducts() {
 }
 
 function renderProducts(products) {
+    // Apply filtering for showcased products if the toggle is active
+    const filteredProducts = showOnlyShowcased
+        ? products.filter(product => product.is_showcase)
+        : products;
+
+    // Apply sorting
+    filteredProducts.sort((a, b) => {
+        if (currentSort.field === "name") {
+            return currentSort.order === "asc"
+                ? a.name.localeCompare(b.name)
+                : b.name.localeCompare(a.name);
+        } else if (currentSort.field === "showcase") {
+            return currentSort.order === "asc"
+                ? a.is_showcase - b.is_showcase
+                : b.is_showcase - a.is_showcase;
+        }
+        return 0;
+    });
+
     const startIndex = (currentPage - 1) * productsPerPage;
     const endIndex = startIndex + productsPerPage;
-    const productsToDisplay = products.slice(startIndex, endIndex);
+    const productsToDisplay = filteredProducts.slice(startIndex, endIndex);
 
     const container = document.getElementById("admin-products-container");
     container.innerHTML = productsToDisplay.map(product => `
-        <div class="product-card" data-id="${product.id}">
-            <img src="${product.image_url || './images/default-image.jpg'}" alt="${product.name}" />
+        <div class="product-card">
+            <img src="${product.image_url || './images/default-image.jpg'}" alt="${product.name}" class="product-image" />
             <h3>${product.name}</h3>
             <p>${product.description}</p>
             <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
-            <p><strong>Stock:</strong> ${product.stock_quantity}</p>
+            <p><strong>Stock:</strong> <span style="color: ${product.stock_quantity < 0 ? 'red' : 'black'};">${product.stock_quantity}</span></p>
+            <p><strong>Showcased:</strong> ${product.is_showcase ? "Yes" : "No"}</p>
             <div class="product-actions">
                 <button class="update-btn" onclick="handleUpdateClick(event, ${product.id})">Update</button>
                 <button class="delete-btn" onclick="deleteProduct(${product.id})">Delete</button>
@@ -210,7 +262,7 @@ function renderProducts(products) {
         </div>
     `).join("");
 
-    renderPagination(products.length);
+    renderPagination(filteredProducts.length); // Update pagination based on filtered products
 }
 
 function renderPagination(totalProducts) {
@@ -250,15 +302,19 @@ async function editProduct(productId) {
         document.getElementById("productPrice").value = product.price;
         document.getElementById("productStock").value = product.stock_quantity;
         document.getElementById("productImageUrl").value = product.image_url || "";
-        document.getElementById("productCategory").value = product.category_id;
         document.getElementById("productShowcase").checked = product.is_showcase;
 
-        // Load subcategories and tags dynamically
+        // Load categories and set the selected category
+        await loadCategories();
+        document.getElementById("productCategory").value = product.category_id;
+
+        // Load subcategories and set the selected subcategory
         if (product.category_id) {
             await loadSubcategories(product.category_id);
             document.getElementById("productSubCategory").value = product.sub_category_id || "";
         }
 
+        // Load tags and set the selected tag
         if (product.sub_category_id) {
             await loadTags(product.sub_category_id);
             document.getElementById("productTag").value = product.tag_id || "";
@@ -297,5 +353,151 @@ async function deleteProduct(productId) {
     } catch (error) {
         console.error("Error deleting product:", error);
         alert("An error occurred while deleting the product. Please try again later.");
+    }
+}
+
+function handleSortChange(field) {
+    if (field === "showcase") {
+        showcasedSortMode = showcasedSortMode === "Yes" ? "No" : "Yes"; // Toggle showcased sort mode
+        currentSort = { field: "showcase", order: showcasedSortMode === "Yes" ? "asc" : "desc" };
+        const showcaseSortBtn = document.querySelector("button[onclick=\"handleSortChange('showcase')\"]");
+        if (showcaseSortBtn) {
+            showcaseSortBtn.textContent = `Sort by Showcased (${showcasedSortMode})`;
+        }
+    } else if (field === "name") {
+        currentSort.order = currentSort.order === "asc" ? "desc" : "asc"; // Toggle sort order
+        const nameSortBtn = document.querySelector("button[onclick=\"handleSortChange('name')\"]");
+        if (nameSortBtn) {
+            nameSortBtn.textContent = `Sort by Name (${currentSort.order === "asc" ? "Ascending" : "Descending"})`;
+        }
+    } else {
+        if (currentSort.field === field) {
+            currentSort.order = currentSort.order === "asc" ? "desc" : "asc";
+        } else {
+            currentSort.field = field;
+            currentSort.order = "asc";
+        }
+    }
+    renderProducts(allProducts); // Re-render products with the new sort order
+}
+
+async function loadLowStockProducts() {
+    try {
+        const response = await fetch("http://localhost:5000/api/low-stock-products", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch low-stock products");
+
+        const lowStockProducts = await response.json();
+        renderLowStockTable(lowStockProducts);
+    } catch (error) {
+        console.error("Error loading low-stock products:", error.message);
+        alert("Failed to load low-stock products.");
+    }
+}
+
+function renderLowStockTable(products) {
+    const lowStockTableBody = document.getElementById("low-stock-table-body");
+    const rowCountElement = document.getElementById("row-count");
+
+    if (!lowStockTableBody) {
+        console.error("Low-stock table body not found.");
+        return;
+    }
+
+    if (products.length === 0) {
+        lowStockTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No low-stock products</td></tr>`;
+        rowCountElement.textContent = "Total Rows: 0";
+        return;
+    }
+
+    // Update row count
+    rowCountElement.textContent = `Total Rows: ${products.length}`;
+
+    // Populate table rows
+    lowStockTableBody.innerHTML = products
+        .map(
+            (product) => `
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">${product.id}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${product.name}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; color: ${product.stock_quantity < 0 ? 'red' : 'black'};">${product.stock_quantity}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${product.restock_threshold}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    <button onclick="populateSearch('${product.name}')">Search</button>
+                </td>
+            </tr>
+        `
+        )
+        .join("");
+}
+
+function populateSearch(productName) {
+    const searchInput = document.getElementById("productSearch");
+    if (searchInput) {
+        searchInput.value = productName;
+        searchInput.dispatchEvent(new Event("input")); // Trigger the search functionality
+    }
+}
+
+function sortTable(column) {
+    const lowStockTableBody = document.getElementById("low-stock-table-body");
+    const rows = Array.from(lowStockTableBody.querySelectorAll("tr"));
+
+    // Determine sort order
+    if (currentSortColumn === column) {
+        currentSortOrder = currentSortOrder === "asc" ? "desc" : "asc";
+    } else {
+        currentSortColumn = column;
+        currentSortOrder = "asc";
+    }
+
+    // Sort rows
+    rows.sort((a, b) => {
+        const aValue = a.querySelector(`td:nth-child(${getColumnIndex(column)})`).textContent.trim();
+        const bValue = b.querySelector(`td:nth-child(${getColumnIndex(column)})`).textContent.trim();
+
+        if (column === "id" || column === "stock_quantity" || column === "restock_threshold") {
+            return currentSortOrder === "asc" ? aValue - bValue : bValue - aValue;
+        } else {
+            return currentSortOrder === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+        }
+    });
+
+    // Re-render sorted rows
+    lowStockTableBody.innerHTML = "";
+    rows.forEach((row) => lowStockTableBody.appendChild(row));
+}
+
+function getColumnIndex(column) {
+    switch (column) {
+        case "id":
+            return 1;
+        case "name":
+            return 2;
+        case "stock_quantity":
+            return 3;
+        case "restock_threshold":
+            return 4;
+        default:
+            return 1;
+    }
+}
+
+async function updateStock(productId, stockChange) {
+    try {
+        const response = await fetch(`/api/products/${productId}/stock`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stockChange }),
+        });
+        if (!response.ok) throw new Error("Failed to update stock");
+
+        alert("Stock updated successfully!");
+        loadProducts(); // Reload the product list
+        loadLowStockProducts(); // Refresh the low-stock table
+    } catch (error) {
+        console.error("Error updating stock:", error);
     }
 }

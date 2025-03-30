@@ -1,70 +1,96 @@
-document.addEventListener("DOMContentLoaded", () => {
-  loadOrders();
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadOrders(); // Initial table load
 });
 
 async function loadOrders() {
+  const tbody = document.querySelector("#orders-table tbody");
+
+  if (!tbody) {
+    console.error("Required DOM elements are missing.");
+    return;
+  }
+
   try {
-    const response = await fetch("http://localhost:5000/api/orders");
+    const response = await fetchWithTokenRefresh(
+      "http://localhost:5000/api/admin/orders",
+      {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      }
+    );
+
     if (!response.ok) throw new Error("Failed to fetch orders");
 
     const orders = await response.json();
-    const ordersContainer = document.getElementById("admin-orders-container");
-    ordersContainer.innerHTML = orders
+
+    if (orders.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No orders found</td></tr>`;
+      return;
+    }
+
+    // Destroy existing DataTable instance if it exists
+    if ($.fn.DataTable.isDataTable("#orders-table")) {
+      $("#orders-table").DataTable().destroy();
+    }
+
+    tbody.innerHTML = orders
       .map(
         (order) => `
-        <div class="order-card">
-          <h3>Order ID: ${order.id}</h3>
-          <p><strong>User ID:</strong> ${order.user_id}</p>
-          <p><strong>Total Amount:</strong> $${order.total_amount.toFixed(2)}</p>
-          <p><strong>Order Date:</strong> ${new Date(order.order_date).toLocaleString()}</p>
-          <p><strong>Shipping Status:</strong> ${order.shipping_status}</p>
-          <div class="order-actions">
-            <button class="update-btn" data-id="${order.id}">Update</button>
-            <button class="delete-btn" data-id="${order.id}">Delete</button>
-          </div>
-        </div>`
+        <tr>
+          <td>${order.id}</td>
+          <td>${order.user_email || "N/A"}</td>
+          <td>$${order.total_amount.toFixed(2)}</td>
+          <td>
+            <select onchange="updateOrderStatus(${order.id}, this.value)">
+              <option value="Pending" ${order.status === "Pending" ? "selected" : ""}>Pending</option>
+              <option value="Processing" ${order.status === "Processing" ? "selected" : ""}>Processing</option>
+              <option value="Boxed" ${order.status === "Boxed" ? "selected" : ""}>Boxed</option>
+              <option value="Shipped" ${order.status === "Shipped" ? "selected" : ""}>Shipped</option>
+            </select>
+          </td>
+          <td>${new Date(order.created_at).toLocaleDateString()}</td>
+        </tr>
+      `
       )
       .join("");
 
-    attachOrderEventListeners();
+    // Reinitialize DataTable
+    $("#orders-table").DataTable({
+      paging: true,
+      searching: true,
+      ordering: true,
+      info: true,
+    });
   } catch (error) {
-    console.error("Error loading orders:", error);
+    console.error("Error loading orders:", error.message);
+    alert("Failed to load orders.");
   }
 }
 
-function attachOrderEventListeners() {
-  document.querySelectorAll(".update-btn").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const orderId = event.target.dataset.id;
-      editOrder(orderId);
+async function fetchWithTokenRefresh(url, options = {}) {
+  let token = localStorage.getItem("token");
+  if (!token) throw new Error("No token available");
+
+  options.headers = { ...options.headers, Authorization: `Bearer ${token}` };
+
+  let response = await fetch(url, options);
+  if (response.status === 401) {
+    const refreshResponse = await fetch("http://localhost:5000/api/refresh-token", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
     });
-  });
 
-  document.querySelectorAll(".delete-btn").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const orderId = event.target.dataset.id;
-      deleteOrder(orderId);
-    });
-  });
-}
-
-async function editOrder(orderId) {
-  // Logic to edit an order
-  console.log(`Editing order with ID: ${orderId}`);
-}
-
-async function deleteOrder(orderId) {
-  if (!confirm("Are you sure you want to delete this order?")) return;
-
-  try {
-    const response = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
-      method: "DELETE",
-    });
-    if (!response.ok) throw new Error("Failed to delete order");
-
-    alert("Order deleted successfully!");
-    loadOrders();
-  } catch (error) {
-    console.error("Error deleting order:", error);
+    if (refreshResponse.ok) {
+      const { token: newToken } = await refreshResponse.json();
+      localStorage.setItem("token", newToken);
+      options.headers.Authorization = `Bearer ${newToken}`;
+      response = await fetch(url, options);
+    } else {
+      localStorage.removeItem("token");
+      alert("Session expired. Please log in again.");
+      window.location.href = "login.html";
+      throw new Error("Failed to refresh token");
+    }
   }
+
+  return response;
 }

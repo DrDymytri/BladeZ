@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Categories</title>
+  <link rel="stylesheet" href="./manage-categories.css">
+</head>
+<body>
+  <header>
+    <nav class="Tabs">
+      <a href="admin.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
+      <a href="index.html"><i class="fas fa-home"></i> Products</a>
+      <a href="admin-products.html"><i class="fas fa-box-open"></i> Product Management</a>
+      <a href="admin-orders.html"><i class="fas fa-box-open"></i> Orders</a>
+      <a href="admin-events.html"><i class="fas fa-calendar"></i> Events</a>
+      <a href="admin-media.html"><i class="fas fa-photo-video"></i> Media</a>
+    </nav>
+  </header>
+  <main>
+    <div class="centered-container">
+      <h1>Manage Categories</h1>
+
+      <!-- Form for adding categories -->
+      <form id="category-form">
+        <h2>Add Category</h2>
+        <label for="category-name">Category Name:</label>
+        <input type="text" id="category-name" name="category-name" required>
+        <button type="submit">Add Category</button>
+      </form>
+
+      <!-- Form for adding subcategories -->
+      <form id="subcategory-form">
+        <h2>Add Subcategory</h2>
+        <label for="subcategory-category">Select Category:</label>
+        <select id="subcategory-category" name="subcategory-category" required>
+          <!-- Dynamically populated -->
+        </select>
+        <label for="subcategory-name">Subcategory Name:</label>
+        <input type="text" id="subcategory-name" name="subcategory-name" required>
+        <button type="submit">Add Subcategory</button>
+      </form>
+
+      <!-- Form for adding descriptors -->
+      <form id="descriptor-form">
+        <h2>Add Descriptor</h2>
+        <label for="descriptor-subcategory">Select Subcategory:</label>
+        <select id="descriptor-subcategory" name="descriptor-subcategory" required>
+          <!-- Dynamically populated -->
+        </select>
+        <label for="descriptor-name">Descriptor Name:</label>
+        <input type="text" id="descriptor-name" name="descriptor-name" required>
+        <button type="submit">Add Descriptor</button>
+      </form>
+
+      <!-- Tables for displaying items -->
+      <div id="categories-list">
+        <h2>Categories</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="categories-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <div id="subcategories-list">
+        <h2>Subcategories</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Category ID</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="subcategories-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <div id="descriptors-list">
+        <h2>Descriptors</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Subcategory ID</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="descriptors-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <!-- ...existing code for footer... -->
+  </footer>
+  <script src="./manage-categories.js"></script>
+</body>
+</html>

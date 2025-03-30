@@ -2,8 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Orders - Point FX BladeZ</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="admin-events.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,24 +15,101 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
     />
-    <link rel="stylesheet" href="admin-events.css" />
-    <link rel="stylesheet" href="admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"
+    />
+    <style>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        font-size: 16px;
+        text-align: left;
+      }
+
+      table thead tr {
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+      }
+
+      table th,
+      table td {
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+      }
+
+      table tbody tr:nth-child(even) {
+        background-color: #f3f3f3;
+      }
+
+      table tbody tr:hover {
+        background-color: #f1f1f1;
+      }
+    </style>
   </head>
   <body>    
-      <nav class="Tabs">
-        <a href="index.html"><i class="fas fa-home"></i> Products</a>
-        <a href="admin-products.html"><i class="fas fa-box-open"></i> Product Management</a>
-        <a href="admin-orders.html"><i class="fas fa-box-open"></i> Orders</a>
-        <a href="admin-events.html"><i class="fas fa-calendar"></i> Events</a>
-      </nav>
+    <nav class="Tabs">
+      <a href="admin.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
+      <a href="index.html"><i class="fas fa-home"></i> Products</a>
+      <a href="admin-products.html"><i class="fas fa-box-open"></i> Product Management</a>
+      <a href="admin-orders.html"><i class="fas fa-box-open"></i> Orders</a>
+      <a href="admin-media.html"><i class="fas fa-photo-video"></i> Media</a>
+    </nav>
     <main>
-      <section id="admin-orders-section">
-        <h2>Order Management</h2>
-        <div id="admin-orders-container" class="order-cards-container">
-          <!-- Order cards will be dynamically loaded here -->
-        </div>
-      </section>
+      <table id="orders-table" class="display">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>User</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Order Placed Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Orders will be dynamically loaded here -->
+        </tbody>
+      </table>
     </main>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="admin-orders.js"></script>
+    <script>
+      async function updateOrderStatus(orderId, newStatus) {
+        let trackingNumber = null;
+
+        if (newStatus === "Shipped") {
+          trackingNumber = prompt("Enter the tracking number:");
+          if (!trackingNumber) {
+            alert("Tracking number is required for shipped orders.");
+            return;
+          }
+        }
+
+        try {
+          const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({ status: newStatus, trackingNumber }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to update order status");
+          }
+
+          alert("Order status updated successfully!");
+          await loadOrders(); // Reload the orders table
+        } catch (error) {
+          console.error("Error updating order status:", error.message);
+          alert("Failed to update order status: " + error.message);
+        }
+      }
+    </script>
   </body>
 </html>

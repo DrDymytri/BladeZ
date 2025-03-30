@@ -86,7 +86,7 @@ header nav ul li a:hover {
 }
 
 main {
-  padding: 10px; /* Reduce padding for smaller screens */
+  padding: 5px; /* Reduce padding for smaller screens */
 }
 
 main section h2 {
@@ -101,40 +101,42 @@ main section h2 {
 }
 
 #product-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Ensure items fall to the next row */
-  gap: 20px; /* Add spacing between items */
-  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center; /* Center the grid horizontally */
-  padding: 10px; /* Add padding for better spacing */
+  align-items: center;
+  gap: 16px; /* Add spacing between items */
+  padding: 5px; /* Add padding for better spacing */
 }
 
 .product-item {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  flex-direction: column; /* Stack elements vertically */
+  justify-content: space-between; /* Ensure space between content and buttons */
   align-items: center;
   width: 100%; /* Ensure the card fits within the grid */
   max-width: 250px; /* Limit the maximum width of each card */
   background-color: #fff;
-  border: 1px solid #ccc;
+  border: 3px solid #a70000;
   border-radius: 8px;
-  box-shadow: 0 0 20px rgb(0, 0, 0);
-  padding: 15px;
+  box-shadow: 0 0 20px 5px rgb(225, 200, 13);
+  padding: 2px;
   text-align: center;
   transition: transform 0.2s ease-in-out;
+  height: 100%; /* Ensure consistent height for all cards */
 }
 
 .product-item img {
   width: 100%; /* Ensure the image spans the full width of the product card */
-  height: auto;
-  object-fit: contain;
-  border-radius: 8px 8px 0 0; /* Adjust border radius to match the top edges of the card */
-  margin-bottom: 0; /* Remove bottom margin to align with the card edges */
+  height: auto; /* Set a fixed height for uniformity */
+  object-fit: contain; /* Ensure the entire image is visible without cropping */
+  border-radius: 8px; /* Match card border radius */
+  margin-bottom: 10px;
   cursor: pointer;
 }
 
-.product-item .add-to-cart {
+.product-item button {
+  margin-top: auto; /* Push the button to the bottom of the card */
   width: auto;
   margin-bottom: 5px;
   margin-top: 0;
@@ -176,29 +178,12 @@ main section h2 {
 
 /* Fixed duplicate and redundant rules for showcase-products-grid */
 .showcase-products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive columns */
-  gap: 20px; /* Add spacing between items */
-  justify-content: center; /* Center the grid horizontally */
-  align-items: start; /* Align items to the top */
-  padding: 20px; /* Add padding for better spacing */
-  width: 100%; /* Ensure full width inside modal */
-}
-
-.showcase-products-grid .product-item {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  justify-content: center; /* Center the grid horizontally */
   align-items: center;
-  width: 100%; /* Ensure the card fits within the grid */
-  max-width: 250px; /* Limit the maximum width of each card */
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 0 20px rgb(0, 0, 0);
-  padding: 15px;
-  text-align: center;
-  transition: transform 0.2s ease-in-out;
+  gap: 16px; /* Add spacing between items */
+  padding: 5px; /* Add padding for better spacing */
 }
 
 .showcase-products-grid .product-item img {
@@ -249,6 +234,34 @@ main section h2 {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Stronger shadow on hover */
 }
 
+#pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 10px;
+}
+
+.pagination-button {
+  padding: 10px 15px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  background-color: #333;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.pagination-button:hover {
+  background-color: #555;
+}
+
+.pagination-button.active {
+  background-color: #ff0000;
+  color: #fff;
+  cursor: default;
+}
 
 footer {
   text-align: center;
@@ -262,7 +275,9 @@ footer {
   display: flex;
   flex-wrap: wrap; /* Allow navigation items to wrap */
   justify-content: center; /* Center navigation items */
-  gap: 10px; /* Add spacing between items */
+  align-items: center; /* Center items vertically */
+  gap: 20px; /* Add spacing between items */
+  text-align: center; /* Center text */
 }
 
 .responsive-logo {
@@ -305,7 +320,7 @@ footer {
   overflow: hidden; /* Prevent text from overflowing */
 }
 
-.modal-products-grid .product-item .add-to-cart {
+.modal .product-item .add-to-cart-btn {
   width: auto;
   margin-bottom: 5px;
   margin-top: 0;
@@ -450,37 +465,6 @@ nav ul li a:hover {
   color: aliceblue; /* Softer color for text */
 }
 
-.showcase-products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Flexible layout */
-  gap: 20px; /* Add spacing between items */
-  width: 100%; /* Ensure full width inside modal */
-  justify-content: center; /* Center the grid horizontally */
-  align-items: center;
-  padding: 20px; /* Add padding for better spacing */
-}
-
-.showcase-products-grid .product-item {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  align-items: center;
-  width: 100%;
-  max-width: 250px;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 0 20px rgb(0, 0, 0);
-  padding: 0;
-  text-align: center;
-  transition: transform 0.2s ease-in-out;
-}
-
-.showcase-products-grid .product-item:hover {
-  transform: translateY(-5px); /* Lift on hover */
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Stronger shadow on hover */
-}
-
 @media (max-width: 768px) {
   .header-image,
   .header-image-mirrored {
@@ -499,4 +483,618 @@ nav ul li a:hover {
   0.25px 0.5px aliceblue,
   0.375px 0.75px #C0AB80, 
   0.5px 1px aliceblue 
+}
+
+.centered-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+#filter-form select,
+#filter-form button {
+  background-color: aliceblue;
+  padding: 5px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+#filter-form button {
+  background-color: black;
+  color: #6b0202;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#filter-form button:hover {
+  background-color: #555;
+}
+
+/* Ensure the dropdown is displayed */
+#filter-form select {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  padding: 5px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #fff;
+  color: black;
+  appearance: auto;
+}
+
+#filter-form select:focus {
+  outline: 2px solid #007bff;
+  background-color: #f9f9f9;
+}
+
+/* Ensure dropdowns are not hidden by other elements */
+#category-filter,
+#subcategory-filter,
+#descriptor-filter {
+  z-index: 1;
+}
+
+/* Add spacing between dropdowns */
+#filter-form select + select {
+  margin-top: 10px;
+}
+
+#filter-form select {
+  background: rgb(255, 255, 255); /* No background color */
+  border: 1px solid black; /* No borders */
+  font-size: 12px; /* Modern font size */
+  font-family: "MedievalSharp", serif; /* Match the site's font */
+  color: black; /* Neutral text color */
+  padding: 5px 5px; /* Add spacing for better usability */
+  cursor: pointer; /* Indicate interactivity */
+  text-align: center; /* Center-align text */
+}
+
+#filter-form select:focus {
+  outline: none; /* Remove focus outline */
+  text-decoration: underline; /* Add underline on focus for accessibility */
+}
+
+#filter-form button {
+  background: rgba(75, 41, 3, 0.329); /* No background color */
+  border: 1px solid black; /* No borders */
+  font-size: 18px; /* Match font size with dropdowns */
+  font-weight: bold;
+  font-family: "MedievalSharp", serif; /* Match the site's font */
+  color: rgb(24, 0, 0); /* Modern blue text color */
+  text-shadow: 
+    0.125px 0.25px rgb(222, 194, 35), 
+    0.25px 0.5px rgb(222, 194, 35);  
+  cursor: pointer; /* Indicate interactivity */
+  padding: 5px 5px; /* Add spacing for usability */
+  transition: color 0.3s ease; /* Smooth color transition */
+}
+
+#filter-form button:hover {
+  color: aliceblue; /* Darker blue on hover */
+  text-decoration: underline; /* Add underline on hover */
+}
+
+.AdminFunctions {
+  display: block; /* Ensure images are treated as block elements */
+  margin: 0 auto; /* Center images horizontally */
+  width: auto; /* Adjust image size */
+  height: 150px; /* Adjust image size */
+}
+
+body main nav li a {
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+
+body main nav li p {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.ImageName {
+  color: black;
+  font-size: 20px; /* Adjust font size */
+  font-weight: bold;
+  text-align: center; /* Center text */
+  margin-top: 10px; /* Add spacing above the text */
+}
+
+#admin-dashboard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#cart-container {
+  display: grid; /* Use grid layout for multiple rows and columns */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive columns */
+  gap: 20px; /* Add spacing between items */
+  justify-content: center; /* Center the grid horizontally */
+  align-items: start; /* Align items to the top */
+  padding: 20px; /* Add padding around the container */
+}
+
+.cart-item-card {
+  display: flex;
+  flex-direction: column; /* Stack elements vertically */
+  justify-content: space-between; /* Space between content and buttons */
+  align-items: center;
+  background-color: #fff; /* White background for the card */
+  border: 1px solid #ccc; /* Add a border around the card */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  padding: 15px; /* Add padding inside the card */
+  text-align: center; /* Center-align text */
+  transition: transform 0.2s ease-in-out; /* Smooth hover effect */
+}
+
+.cart-item-card:hover {
+  transform: translateY(-5px); /* Lift the card slightly on hover */
+}
+
+.cart-item-image {
+  width: 100%; /* Ensure the image spans the full width of the card */
+  height: auto; /* Maintain aspect ratio */
+  object-fit: contain; /* Ensure the entire image is visible without cropping */
+  border-radius: 8px; /* Match card border radius */
+  margin-bottom: 10px; /* Add spacing below the image */
+}
+
+.cart-item-details h3 {
+  font-size: 18px; /* Adjust font size for the product name */
+  margin: 10px 0; /* Add spacing above and below the name */
+}
+
+.cart-item-details p {
+  font-size: 16px; /* Adjust font size for details */
+  color: #555; /* Neutral text color */
+  margin: 5px 0; /* Add spacing between details */
+}
+
+.cart-item-actions {
+  display: flex; /* Use flexbox for buttons */
+  justify-content: space-between; /* Space out the buttons */
+  gap: 10px; /* Add spacing between buttons */
+  margin-top: 10px; /* Add spacing above the buttons */
+}
+
+.cart-item-actions button {
+  padding: 5px 10px; /* Add padding for better usability */
+  font-size: 14px; /* Adjust font size for buttons */
+  font-weight: bold; /* Make button text bold */
+  color: white; /* White text color */
+  background-color: #007bff; /* Blue background */
+  border: none; /* Remove default border */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor for interactivity */
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+.cart-item-actions button:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+}
+
+#cart-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* Center the cart cards horizontally */
+  align-items: center; /* Center the cart cards vertically */
+  gap: 20px;
+  padding: 20px;
+}
+
+.cart-item-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: 300px; /* Set a fixed width for the cart cards */
+}
+
+.cart-item-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.cart-item-actions button {
+  padding: 5px 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cart-item-actions button:hover {
+  background-color: #0056b3;
+}
+
+.cart-item-image {
+  width: 300px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.cart-item-details {
+  flex: 1;
+  margin-left: 10px;
+}
+
+.cart-item-details h3 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.cart-item-details p {
+  font-size: 16px;
+  color: #555;
+}
+
+#cart-total {
+  font-size: 36px;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+#cart-section {
+  display: block;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#cart-section h2 {
+  font-size: 36px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+#cart-section p {
+  font-size: 18px;
+  background-color: rgba(240, 248, 255, 0.116);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#cart-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+#cart-summary a {
+  background-color: rgba(240, 248, 255, 0.144);
+  color: black;
+  font-size: 36px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.checkout-item-image {
+  width: 150px; /* Set a fixed width for the checkout item image */
+  height: auto; /* Maintain aspect ratio */
+  object-fit: cover; /* Ensure the image covers the area without stretching */
+  border-radius: 5px; /* Add rounded corners */
+}
+
+.remove-item-btn {
+  width: auto;
+  margin-bottom: 5px;
+  margin-top: 0;
+  box-sizing: border-box;
+  font-family: serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: aliceblue;
+  text-shadow: black 0.125px 0.25px, black 0.25px 0.5px, black 0.375px 0.75px, black 0.5px 1px, black 0.625px 1.25px, black 0.75px 1.5px;
+  box-shadow: aliceblue 0px 0px 15px 1px;
+  padding: 5px;
+  border-top: 4px solid rgb(189, 209, 230);
+  border-bottom: 4px solid rgb(121, 141, 160);
+  border-right: 4px solid rgb(149, 172, 190);
+  border-left: 4px solid rgb(156, 175, 194);
+  outline: black solid 1px;
+  background: linear-gradient(to right, rgba(255, 0, 0, 0.533), rgb(161, 0, 0), rgb(139, 0, 0), rgb(161, 0, 0), rgba(255, 0, 0, 0.533));
+  }
+
+.remove-item-btn:hover {
+  background-color: #0056b3;
+}
+
+#cart-total {
+  font-size: 36px;
+  font-weight: bold;
+  margin-top: 20px;
+  margin-left: 20px;
+  color: #146818;
+}
+
+.cart-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+  z-index: 1000;
+  animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+/* Cart Summary Table */
+#cart-summary-table {
+  width: 100%; /* Ensure the table spans the full width of its container */
+  border-collapse: collapse; /* Remove gaps between table cells */
+  margin-top: 20px; /* Add spacing above the table */
+}
+
+#cart-summary-table th,
+#cart-summary-table td {
+  border: 1px solid #ccc; /* Add borders to table cells */
+  padding: 10px; /* Add padding for better readability */
+  text-align: center; /* Center-align text in cells */
+}
+
+#cart-summary-table th {
+  background-color: #f4f4f4; /* Light background for header cells */
+  font-weight: bold; /* Make header text bold */
+}
+
+#cart-summary-table td {
+  background-color: #fff; /* White background for data cells */
+}
+
+#cart-summary {
+  width: 100%; /* Ensure the summary section spans the full width */
+  overflow-x: auto; /* Enable horizontal scrolling for small screens */
+}
+
+#cart-summary table {
+  display: table; /* Ensure the table layout is preserved */
+  table-layout: auto; /* Allow columns to adjust based on content */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  #cart-summary-table th,
+  #cart-summary-table td {
+    font-size: 14px; /* Reduce font size for smaller screens */
+    padding: 8px; /* Adjust padding for smaller screens */
+  }
+}
+
+#cart-items {
+  display: grid; /* Use grid layout for multiple rows and columns */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive columns */
+  gap: 20px; /* Add spacing between items */
+  justify-content: center; /* Center the grid horizontally */
+  align-items: start; /* Align items to the top */
+  padding: 20px; /* Add padding around the container */
+}
+
+.checkout-item {
+  display: flex;
+  flex-direction: column; /* Stack elements vertically */
+  justify-content: space-between; /* Space between content */
+  align-items: center;
+  background-color: #fff; /* White background for the card */
+  border: 1px solid #ccc; /* Add a border around the card */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  padding: 15px; /* Add padding inside the card */
+  text-align: center; /* Center-align text */
+  transition: transform 0.2s ease-in-out; /* Smooth hover effect */
+}
+
+.checkout-item:hover {
+  transform: translateY(-5px); /* Lift the card slightly on hover */
+}
+
+.checkout-item-image {
+  width: 100%; /* Ensure the image spans the full width of the card */
+  height: auto; /* Maintain aspect ratio */
+  object-fit: contain; /* Ensure the entire image is visible without cropping */
+  border-radius: 8px; /* Match card border radius */
+  margin-bottom: 10px; /* Add spacing below the image */
+}
+
+.checkout-item-details h3 {
+  font-size: 18px; /* Adjust font size for the product name */
+  margin: 10px 0; /* Add spacing above and below the name */
+}
+
+.checkout-item-details p {
+  font-size: 16px; /* Adjust font size for details */
+  color: #555; /* Neutral text color */
+  margin: 5px 0; /* Add spacing between details */
+}
+
+#orders-table {
+  width: 100%; /* Ensure the table spans the full width of its container */
+  border-collapse: collapse; /* Remove gaps between table cells */
+  margin-top: 20px; /* Add spacing above the table */ 
+}
+
+#orders-table th, #orders-table td {
+  background-color: white;
+  color: black;
+  border: 1px solid black; /* Add borders to table cells */
+  padding: 10px; /* Add padding for better readability */
+  text-align: center; /* Center-align text in cells */
+}
+
+.image-modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+}
+
+.image-modal-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.image-modal-content img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.image-modal-content .close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+  border-radius: 50%;
+}
+
+.product-card {
+  width: 300px; /* Set a fixed width */
+  height: auto; /* Set a fixed height */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  border: 2px solid black;
+  border-radius: 8px;
+  padding: 5px;
+  margin: 16px;
+  box-shadow: 0 0 20px 5px rgb(0, 0, 0);
+  background-color: #fff;
+  text-align: center;
+  word-wrap: break-word; /* Ensure long words break to fit within the card */
+  overflow-wrap: break-word; /* Additional support for breaking long words */
+  white-space: normal; /* Allow text to wrap to the next line */
+}
+
+.product-card img {
+  width: 100%; /* Ensure the image spans the full width of the card */
+  height: auto; /* Set a fixed height for uniformity */
+  object-fit: cover; /* Maintain aspect ratio and fill the space */
+  border-radius: 4px; /* Add rounded corners */
+  cursor: pointer;
+}
+
+.product-card h3,
+.product-card p {
+  word-wrap: break-word; /* Ensure long words break to fit within the card */
+  overflow-wrap: break-word; /* Additional support for breaking long words */
+  white-space: normal; /* Allow text to wrap to the next line */
+  text-align: center; /* Align text to the center for better readability */
+  margin: 5px 0; /* Add spacing between text elements */
+  color: #555; /* Neutral text color */
+  max-width: 100%; /* Ensure text stays within the card's boundaries */
+  overflow: hidden; /* Prevent text from overflowing */
+}
+
+.product-card h3 {
+  font-size: 1.2rem;
+  margin: 8px 0;
+}
+
+.product-card p {
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+.product-card button {
+  width: auto;
+  margin-bottom: 5px;
+  margin-top: 0;
+  box-sizing: border-box;
+  font-family: serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: aliceblue;
+  text-shadow: black 0.125px 0.25px, black 0.25px 0.5px, black 0.375px 0.75px, black 0.5px 1px, black 0.625px 1.25px, black 0.75px 1.5px;
+  box-shadow: aliceblue 0px 0px 15px 1px;
+  padding: 5px;
+  border-top: 4px solid rgb(189, 209, 230);
+  border-bottom: 4px solid rgb(121, 141, 160);
+  border-right: 4px solid rgb(149, 172, 190);
+  border-left: 4px solid rgb(156, 175, 194);
+  outline: black solid 1px;
+  background: linear-gradient(to right, rgba(255, 0, 0, 0.533), rgb(161, 0, 0), rgb(139, 0, 0), rgb(161, 0, 0), rgba(255, 0, 0, 0.533));
+  }
+
+.product-card button:hover {
+  background-color: #0056b3;
+}
+
+.price {
+  color: red;
+  font-style: italic;
+  font-size: 1.2em;
+  line-height: 1.5;
+}
+
+.price-label {
+  font-weight: bolder;
+  font-size: 1.1em;
+  color:  black;
 }

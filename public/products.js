@@ -1,8 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const productForm = document.getElementById("productForm");
+
+    if (!productForm) {
+        console.warn("Product form not found in the DOM. Exiting script.");
+        return; // Exit early if the form is not found
+    }
+
     const categorySelect = document.getElementById('productCategory');
     const subcategorySelect = document.getElementById('productSubCategory');
     const tagSelect = document.getElementById('productTag');
-    const productForm = document.getElementById("productForm");
 
     if (categorySelect) {
         categorySelect.addEventListener('change', async () => {
@@ -10,11 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Reset and disable subcategory and tag dropdowns
             if (subcategorySelect) {
-                subcategorySelect.innerHTML = '<option value="">Select a Subcategory</option>';
+                resetDropdown(subcategorySelect, "Select a Subcategory");
                 subcategorySelect.disabled = true;
             }
             if (tagSelect) {
-                tagSelect.innerHTML = '<option value="">Select a Tag</option>';
+                resetDropdown(tagSelect, "Select a Tag");
                 tagSelect.disabled = true;
             }
 
@@ -31,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Reset and disable the tag dropdown
             if (tagSelect) {
-                tagSelect.innerHTML = '<option value="">Select a Tag</option>';
+                resetDropdown(tagSelect, "Select a Tag");
                 tagSelect.disabled = true;
             }
 
@@ -42,45 +48,114 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (productForm) {
-        productForm.addEventListener("submit", async (e) => {
-            e.preventDefault(); // Prevent default form submission behavior
+    productForm.addEventListener("submit", async (e) => {
+        e.preventDefault(); // Prevent default form submission behavior
 
-            const newProduct = {
-                name: document.getElementById("productName").value,
-                description: document.getElementById("productDescription").value,
-                price: parseFloat(document.getElementById("productPrice").value),
-                stock_quantity: parseInt(document.getElementById("productStock").value),
-                category_id: parseInt(document.getElementById("productCategory").value),
-                sub_category_id: parseInt(document.getElementById("productSubCategory").value),
-                tag_id: parseInt(document.getElementById("productTag").value),
-                is_showcase: document.getElementById("productShowcase").checked,
-            };
+        const newProduct = {
+            name: document.getElementById("productName").value,
+            description: document.getElementById("productDescription").value,
+            price: parseFloat(document.getElementById("productPrice").value),
+            stock_quantity: parseInt(document.getElementById("productStock").value),
+            category_id: parseInt(document.getElementById("productCategory").value),
+            sub_category_id: parseInt(document.getElementById("productSubCategory").value),
+            tag_id: parseInt(document.getElementById("productTag").value),
+            is_showcase: document.getElementById("productShowcase").checked,
+        };
 
-            try {
-                const response = await fetch("http://localhost:5000/api/products", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(newProduct), // Send product data to the server
-                });
+        try {
+            const response = await fetch("http://localhost:5000/api/products", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newProduct), // Send product data to the server
+            });
 
-                if (response.ok) {
-                    alert("Product added successfully!");
-                    e.target.reset(); // Reset the form after submission
-                } else {
-                    const errorText = await response.text();
-                    console.error("Failed to add product:", errorText);
-                    alert("Failed to add product. Please check your input.");
-                }
-            } catch (error) {
-                console.error("Error adding product:", error);
-                alert("An error occurred while adding the product. Please try again later.");
+            if (response.ok) {
+                alert("Product added successfully!");
+                e.target.reset(); // Reset the form after submission
+            } else {
+                const errorText = await response.text();
+                console.error("Failed to add product:", errorText);
+                alert("Failed to add product. Please check your input.");
             }
-        });
-    } else {
-        console.warn("Product form not found in the DOM.");
-    }
+        } catch (error) {
+            console.error("Error adding product:", error);
+            alert("An error occurred while adding the product. Please try again later.");
+        }
+    });
+
+    // Load initial data
+    loadCategories();
 });
+
+async function loadCategories() {
+    try {
+        const categorySelect = document.getElementById('productCategory');
+        if (!categorySelect) {
+            console.error('Category select element not found in DOM');
+            return;
+        }
+
+        const response = await fetch('http://localhost:5000/api/categories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
+
+        const categories = await response.json();
+        resetDropdown(categorySelect, "Select a Category");
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id; // Use the correct field for the value
+            option.textContent = category.name; // Use the correct field for the display text
+            categorySelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading categories:', error);
+    }
+}
+
+async function loadSubcategories(categoryId) {
+    try {
+        const response = await fetch(`http://localhost:5000/api/subcategories?categoryId=${categoryId}`);
+        if (!response.ok) throw new Error('Failed to fetch subcategories');
+
+        const subcategories = await response.json();
+        const subcategorySelect = document.getElementById('productSubCategory');
+        resetDropdown(subcategorySelect, "Select a Subcategory");
+        subcategories.forEach(subcategory => {
+            const option = document.createElement('option');
+            option.value = subcategory.id; // Use the correct field for the value
+            option.textContent = subcategory.name; // Use the correct field for the display text
+            subcategorySelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading subcategories:', error);
+    }
+}
+
+async function loadTags(subCategoryId) {
+    try {
+        const response = await fetch(`http://localhost:5000/api/descriptors?subCategoryId=${subCategoryId}`);
+        if (!response.ok) throw new Error('Failed to fetch tags');
+
+        const tags = await response.json();
+        const tagSelect = document.getElementById('productTag');
+        resetDropdown(tagSelect, "Select a Tag");
+        tags.forEach(tag => {
+            const option = document.createElement('option');
+            option.value = tag.id; // Use the correct field for the value
+            option.textContent = tag.name; // Use the correct field for the display text
+            tagSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading tags:', error);
+    }
+}
+
+function resetDropdown(selectElement, placeholder) {
+    if (!selectElement) {
+        console.warn("resetDropdown: selectElement is null or undefined.");
+        return;
+    }
+    selectElement.innerHTML = `<option value="">${placeholder}</option>`; // Reset dropdown with placeholder
+}
 
 function displayProducts(products) {
   const productContainer = document.getElementById("product-container");
@@ -173,59 +248,6 @@ function updateCartCount() {
     (sum, item) => sum + item.quantity,
     0
   );
-}
-
-async function loadCategories() {
-    try {
-        const categorySelect = document.getElementById('productCategory');
-        if (!categorySelect) {
-            console.error('Category select element not found in DOM');
-            return;
-        }
-
-        const response = await fetch('http://localhost:5000/api/categories');
-        if (!response.ok) throw new Error('Failed to fetch categories');
-
-        const categories = await response.json();
-        categorySelect.innerHTML = '<option value="">Select a Category</option>';
-        categories.forEach(category => {
-            categorySelect.innerHTML += `<option value="${category.Categoryid}">${category.name}</option>`;
-        });
-    } catch (error) {
-        console.error('Error loading categories:', error);
-    }
-}
-
-async function loadSubcategories(categoryId) {
-  try {
-      const response = await fetch(`http://localhost:5000/api/subcategories?categoryId=${categoryId}`);
-      if (!response.ok) throw new Error('Failed to fetch subcategories');
-
-      const subcategories = await response.json();
-      const subcategorySelect = document.getElementById('productSubCategory');
-      subcategorySelect.innerHTML = '<option value="">Select a Subcategory</option>';
-      subcategories.forEach(subcategory => {
-          subcategorySelect.innerHTML += `<option value="${subcategory.SubCategoryID}">${subcategory.SubCategoryName}</option>`;
-      });
-  } catch (error) {
-      console.error('Error loading subcategories:', error);
-  }
-}
-
-async function loadTags(subCategoryId) {
-  try {
-      const response = await fetch(`http://localhost:5000/api/descriptors?subCategoryId=${subCategoryId}`);
-      if (!response.ok) throw new Error('Failed to fetch tags');
-
-      const tags = await response.json();
-      const tagSelect = document.getElementById('productTag');
-      tagSelect.innerHTML = '<option value="">Select a Tag</option>';
-      tags.forEach(tag => {
-          tagSelect.innerHTML += `<option value="${tag.DescriptorID}">${tag.DescriptorName}</option>`;
-      });
-  } catch (error) {
-      console.error('Error loading tags:', error);
-  }
 }
 
 // Handle missing default image gracefully

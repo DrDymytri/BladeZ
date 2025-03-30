@@ -17,19 +17,28 @@
     />
   </head>
   <body>
-    <header>
-      <h1>My Orders</h1>
-      <nav>
-        <a href="index.html"
-          ><i class="material-icons">inventory</i> Products</a
-        >
-        <a href="cart.html"><i class="material-icons">shopping_cart</i> Cart</a>
-      </nav>
-    </div>
-    <div>
-      <img src="./images/Chinese warrior dragon in red and gold.PNG" alt="./images/default-image.jpg" class="header-image-mirrored" />
-    </div>
-  </header>
+    <header style="display: flex; justify-content: space-between; align-items: center; width: 100vw;">
+      <div>
+        <img src="./images/Chinese warrior dragon in red and gold.PNG" alt="./images/default-image.jpg" class="header-image" />
+      </div>
+      <div>
+        <div class="logo-container">
+          <img src="./Images/Logo only.gif" alt="Logo" class="responsive-logo" />
+        </div>
+        <h1 class="businessName">Point FX BladeZ</h1>
+        <p class="slogan">Premium BladeZ for the Modern Warrior</p>
+        <nav>
+          <ul class="responsive-nav">
+            <li><a href="cart.html"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count">0</span>)</a></li>
+            <li><a href="about.html"><i class="fas fa-info-circle"></i> About Us!</a></li>
+            <li><a href="events.html"><i class="fas fa-calendar"></i> Events</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div>
+        <img src="./images/Chinese warrior dragon in red and gold.PNG" alt="./images/default-image.jpg" class="header-image-mirrored" />
+      </div>
+    </header>
 
     <main>
       <table id="orders-table">
@@ -38,7 +47,7 @@
             <th>Order ID</th>
             <th>Total Amount</th>
             <th>Status</th>
-            <th>Shipping</th>
+            <th>Tracking Number</th>
             <th>Date</th>
           </tr>
         </thead>
