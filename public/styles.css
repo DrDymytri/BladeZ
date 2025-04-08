@@ -711,7 +711,7 @@ body main nav li p {
   padding: 10px;
   margin-bottom: 10px;
   background-color: #fff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 40px 5px rgb(30, 0, 0);
   width: 300px; /* Set a fixed width for the cart cards */
 }
 
@@ -788,22 +788,6 @@ body main nav li p {
   text-align: center;
 }
 
-#cart-summary {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-top: 30px;
-}
-
-#cart-summary a {
-  background-color: rgba(240, 248, 255, 0.144);
-  color: black;
-  font-size: 36px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
 .checkout-item-image {
   width: 150px; /* Set a fixed width for the checkout item image */
   height: auto; /* Maintain aspect ratio */
@@ -876,47 +860,7 @@ body main nav li p {
   }
 }
 
-/* Cart Summary Table */
-#cart-summary-table {
-  width: 100%; /* Ensure the table spans the full width of its container */
-  border-collapse: collapse; /* Remove gaps between table cells */
-  margin-top: 20px; /* Add spacing above the table */
-}
 
-#cart-summary-table th,
-#cart-summary-table td {
-  border: 1px solid #ccc; /* Add borders to table cells */
-  padding: 10px; /* Add padding for better readability */
-  text-align: center; /* Center-align text in cells */
-}
-
-#cart-summary-table th {
-  background-color: #f4f4f4; /* Light background for header cells */
-  font-weight: bold; /* Make header text bold */
-}
-
-#cart-summary-table td {
-  background-color: #fff; /* White background for data cells */
-}
-
-#cart-summary {
-  width: 100%; /* Ensure the summary section spans the full width */
-  overflow-x: auto; /* Enable horizontal scrolling for small screens */
-}
-
-#cart-summary table {
-  display: table; /* Ensure the table layout is preserved */
-  table-layout: auto; /* Allow columns to adjust based on content */
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  #cart-summary-table th,
-  #cart-summary-table td {
-    font-size: 14px; /* Reduce font size for smaller screens */
-    padding: 8px; /* Adjust padding for smaller screens */
-  }
-}
 
 #cart-items {
   display: grid; /* Use grid layout for multiple rows and columns */
@@ -1024,7 +968,7 @@ body main nav li p {
   border-radius: 8px;
   padding: 5px;
   margin: 16px;
-  box-shadow: 0 0 20px 5px rgb(0, 0, 0);
+  box-shadow: 0 0 40px 5px rgb(30, 0, 0);
   background-color: #fff;
   text-align: center;
   word-wrap: break-word; /* Ensure long words break to fit within the card */
@@ -1097,4 +1041,45 @@ body main nav li p {
   font-weight: bolder;
   font-size: 1.1em;
   color:  black;
+}
+
+#cart-summary-table {
+  width: 100%; /* Full width for better alignment */
+  border-collapse: collapse; /* Remove gaps between cells */
+  margin-top: 20px; /* Add spacing above the table */
+  background-color: #f9f9f9; /* Light background for better readability */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+#cart-summary-table th {
+  background-color: #007bff; /* Blue header background */
+  color: white; /* White text for contrast */
+  font-weight: bold; /* Emphasize header text */
+  padding: 10px; /* Add padding for better readability */
+  text-align: center; /* Center-align text */
+  border: 1px solid #ddd; /* Add borders for separation */
+}
+
+#cart-summary-table td {
+  padding: 10px; /* Add padding for better readability */
+  text-align: center; /* Center-align text */
+  border: 1px solid #ddd; /* Add borders for separation */
+  color: #333; /* Neutral text color */
+}
+
+#cart-summary-table tr:nth-child(even) {
+  background-color: #f2f2f2; /* Alternate row background for better readability */
+}
+
+#cart-summary-table tr:hover {
+  background-color: #e6f7ff; /* Highlight row on hover */
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+.grand-total {
+  font-size: 1.5em; /* Larger font for emphasis */
+  font-weight: bold; /* Make it stand out */
+  color: #146818; /* Green color for positive emphasis */
+  margin-top: 10px; /* Add spacing above */
+  text-align: right; /* Align to the right */
 }

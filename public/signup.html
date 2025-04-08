@@ -4,10 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sign Up - Point FX BladeZ</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
+      rel="stylesheet"
+    />
     <style>
       body {
         margin: 0;
-        background-color: bisque;
+        background-color: black;
         padding: 0;
         height: 100vh;
         display: flex;
@@ -15,18 +19,35 @@
         align-items: center;
       }
       .card {
-        background-color: orange;
+        background: linear-gradient(
+          to right, 
+          rgb(53, 2, 2), 
+          rgb(121, 18, 18), 
+          rgb(165, 4, 4), 
+          rgb(121, 18, 18), 
+          rgb(53, 2, 2));
         border-radius: 10px;
+        border: 1px solid aliceblue;
         padding: 20px;
         width: 350px;
         height: auto;
       }
       h2 {
-        color: #2a2a3a;
-        font-size: 40px;
-        text-shadow: 1px 1px 1px white, 2px 2px 1px white;
-        margin-bottom: 20px;
+        font-family: "MedievalSharp", serif;
+        font-size: 28px;
+        color: black;        
+        text-shadow:  
+          -0.375px -0.75px rgb(222, 194, 35), 
+          -0.125px -0.25px aliceblue, 
+          -0.25px -0.5px rgb(22, 64, 100),
+          0.125px 0.25px rgb(222, 194, 35), 
+          0.25px 0.5px rgb(222, 194, 35), 
+          0.375px 0.75px aliceblue, 
+          0.5px 1px rgb(32, 79, 119), 
+          0.625px 1.25px rgb(222, 194, 35), 
+          0.75px 1.5px rgb(222, 194, 35);
         text-align: center;
+        margin: 20px 0;
       }
       form {
         display: flex;
@@ -34,29 +55,47 @@
         gap: 10px;
       }
       input, textarea {
-        margin-bottom: 15px;
         padding: 10px;
-        background-color: wheat;
-        color: black;
-        border: 1px solid #ccc;
+        margin-bottom: 5px;
+        /* margin-top: 5px; */
+        border: 4px inset rgb(223, 223, 223);
+        box-shadow: inset 0 0 6px 1px rgba(0, 0, 0, 0.466);
+        outline: 1px solid black;
+        background-color: rgb(228, 189, 189);
         border-radius: 5px;
+        box-sizing: border-box;
       }
       button {
-        background-color: blue;
-        color: white;
-        padding: 10px;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
+        width: auto;
+        font-family: "MedievalSharp", serif;width: auto;
+        text-decoration: none;
+        padding: 5px;
+        margin-bottom: 5px;
+        margin-top: 5px;
+        border-top: 4px solid rgb(189, 209, 230);
+        border-bottom: 4px solid rgb(121, 141, 160);
+        border-right: 4px solid rgb(149, 172, 190);
+        border-left: 4px solid rgb(156, 175, 194);
+        box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466);
+        outline: 1px solid black;
+        background: linear-gradient(to right, #ff000088, #a10000, #8b0000, #a10000, #ff000088);
+        box-sizing: border-box;
+        font-family: serif;
+        font-size: 20px;
+        font-weight: bold;
+        color: aliceblue;
+        text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black, 0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+        box-shadow: 0 0 15px 1px aliceblue;
       }
       button:hover {
-        color: red;
+        color: greenyellow; 
+        background: linear-gradient(to right, #1eff0088, #0da100, #178b00, #13a100, #1eff0088);
       }
     </style>
   </head>
   <body>
     <div class="card">
-      <h2>Sign Up</h2>
+      <h2>Create Your Account</h2>
       <form id="signup-form" autocomplete="on">
         <input type="text" id="first-name" placeholder="First Name" autocomplete="given-name" required />
         <input type="text" id="last-name" placeholder="Last Name" autocomplete="family-name" required />

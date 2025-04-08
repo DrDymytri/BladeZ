@@ -9,31 +9,34 @@ body {
 
 .images-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive columns */
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive grid with minimum column width */
+  gap: 20px; /* Space between grid items */
   padding: 20px;
+  justify-items: center; /* Center items horizontally */
 }
 
 .image-card {
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
-  box-shadow: 0 0 20px rgb(0, 0, 0);
+  box-shadow: 0 0 40px 5px rgb(30, 0, 0);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
   text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%; /* Ensure consistent width */
+  max-width: 250px; /* Limit maximum width */
 }
 
 .image-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 0 20px rgb(0, 0, 0);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
 }
 
 .image-card img {
   width: 100%;
   height: 200px; /* Fixed height for consistency */
-  object-fit: contain;
-  border-bottom: 2px solid black;
+  object-fit: cover; /* Ensure the image fits nicely */
+  border-bottom: 1px solid #ddd;
   cursor: pointer;
 }
 
@@ -61,12 +64,25 @@ body {
   position: relative;
   max-width: 90%;
   max-height: 90%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 95%; /* Limit the popup content width */
+  max-height: 95%; /* Limit the popup content height */
+  overflow: hidden; /* Prevent content overflow */
 }
 
 .image-popup img {
   width: 100%;
   height: auto;
   border-radius: 8px;
+  max-width: 90vw; /* Ensure the image fits within the viewport width */
+  max-height: 90vh; /* Ensure the image fits within the viewport height */
+  width: auto; /* Maintain aspect ratio */
+  height: auto; /* Maintain aspect ratio */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Add a shadow for better visibility */
 }
 
 .image-popup .close-popup {
@@ -80,6 +96,12 @@ body {
   background: rgba(0, 0, 0, 0.5);
   padding: 5px 10px;
   border-radius: 50%;
+}
+
+.image-popup p {
+  color: white;
+  margin-top: 10px;
+  font-size: 1.2em;
 }
 
 /* High-contrast mode styles */

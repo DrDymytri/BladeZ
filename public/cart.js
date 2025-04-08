@@ -1,53 +1,102 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const cartContainer = document.getElementById("cart-container");
+  const cartSummaryTableBody = document.querySelector("#cart-summary-table tbody");
   const cartTotalElement = document.getElementById("cart-total");
 
-  // Fetch cart items from localStorage
+  // Retrieve cart items from localStorage
   const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
 
   if (cartItems.length === 0) {
     cartContainer.innerHTML = "<p>Your cart is empty.</p>";
+    cartSummaryTableBody.innerHTML = "";
+    cartTotalElement.textContent = "0.00";
     return;
   }
 
-  // Fetch updated product details from the server
-  const productIds = cartItems.map((item) => item.id).join(",");
-  try {
-    const response = await fetch(`http://localhost:5000/api/cart-products?ids=${productIds}`);
-    if (!response.ok) throw new Error("Failed to fetch product details");
-
-    const products = await response.json();
-
-    // Merge updated product details with cart items and combine duplicates
-    const updatedCart = cartItems.reduce((acc, item) => {
-      const product = products.find((p) => p.id === item.id);
-      if (product) {
-        const existingItem = acc.find((i) => i.id === item.id);
-        if (existingItem) {
-          existingItem.quantity += item.quantity; // Combine quantities
-        } else {
-          acc.push({ ...product, quantity: item.quantity });
-        }
-      }
-      return acc;
-    }, []);
-
-    renderCartItems(updatedCart);
-    updateTotal(updatedCart);
-
-    // Save the updated cart to localStorage
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
-    attachEventListeners(updatedCart);
-  } catch (error) {
-    console.error("Error fetching cart products:", error.message);
-    alert("Failed to load cart. Please try again.");
+  // Fetch product details from the server
+  const productDetails = await fetchProductDetails(cartItems.map((item) => item.id));
+  if (!productDetails) {
+    cartContainer.innerHTML = "<p>Failed to load cart items. Please try again later.</p>";
+    cartSummaryTableBody.innerHTML = ""; // Clear the summary table
+    cartTotalElement.textContent = "0.00"; // Reset the total
+    return;
   }
 
-  // Add event listener for the "Clear Cart" button
-  document.getElementById("clear-cart-btn").addEventListener("click", () => {
-    clearCart();
+  // Merge product details with cart items
+  const updatedCartItems = cartItems.map((item) => {
+    const product = productDetails?.find((p) => p.id === item.id);
+    if (!product) {
+      console.warn(`Product with ID ${item.id} not found. Using fallback data.`);
+    }
+    return {
+      ...item,
+      name: product?.name || item.name,
+      price: product?.price || item.price,
+      image_url: product?.image_url || item.image_url || './images/default-image.jpg', // Prioritize product image, fallback to item image
+    };
   });
+
+  // Render cart items
+  renderCartItems(updatedCartItems);
+
+  // Calculate and display the total
+  const total = updatedCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  cartTotalElement.textContent = total.toFixed(2);
+
+  // Add event listener for the "Clear Cart" button
+  const clearCartButton = document.getElementById("clear-cart-btn");
+  if (clearCartButton) {
+    clearCartButton.addEventListener("click", () => {
+      clearCart();
+      alert("Cart cleared!");
+    });
+  } else {
+    console.warn("Clear Cart button not found in the DOM.");
+  }
+
+  // Fix: Ensure the checkout button navigates without overwriting the cart in localStorage
+  const checkoutButton = document.getElementById("checkout-button");
+  if (checkoutButton) {
+    checkoutButton.addEventListener("click", () => {
+      // Only set the intended destination without modifying the cart
+      localStorage.setItem("intendedDestination", "checkout.html");
+      window.location.href = "checkout.html"; // Navigate to checkout page
+    });
+  } else {
+    console.warn("Checkout button not found in the DOM.");
+  }
+
+  // Add event listener for the "My Orders" button
+  const myOrdersButton = document.querySelector('a[href="orders.html"]');
+  if (myOrdersButton) {
+    myOrdersButton.addEventListener("click", (event) => {
+      event.preventDefault(); // Prevent default navigation
+      localStorage.setItem("intendedDestination", "orders.html"); // Set intended destination
+      window.location.href = "login.html"; // Navigate to login page
+    });
+  }
 });
+
+document.addEventListener("touchstart", () => {
+  console.log("Touchstart event triggered."); // Replace with actual logic if needed
+});
+
+async function fetchProductDetails(productIds) {
+  try {
+    const response = await fetch(`/api/cart-products?ids=${productIds.join(",")}`);
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn("Some products were not found. Proceeding with available products.");
+        return []; // Return an empty array to allow the cart to proceed
+      }
+      throw new Error("Failed to fetch product details");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching product details:", error.message);
+    return null;
+  }
+}
 
 function renderCartItems(cartItems) {
   const cartContainer = document.getElementById("cart-container");
@@ -58,7 +107,7 @@ function renderCartItems(cartItems) {
     .map(
       (item, index) => `
       <div class="cart-item-card" data-id="${index}">
-        <img src="${item.image_url || './images/default-image.jpg'}" alt="${item.name}" class="cart-item-image" />
+        <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" />
         <div class="cart-item-details">
           <h3>${item.name}</h3>
           <p><strong class="price-label">Price:</strong> <span class="price">$${item.price.toFixed(2)}</span></p>
@@ -87,9 +136,32 @@ function renderCartItems(cartItems) {
     `
     )
     .join("");
+
+  attachEventListeners(cartItems); // Ensure buttons are functional
 }
 
 function attachEventListeners(cartItems) {
+  // Remove existing event listeners by cloning the buttons
+  const removeButtons = document.querySelectorAll(".remove-item-btn");
+  const decreaseButtons = document.querySelectorAll(".decrease-quantity-btn");
+  const increaseButtons = document.querySelectorAll(".increase-quantity-btn");
+
+  removeButtons.forEach((button) => {
+    const clonedButton = button.cloneNode(true);
+    button.parentNode.replaceChild(clonedButton, button);
+  });
+
+  decreaseButtons.forEach((button) => {
+    const clonedButton = button.cloneNode(true);
+    button.parentNode.replaceChild(clonedButton, button);
+  });
+
+  increaseButtons.forEach((button) => {
+    const clonedButton = button.cloneNode(true);
+    button.parentNode.replaceChild(clonedButton, button);
+  });
+
+  // Add new event listeners
   document.querySelectorAll(".remove-item-btn").forEach((button) => {
     button.addEventListener("click", (event) => {
       const cartId = event.target.dataset.id;
@@ -112,10 +184,35 @@ function attachEventListeners(cartItems) {
   });
 }
 
+async function syncCartWithBackend(cartItems) {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    console.warn("User is not logged in. Skipping cart sync.");
+    return;
+  }
+
+  try {
+    await fetch("/api/cart/sync", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ items: cartItems }),
+    });
+  } catch (error) {
+    console.error("Error syncing cart with backend:", error.message);
+    console.error("Stack trace:", error.stack); // Log stack trace for debugging
+  }
+}
+
 function removeItemFromCart(cartId, cartItems) {
   // Remove the item from the cart
   cartItems.splice(cartId, 1);
   localStorage.setItem("cart", JSON.stringify(cartItems));
+
+  // Sync with backend
+  syncCartWithBackend(cartItems);
 
   // Update the cart items in the UI
   renderCartItems(cartItems);
@@ -135,7 +232,11 @@ function decreaseItemQuantity(cartId, cartItems) {
   const item = cartItems[cartId];
   if (item.quantity > 1) {
     item.quantity -= 1;
-    localStorage.setItem("cart", JSON.stringify(cartItems));
+    localStorage.setItem("cart", JSON.stringify(cartItems)); // Save updated cart to localStorage
+
+    // Sync with backend
+    syncCartWithBackend(cartItems);
+
     renderCartItems(cartItems);
     updateTotal(cartItems);
     attachEventListeners(cartItems);
@@ -150,7 +251,11 @@ function decreaseItemQuantity(cartId, cartItems) {
 function increaseItemQuantity(cartId, cartItems) {
   const item = cartItems[cartId];
   item.quantity += 1;
-  localStorage.setItem("cart", JSON.stringify(cartItems));
+  localStorage.setItem("cart", JSON.stringify(cartItems)); // Save updated cart to localStorage
+
+  // Sync with backend
+  syncCartWithBackend(cartItems);
+
   renderCartItems(cartItems);
   updateTotal(cartItems);
   attachEventListeners(cartItems);
@@ -168,12 +273,29 @@ function clearCart() {
   // Clear the cart in localStorage
   localStorage.removeItem("cart");
 
+  // Clear PayPal-related data
+  localStorage.removeItem("paypalOrderId");
+  localStorage.removeItem("paypalPaymentDetails");
+  localStorage.removeItem("token"); // Optionally clear the token if you want to log out the user
+
+  // Sync with backend
+  syncCartWithBackend([]);
+
   // Update the UI
   document.getElementById("cart-container").innerHTML = "<p>Your cart is empty.</p>";
   document.getElementById("cart-total").textContent = "0.00";
 
+  // Clear the cart summary table
+  const cartSummaryTableBody = document.querySelector("#cart-summary-table tbody");
+  if (cartSummaryTableBody) {
+    cartSummaryTableBody.innerHTML = "";
+  }
+
   // Update the cart count
-  updateCartCount();
+  const cartCountElement = document.getElementById("cart-count");
+  if (cartCountElement) {
+    cartCountElement.textContent = "0";
+  }
 }
 
 function updateCartCount() {
@@ -186,3 +308,32 @@ function updateCartCount() {
     console.warn("Cart count element not found in the DOM.");
   }
 }
+
+// Ensure the cart variable is defined and initialized
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// Ensure the button exists before adding the event listener
+const someButton = document.querySelector("#checkout-button");
+if (someButton) {
+  someButton.addEventListener("click", () => {
+    // Ensure cart is accessible here
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    console.log(cart); // Log the cart to verify its contents
+    // ...add your logic here...
+  });
+} else {
+  console.warn("Button with ID 'checkout-button' not found in the DOM.");
+}
+
+// Ensure the checkout button exists before adding the event listener
+const checkoutButton = document.getElementById("checkout-button");
+if (checkoutButton) {
+  checkoutButton.addEventListener("click", function () {
+    // Only set the intended destination without modifying the cart
+    localStorage.setItem("intendedDestination", "checkout.html");
+    window.location.href = "checkout.html"; // Navigate to checkout page
+  });
+} else {
+  console.warn("Checkout button not found in the DOM.");
+}
+

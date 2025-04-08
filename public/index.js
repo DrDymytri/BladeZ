@@ -160,11 +160,19 @@ async function loadProducts(filters = {}) {
     queryParams.append("page", page);
     queryParams.append("limit", limit);
 
+    console.log("Fetching products with query:", queryParams.toString()); // Debugging log
+
     const response = await fetch(`http://localhost:5000/api/products?${queryParams.toString()}`);
     if (!response.ok) throw new Error("Failed to fetch products");
 
     const data = await response.json();
+    console.log("Fetched products:", data); // Debugging log
+
     renderProducts(data.products);
+
+    // Render pagination controls if applicable
+    const totalPages = Math.ceil(data.total / limit); // Assuming `data.total` contains the total number of products
+    renderPaginationControls(page, totalPages);
   } catch (error) {
     console.error("Error loading products:", error.message);
     alert("Error loading products: " + error.message);
@@ -215,32 +223,42 @@ function renderPaginationControls(currentPage, totalPages) {
   });
 }
 
-function addToCart(productId, productName, productPrice) {
+function addToCart(productId, productName, productPrice, productImage) {
   const cart = JSON.parse(localStorage.getItem("cart")) || [];
   const existingProduct = cart.find((item) => item.id === productId);
 
   if (existingProduct) {
     existingProduct.quantity += 1;
   } else {
-    cart.push({ id: productId, name: productName, price: productPrice, quantity: 1 });
+    cart.push({
+      id: productId,
+      name: productName,
+      price: productPrice,
+      image_url: productImage || './images/default-image.jpg', // Ensure the correct image is stored
+      quantity: 1,
+    });
   }
 
   localStorage.setItem("cart", JSON.stringify(cart));
   alert(`${productName} has been added to your cart.`);
   updateCartCount();
+  renderCartItems(cart); // Use the correct rendering function
 }
 
 function applyFilters() {
-  const categoryFilter = document.getElementById("category-filter"); // Corrected ID
-  const subCategoryFilter = document.getElementById("subcategory-filter"); // Corrected ID
-  const descriptorFilter = document.getElementById("descriptor-filter"); // Corrected ID
+  const categoryFilter = document.getElementById("category-filter");
+  const subCategoryFilter = document.getElementById("subcategory-filter");
+  const descriptorFilter = document.getElementById("descriptor-filter");
 
   // Ensure the elements exist before accessing their values
-  const categoryId = categoryFilter ? categoryFilter.value : null;
-  const subCategoryId = subCategoryFilter ? subCategoryFilter.value : null;
-  const descriptorId = descriptorFilter ? descriptorFilter.value : null;
+  const categoryId = categoryFilter?.value || null;
+  const subCategoryId = subCategoryFilter?.value || null;
+  const descriptorId = descriptorFilter?.value || null;
 
-  loadProducts({ categoryId, subCategoryId, descriptorId }); // Pass filters to loadProducts
+  console.log("Applying filters:", { categoryId, subCategoryId, descriptorId }); // Debugging log
+
+  // Pass the filters to the loadProducts function
+  loadProducts({ categoryId, subCategoryId, descriptorId, page: 1 });
 }
 
 function clearFilters() {
@@ -373,7 +391,7 @@ function renderProductItems(products) {
         <h3>${product.name}</h3>
         <p>${product.description}</p>
         <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
-        <button class="add-to-cart-btn" data-id="${product.id}">Add to Cart</button>
+        <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || './images/default-image.jpg'}">Add to Cart</button>
       </div>
     `
     )
@@ -395,7 +413,7 @@ function renderProducts(products) {
   productContainer.innerHTML = products
     .map(
       (product) => `
-      <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}">
+      <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || './images/default-image.jpg'}">
         <img src="${product.image_url || './images/default-image.jpg'}" alt="${product.name}" class="product-image" onclick="openImageInPopup('${product.image_url || './images/default-image.jpg'}')" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
@@ -406,15 +424,79 @@ function renderProducts(products) {
     )
     .join("");
 
-  // Add event listeners to "Add to Cart" buttons
   productContainer.querySelectorAll(".add-to-cart-btn").forEach((button) => {
     button.addEventListener("click", (event) => {
       const productCard = event.target.closest(".product-card");
       const productId = parseInt(productCard.dataset.id, 10);
       const productName = productCard.dataset.name;
       const productPrice = parseFloat(productCard.dataset.price);
+      const productImage = productCard.dataset.image; // Retrieve the correct image URL
 
-      addToCart(productId, productName, productPrice);
+      addToCart(productId, productName, productPrice, productImage); // Pass the image URL to addToCart
     });
   });
 }
+
+async function loadShowcaseProducts() {
+  const showcaseContainer = document.getElementById("showcase-container");
+  if (!showcaseContainer) {
+    console.error("Showcase container not found in the DOM. Exiting function.");
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/showcase-products");
+    if (!response.ok) throw new Error("Failed to fetch showcase products");
+
+    const products = await response.json();
+    showcaseContainer.innerHTML = products
+      .map(
+        (product) => `
+        <div class="product-card">
+          <img src="${product.image_url}" alt="${product.name}" />
+          <h3>${product.name}</h3>
+          <p>${product.description}</p>
+          <p>Price: $${product.price.toFixed(2)}</p>
+        </div>
+      `
+      )
+      .join("");
+  } catch (error) {
+    console.error("Error loading showcased products:", error.message);
+    showcaseContainer.innerHTML = "<p>Failed to load showcased products. Please try again later.</p>";
+  }
+}
+
+function renderShowcaseProducts(products) {
+  const showcaseContainer = document.getElementById("showcase-products-container");
+  
+  showcaseContainer.innerHTML = products
+    .map(
+      (product) => `
+            <div class="product-card">
+                <img src="${product.image_url || './images/default-image.jpg'}" alt="${product.name}" />
+                <h3>${product.name}</h3>
+                <p>${product.description}</p>
+                <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
+            </div>
+        `
+    )
+    .join("");
+}
+
+document.querySelectorAll(".add-to-cart-btn").forEach((button) => {
+  button.addEventListener("click", (event) => {
+    const productCard = event.target.closest(".product-card");
+    if (!productCard) return;
+
+    const productId = parseInt(productCard.dataset.id, 10);
+    const productName = productCard.dataset.name;
+    const productPrice = parseFloat(productCard.dataset.price);
+    const productImage = productCard.dataset.image;
+
+    addToCart(productId, productName, productPrice, productImage);
+  });
+});
+
+// Call the function to load showcase products
+loadShowcaseProducts();

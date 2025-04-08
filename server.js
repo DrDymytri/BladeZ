@@ -1,51 +1,62 @@
 require("dotenv").config();
-console.log("EMAIL_USER:", process.env.EMAIL_USER);
-console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "Not Loaded");
 const express = require("express");
 const cors = require("cors");
 const sql = require("mssql");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const path = require("path");
 const multer = require("multer");
 const fs = require("fs");
-const { v4: uuidv4 } = require("uuid"); // Add this for generating session IDs
-const nodemailer = require("nodemailer"); // Add this for sending emails
+const { v4: uuidv4 } = require("uuid");
+const nodemailer = require("nodemailer");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY); // Ensure STRIPE_SECRET_KEY is set in .env
+const jwt = require("jsonwebtoken");
 
 const SECRET_KEY = process.env.JWT_SECRET;
+const PORT = 5000;
 
 const app = express();
-const PORT = 5000; // Explicitly set to 5000
 
 // Middleware
-app.use(cors({ origin: "http://localhost:5000", credentials: true })); // Corrected syntax
+app.use(cors({ origin: "http://localhost:5000", credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(express.static(__dirname + "/public"));
+app.use(express.static(path.join(__dirname, "public"))); // Ensure this line exists and serves the 'public' folder
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Middleware to ensure session_id for guest users
+// Ensure session_id for guest users
 app.use((req, res, next) => {
-  if (!req.cookies.session_id) {
-    res.cookie("session_id", uuidv4(), { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days
-  }
-  next();
+    if (!req.cookies.session_id) {
+        res.cookie("session_id", uuidv4(), { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    }
+    next();
 });
+
+// Middleware to authenticate user using JWT
+function authenticateToken(req, res, next) {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "Access denied. No token provided." });
+
+    jwt.verify(token, SECRET_KEY, (err, user) => {
+        if (err) return res.status(403).json({ error: "Invalid or expired token." });
+        req.user = user;
+        next();
+    });
+}
 
 // Database configuration
 const dbConfig = {
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  server: process.env.DB_SERVER,
-  database: process.env.DB_NAME,
-  port: Number(process.env.DB_PORT) || 1433,
-  options: {
-    encrypt: process.env.DB_ENCRYPT === "true", // Ensure encryption is correctly set
-    trustServerCertificate: true, // For local development
-  },
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    server: process.env.DB_SERVER,
+    database: process.env.DB_NAME,
+    port: Number(process.env.DB_PORT) || 1433,
+    options: {
+        encrypt: process.env.DB_ENCRYPT === "true",
+        trustServerCertificate: true,
+    },
 };
 
 // Global connection pool
@@ -55,516 +66,547 @@ async function getConnection() {
     try {
         if (!pool || !pool.connected) {
             pool = await sql.connect(dbConfig);
-            console.log("✅ Database connection established.");
+            console.log("✅ Database connection established."); // Keep this log for monitoring
         }
         return pool;
     } catch (error) {
-        console.error("❌ Error establishing database connection:", error.message);
+        console.error("❌ Error establishing database connection:", error.message); // Keep this log for debugging
         throw error;
     }
 }
 
-// Utility function to convert a date to UTC
-function toUTC(date) {
-  return new Date(date).toISOString(); // Convert to ISO string in UTC
-}
+// Ensure upload folders exist
+["uploads", "uploads/images", "uploads/videos"].forEach((folder) => {
+    if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
+});
 
-// Utility function to convert a UTC date to local time
-function toLocalTime(utcDate) {
-  return new Date(utcDate).toLocaleString("en-US", { timeZone: "America/New_York" }); // Adjust to Eastern Time
-}
+// Multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadFolder = file.mimetype.startsWith("image/") ? "uploads/images" : "uploads/videos";
+        cb(null, uploadFolder);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname));
+    },
+});
+const upload = multer({ storage });
 
-// Utility function to send emails
-async function sendEmail(to, subject, html) {
-  try {
-    console.log("Attempting to send email...");
-    console.log("EMAIL_USER:", process.env.EMAIL_USER);
-    console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "Not Loaded");
-
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to,
-      subject,
-      html,
-    });
-
-    console.log("Email sent successfully:", info.messageId);
-  } catch (error) {
-    console.error("Error sending email:", error.message);
-    console.error("Full error details:", error);
-  }
-}
-
-// Deduct inventory when an order is placed
-async function deductInventory(items) {
-  const pool = await getConnection();
-  let insufficientStock = false;
-
-  for (const item of items) {
-    const result = await pool.request()
-      .input("productId", sql.Int, item.id)
-      .query("SELECT stock_quantity FROM Products WHERE id = @productId");
-
-    const stock = result.recordset[0]?.stock_quantity || 0;
-
-    if (stock < item.quantity) {
-      insufficientStock = true; // Flag insufficient stock
+// Routes
+app.get("/api/categories", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request().query(`
+            SELECT CategoryID AS id, Name AS name 
+            FROM Categories
+            ORDER BY Name ASC
+        `);
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching categories:", error.message);
+        res.status(500).json({ error: "Failed to fetch categories." });
     }
-
-    // Allow negative stock values
-    await pool.request()
-      .input("productId", sql.Int, item.id)
-      .input("quantity", sql.Int, item.quantity)
-      .query("UPDATE Products SET stock_quantity = stock_quantity - @quantity WHERE id = @productId");
-  }
-
-  return insufficientStock;
-}
-
-app.post('/api/products', async (req, res) => {
-  const { name, description, price, image_url, stock_quantity, category_id, sub_category_id, tag_id, is_showcase } = req.body;
-  // Validate required fields
-  if (!name || !description || !price || !stock_quantity || !category_id) {
-      return res.status(400).send("Missing required fields.");
-  }
-
-  try {
-      const pool = await getConnection();
-      await pool.request()
-          .input("name", sql.NVarChar, name)
-          .input("description", sql.NVarChar, description)
-          .input("price", sql.Decimal(18, 2), price)
-          .input("image_url", sql.NVarChar, image_url || null) // Allow null for optional fields
-          .input("stock_quantity", sql.Int, stock_quantity)
-          .input("category_id", sql.Int, category_id)
-          .input("sub_category_id", sql.Int, sub_category_id || null) // Allow null for optional fields
-          .input("tag_id", sql.Int, tag_id || null) // Allow null for optional fields
-          .input("is_showcase", sql.Bit, is_showcase || false) // Default to false if not provided
-          .query(`
-              INSERT INTO Products (name, description, price, image_url, stock_quantity, category_id, sub_category_id, tag_id, is_showcase, created_at, updated_at)
-              VALUES (@name, @description, @price, @image_url, @stock_quantity, @category_id, @sub_category_id, @tag_id, @is_showcase, GETDATE(), GETDATE())
-          `);
-
-      res.status(201).send("Product added successfully.");
-  } catch (error) {
-      console.error("Error adding product:", error.message);
-      res.status(500).send("Failed to add product.");
-  }
 });
 
-app.get('/api/products/:id', async (req, res) => {
-  const productId = req.params.id;
+app.post("/api/login", async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("email", sql.NVarChar, email)
+            .query("SELECT id, email, password FROM Users WHERE email = @Email");
 
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input('productId', sql.Int, productId)
-      .query(`
-        SELECT 
-          id, 
-          name, 
-          description, 
-          price, 
-          image_url, 
-          stock_quantity, 
-          category_id, 
-          sub_category_id, 
-          tag_id, 
-          is_showcase
-        FROM Products 
-        WHERE id = @productId
-      `);
+        const user = result.recordset[0];
+        if (!user) {
+            return res.status(401).json({ error: "Invalid email or password" });
+        }
 
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: "Invalid email or password" });
+        }
+
+        console.log("Generating token for user ID:", user.id); // Log user ID
+        const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "1h" });
+        res.json({ token });
+    } catch (error) {
+        console.error("Error during user login:", error.message);
+        res.status(500).json({ error: "Failed to login" });
     }
-
-    res.json(result.recordset[0]);
-  } catch (error) {
-    console.error('Error fetching product:', error.message);
-    res.status(500).json({ error: 'Failed to fetch product' });
-  }
 });
 
-app.put('/api/products/:id', async (req, res) => {
-  const productId = req.params.id;
-  const { name, description, price, stock_quantity, image_url, category_id, sub_category_id, tag_id, is_showcase } = req.body;
-
-  try {
-      const pool = await getConnection();
-      await pool.request()
-          .input('productId', sql.Int, productId)
-          .input('name', sql.NVarChar, name)
-          .input('description', sql.NVarChar, description)
-          .input('price', sql.Decimal(18, 2), price)
-          .input('stock_quantity', sql.Int, stock_quantity)
-          .input('image_url', sql.NVarChar, image_url)
-          .input('category_id', sql.Int, category_id)
-          .input('sub_category_id', sql.Int, sub_category_id)
-          .input('tag_id', sql.Int, tag_id)
-          .input('is_showcase', sql.Bit, is_showcase)
-          .query(`
-              UPDATE Products
-              SET name = @name,
-                  description = @description,
-                  price = @price,
-                  stock_quantity = @stock_quantity,
-                  image_url = @image_url,
-                  category_id = @category_id,
-                  sub_category_id = @sub_category_id,
-                  tag_id = @tag_id,
-                  is_showcase = @is_showcase,
-                  updated_at = GETDATE()
-              WHERE id = @productId
-          `);
-
-      res.status(200).send("Product updated successfully.");
-  } catch (error) {
-      console.error("Error updating product:", error.message);
-      res.status(500).send("Failed to update product.");
-  }
-});
-
-app.get('/api/products', async (req, res) => {
-  const { page = 1, limit = 30, categoryId, subCategoryId, descriptorId } = req.query;
-
-  try {
-    const pool = await getConnection();
-    let query = `
-      SELECT 
-        p.id, 
-        p.name, 
-        p.description, 
-        p.price, 
-        p.stock_quantity, 
-        p.image_url, 
-        p.category_id, 
-        c.name AS category_name, 
-        p.sub_category_id, 
-        sc.SubCategoryName AS subcategory_name, 
-        p.tag_id, 
-        t.DescriptorName AS tag_name, 
-        p.is_showcase
-      FROM Products p
-      LEFT JOIN Categories c ON p.category_id = c.Categoryid
-      LEFT JOIN SubCategories sc ON p.sub_category_id = sc.SubCategoryID
-      LEFT JOIN Descriptors t ON p.tag_id = t.DescriptorID
-      WHERE 1=1
-    `;
-
-    const request = pool.request();
-
-    if (categoryId) {
-      query += ` AND p.category_id = @categoryId`;
-      request.input("categoryId", sql.Int, categoryId);
-    }
-    if (subCategoryId) {
-      query += ` AND p.sub_category_id = @subCategoryId`;
-      request.input("subCategoryId", sql.Int, subCategoryId);
-    }
-    if (descriptorId) {
-      query += ` AND p.tag_id = @descriptorId`;
-      request.input("descriptorId", sql.Int, descriptorId);
-    }
-
-    query += `
-      ORDER BY p.name ASC
-      OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;
-    `;
-
-    request.input("offset", sql.Int, (page - 1) * limit);
-    request.input("limit", sql.Int, limit);
-
-    const result = await request.query(query);
-    res.json({ products: result.recordset });
-  } catch (error) {
-    console.error("Error fetching products:", error.message);
-    res.status(500).json({ error: "Failed to fetch products." });
-  }
-});
-
-app.get('/api/products', async (req, res) => {
-  const ids = req.query.ids?.split(",").map((id) => parseInt(id)).filter((id) => !isNaN(id));
-
-  if (!ids || ids.length === 0) {
-    return res.status(400).json({ error: "No valid product IDs provided." });
-  }
-
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input("ids", sql.NVarChar, ids.join(","))
-      .query(`
-        SELECT id, name, price, image_url 
-        FROM Products 
-        WHERE id IN (${ids.map((_, i) => `@id${i}`).join(",")})
-      `);
-
-    ids.forEach((id, i) => {
-      result.request.input(`id${i}`, sql.Int, id);
-    });
-
-    res.json(result.recordset);
-  } catch (error) {
-    console.error("Error fetching products by IDs:", error.message);
-    res.status(500).json({ error: "Failed to fetch products." });
-  }
-});
-
-app.get('/admin/products', authenticateToken, async (req, res) => {
-  try {
-      const pool = await getConnection();
-      const result = await pool.request()
-          .query('SELECT id, name, description, price, image_url, stock_quantity FROM Products');
-      res.json(result.recordset);
-  } catch (error) {
-      console.error('Error fetching products for admin:', error);
-      res.status(500).json({ error: 'Failed to fetch products' });
-  }
-});
-
-
-// Get showcase products
-app.get('/api/showcase-products', async (req, res) => {
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .query('SELECT id, name, description, price, image_url, stock_quantity FROM Products WHERE is_showcase = 1');
-    res.json(result.recordset);
-  } catch (error) {
-    console.error('Error fetching showcase products:', error);
-    res.status(500).json({ error: 'Failed to fetch showcase products' });
-  }
-});
-
-// Fix: Get categories
-app.get('/api/categories', async (req, res) => {
-  try {
-    const pool = await getConnection();
-    const result = await pool.request().query(`
-      SELECT CategoryID AS id, Name AS name 
-      FROM Categories
-      ORDER BY Name ASC
-    `);
-
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'No categories found.' });
-    }
-
-    res.json(result.recordset);
-  } catch (error) {
-    console.error('Error fetching categories:', error.message);
-    res.status(500).json({ error: 'Failed to fetch categories.' });
-  }
-});
-
-// Fix: Get subcategories
-app.get('/api/subcategories', async (req, res) => {
-  const { categoryId } = req.query;
-
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input('categoryId', sql.Int, categoryId || null)
-      .query(`
-        SELECT SubCategoryID AS id, SubCategoryName AS name, CategoryID AS categoryId 
-        FROM SubCategories 
-        WHERE @categoryId IS NULL OR CategoryID = @categoryId
-        ORDER BY SubCategoryName ASC
-      `);
-
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'No subcategories found for the given category.' });
-    }
-
-    res.json(result.recordset);
-  } catch (error) {
-    console.error('Error fetching subcategories:', error.message);
-    res.status(500).send('Failed to fetch subcategories.');
-  }
-});
-
-// Fix: Get descriptors
-app.get('/api/descriptors', async (req, res) => {
-  const { subCategoryId } = req.query;
-
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input('subCategoryId', sql.Int, subCategoryId || null)
-      .query(`
-        SELECT DescriptorID AS id, DescriptorName AS name, SubCategoryID AS subCategoryId 
-        FROM Descriptors 
-        WHERE @subCategoryId IS NULL OR SubCategoryID = @subCategoryId
-        ORDER BY DescriptorName ASC
-      `);
-    res.json(result.recordset);
-  } catch (error) {
-    console.error('Error fetching descriptors:', error.message);
-    res.status(500).send('Failed to fetch descriptors.');
-  }
-});
-
-app.get('/api/subcategories', async (req, res) => {
+app.get("/api/subcategories", async (req, res) => {
     const { categoryId } = req.query;
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("categoryId", sql.Int, categoryId || null)
+            .query(`
+                SELECT SubCategoryID AS id, SubCategoryName AS name, CategoryID AS categoryId 
+                FROM SubCategories 
+                WHERE @categoryId IS NULL OR CategoryID = @categoryId
+                ORDER BY SubCategoryName ASC
+            `);
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching subcategories:", error.message);
+        res.status(500).send("Failed to fetch subcategories.");
+    }
+});
 
-    if (!categoryId) {
-        return res.status(400).send('Category ID is required.');
+app.post("/api/subcategories", async (req, res) => {
+    const { name, categoryId } = req.body;
+    if (!name || !categoryId) {
+        return res.status(400).json({ error: "Subcategory name and category ID are required." });
+    }
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("name", sql.NVarChar, name)
+            .input("categoryId", sql.Int, categoryId)
+            .query(`
+                INSERT INTO SubCategories (SubCategoryName, CategoryID)
+                OUTPUT INSERTED.SubCategoryID AS id, INSERTED.SubCategoryName AS name, INSERTED.CategoryID AS categoryId
+                VALUES (@name, @categoryId)
+            `);
+        res.status(201).json(result.recordset[0]);
+    } catch (error) {
+        console.error("Error creating subcategory:", error.message);
+        res.status(500).json({ error: "Failed to create subcategory." });
+    }
+});
+
+app.put("/api/subcategories/:id", async (req, res) => {
+    const { id } = req.params;
+    const { name, categoryId } = req.body;
+
+    if (!name || !categoryId) {
+        return res.status(400).json({ error: "Subcategory name and category ID are required." });
     }
 
     try {
         const pool = await getConnection();
         const result = await pool.request()
-            .input('categoryId', sql.Int, categoryId)
+            .input("id", sql.Int, id)
+            .input("name", sql.NVarChar, name)
+            .input("categoryId", sql.Int, categoryId)
             .query(`
-                SELECT SubCategoryID, SubCategoryName 
-                FROM SubCategories 
+                UPDATE SubCategories
+                SET SubCategoryName = @name, CategoryID = @categoryId
+                WHERE SubCategoryID = @id
+            `);
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: "Subcategory not found." });
+        }
+
+        res.json({ message: "Subcategory updated successfully." });
+    } catch (error) {
+        console.error("Error updating subcategory:", error.message);
+        res.status(500).json({ error: "Failed to update subcategory." });
+    }
+});
+
+app.get("/api/descriptors", async (req, res) => {
+    const { subCategoryId } = req.query;
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("subCategoryId", sql.Int, subCategoryId || null)
+            .query(`
+                SELECT DescriptorID AS id, DescriptorName AS name, SubCategoryID AS subCategoryId 
+                FROM Descriptors 
+                WHERE @subCategoryId IS NULL OR SubCategoryID = @subCategoryId
+                ORDER BY DescriptorName ASC
+            `);
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching descriptors:", error.message);
+        res.status(500).send("Failed to fetch descriptors.");
+    }
+});
+
+app.post("/api/descriptors", async (req, res) => {
+    const { name, subCategoryId } = req.body;
+
+    if (!name || !subCategoryId) {
+        return res.status(400).json({ error: "Descriptor name and subcategory ID are required." });
+    }
+
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("name", sql.NVarChar, name)
+            .input("subCategoryId", sql.Int, subCategoryId)
+            .query(`
+                INSERT INTO Descriptors (DescriptorName, SubCategoryID)
+                OUTPUT INSERTED.DescriptorID AS id, INSERTED.DescriptorName AS name, INSERTED.SubCategoryID AS subCategoryId
+                VALUES (@name, @subCategoryId)
+            `);
+
+        res.status(201).json(result.recordset[0]);
+    } catch (error) {
+        console.error("Error creating descriptor:", error.message);
+        res.status(500).json({ error: "Failed to create descriptor." });
+    }
+});
+
+app.put("/api/descriptors/:id", async (req, res) => {
+    const { id } = req.params;
+    const { name, subCategoryId } = req.body;
+
+    // Log the incoming request body for debugging
+    console.log("PUT /api/descriptors/:id - Request body:", req.body);
+
+    if (!name || !subCategoryId) {
+        return res.status(400).json({ error: "Descriptor name and subcategory ID are required." });
+    }
+
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("id", sql.Int, id)
+            .input("name", sql.NVarChar, name)
+            .input("subCategoryId", sql.Int, subCategoryId)
+            .query(`
+                UPDATE Descriptors
+                SET DescriptorName = @name, SubCategoryID = @subCategoryId
+                WHERE DescriptorID = @id
+            `);
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: "Descriptor not found." });
+        }
+
+        res.json({ message: "Descriptor updated successfully." });
+    } catch (error) {
+        console.error("Error updating descriptor:", error.message);
+        res.status(500).json({ error: "Failed to update descriptor." });
+    }
+});
+
+app.delete("/api/descriptors/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("id", sql.Int, id)
+            .query(`
+                DELETE FROM Descriptors
+                WHERE DescriptorID = @id
+            `);
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: "Descriptor not found." });
+        }
+
+        res.json({ message: "Descriptor deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting descriptor:", error.message);
+        res.status(500).json({ error: "Failed to delete descriptor." });
+    }
+});
+
+app.delete("/api/subcategories/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const pool = await getConnection();
+
+        // Delete associated descriptors first
+        await pool.request()
+            .input("subCategoryId", sql.Int, id)
+            .query(`
+                DELETE FROM Descriptors
+                WHERE SubCategoryID = @subCategoryId
+            `);
+
+        // Delete the subcategory
+        const result = await pool.request()
+            .input("id", sql.Int, id)
+            .query(`
+                DELETE FROM SubCategories
+                WHERE SubCategoryID = @id
+            `);
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: "Subcategory not found." });
+        }
+
+        res.json({ message: "Subcategory and its descriptors deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting subcategory:", error.message);
+        res.status(500).json({ error: "Failed to delete subcategory." });
+    }
+});
+
+app.delete("/api/categories/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const pool = await getConnection();
+
+        // Delete associated subcategories and their descriptors first
+        const subcategories = await pool.request()
+            .input("categoryId", sql.Int, id)
+            .query(`
+                SELECT SubCategoryID
+                FROM SubCategories
                 WHERE CategoryID = @categoryId
             `);
 
-        if (result.recordset.length === 0) {
-            return res.status(404).send('No subcategories found for the given category.');
+        for (const subcategory of subcategories.recordset) {
+            await pool.request()
+                .input("subCategoryId", sql.Int, subcategory.SubCategoryID)
+                .query(`
+                    DELETE FROM Descriptors
+                    WHERE SubCategoryID = @subCategoryId
+                `);
         }
 
+        await pool.request()
+            .input("categoryId", sql.Int, id)
+            .query(`
+                DELETE FROM SubCategories
+                WHERE CategoryID = @categoryId
+            `);
+
+        // Delete the category
+        const result = await pool.request()
+            .input("id", sql.Int, id)
+            .query(`
+                DELETE FROM Categories
+                WHERE CategoryID = @id
+            `);
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: "Category not found." });
+        }
+
+        res.json({ message: "Category, its subcategories, and their descriptors deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting category:", error.message);
+        res.status(500).json({ error: "Failed to delete category." });
+    }
+});
+
+app.get("/api/products", async (req, res) => {
+    const { categoryId, subCategoryId, descriptorId, page = 1, limit = 30 } = req.query;
+
+    try {
+        const pool = await getConnection();
+        let query = `
+            SELECT id, name, description, price, stock_quantity, image_url, is_showcase
+            FROM Products
+            WHERE 1=1
+        `;
+        const request = pool.request();
+
+        if (categoryId) {
+            query += " AND category_id = @categoryId";
+            request.input("categoryId", sql.Int, categoryId);
+        }
+        if (subCategoryId) {
+            query += " AND sub_category_id = @subCategoryId";
+            request.input("subCategoryId", sql.Int, subCategoryId);
+        }
+        if (descriptorId) {
+            query += " AND tag_id = @descriptorId";
+            request.input("descriptorId", sql.Int, descriptorId);
+        }
+        query += `
+            ORDER BY name ASC
+            OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;
+        `;
+        request.input("offset", sql.Int, (page - 1) * limit);
+        request.input("limit", sql.Int, limit);
+
+        const result = await request.query(query);
+
+        if (result.recordset.length === 0) {
+            return res.json({ products: [], total: 0 });
+        }
+
+        // Fetch total count for pagination
+        const totalResult = await pool.request().query("SELECT COUNT(*) AS total FROM Products");
+        const total = totalResult.recordset[0].total;
+
+        res.json({ products: result.recordset, total });
+    } catch (error) {
+        console.error("Error fetching products:", error.message);
+        res.status(500).json({ error: "Failed to fetch products." });
+    }
+});
+
+app.get("/api/showcase-products", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .query(`
+                SELECT id, name, description, price, image_url, stock_quantity 
+                FROM Products 
+                WHERE is_showcase = 1
+            `);
         res.json(result.recordset);
     } catch (error) {
-        console.error('Error fetching subcategories:', error.message);
-        res.status(500).send('Failed to fetch subcategories.');
+        console.error("Error fetching showcase products:", error.message);
+        res.status(500).json({ error: "Failed to fetch showcase products." });
     }
 });
 
-
-// Get descriptors
-app.get('/api/descriptors', async (req, res) => {
-  const { subCategoryId } = req.query;
-  try {
-      const pool = await getConnection();
-      const result = await pool.request()
-          .input('subCategoryId', sql.Int, subCategoryId)
-          .query('SELECT DescriptorID, DescriptorName FROM Descriptors WHERE SubCategoryID = @subCategoryId');
-      res.json(result.recordset);
-  } catch (error) {
-      console.error('Error fetching descriptors:', error);
-      res.status(500).send('Failed to fetch descriptors.');
-  }
+app.get("/api/paypal-client-id", (req, res) => {
+    try {
+        const clientId = process.env.PAYPAL_CLIENT_ID;
+        if (!clientId) {
+            return res.status(500).json({ error: "PayPal client ID not configured." });
+        }
+        res.json({ clientId });
+    } catch (error) {
+        console.error("Error fetching PayPal client ID:", error.message);
+        res.status(500).json({ error: "Failed to fetch PayPal client ID." });
+    }
 });
 
+app.post("/api/create-payment-intent", async (req, res) => {
+    try {
+        const { amount, cart } = req.body;
+        if (!amount || !cart || cart.length === 0) {
+            return res.status(400).json({ error: "Invalid request. Amount and cart details are required." });
+        }
 
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ error: "Access denied. No token provided." });
-  }
+        // Create a payment intent with Stripe
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: Math.round(amount * 100), // Convert to cents
+            currency: "usd",
+            payment_method_types: ["card"],
+        });
 
-  const token = authHeader.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({ error: "Access denied. Invalid token format." });
-  }
-
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: "Invalid token" });
+        res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error) {
+        console.error("Error creating payment intent:", error.message);
+        res.status(500).json({ error: "Failed to create payment intent." });
     }
-    req.user = user; // Attach the decoded user object to the request
-    next();
-  });
-}
+});
 
+app.post("/api/orders", authenticateToken, async (req, res) => {
+    try {
+        const { items, total } = req.body;
+        if (!items || items.length === 0 || !total) {
+            return res.status(400).json({ error: "Invalid request. Items and total are required." });
+        }
 
-// Admin login
-app.post('/admin/login', async (req, res) => {
-  const { email, password } = req.body;
+        const pool = await getConnection();
+
+        // Insert order into Orders table
+        const orderResult = await pool.request()
+            .input("userId", sql.Int, req.user.id) // Ensure req.user.id is populated by authenticateToken
+            .input("total", sql.Decimal(10, 2), total)
+            .query(`
+                INSERT INTO orders (user_id, total_amount, created_at)
+                OUTPUT INSERTED.id -- Use the correct column name for the inserted order ID
+                VALUES (@userId, @total, GETDATE())
+            `);
+        const orderId = orderResult.recordset[0].id; // Use the correct column name
+
+        // Insert order items into the order_items table and update stock
+        for (const item of items) {
+            // Insert order item
+            await pool.request()
+                .input("orderId", sql.Int, orderId)
+                .input("productId", sql.Int, item.id)
+                .input("quantity", sql.Int, item.quantity)
+                .input("price", sql.Decimal(10, 2), item.price)
+                .query(`
+                    INSERT INTO order_items (order_id, product_id, quantity, price)
+                    VALUES (@orderId, @productId, @quantity, @price)
+                `);
+
+            // Reduce stock (allow negative values)
+            await pool.request()
+                .input("productId", sql.Int, item.id)
+                .input("quantity", sql.Int, item.quantity)
+                .query(`
+                    UPDATE Products
+                    SET stock_quantity = stock_quantity - @quantity
+                    WHERE id = @productId
+                `);
+        }
+
+        res.json({ message: "Order placed successfully", orderId });
+    } catch (error) {
+        console.error("Error placing order:", error.message);
+        console.error("Stack trace:", error.stack); // Log stack trace for debugging
+        res.status(500).json({ error: "Failed to place order." });
+    }
+});
+
+app.get("/api/orders", authenticateToken, async (req, res) => {
+    try {
+        const pool = await getConnection();
+
+        // Log the user ID for debugging
+        console.log("Fetching orders for user ID:", req.user.id);
+
+        // Fetch orders for the logged-in user
+        const ordersResult = await pool.request()
+            .input("userId", sql.Int, req.user.id)
+            .query(`
+                SELECT o.id AS orderId, o.total_amount AS total, o.status, o.shipping_status AS shippingStatus,
+                       o.tracking_number AS trackingNumber, o.created_at AS orderDate,
+                       oi.product_id AS productId, oi.quantity, oi.price
+                FROM orders o
+                INNER JOIN order_items oi ON o.id = oi.order_id
+                WHERE o.user_id = @userId
+                ORDER BY o.created_at DESC
+            `);
+        const orders = ordersResult.recordset;
+
+        // Log the fetched orders for debugging
+        console.log("Fetched orders:", orders);
+
+        if (orders.length === 0) {
+            console.log("No orders found for user ID:", req.user.id);
+            return res.json({ message: "No orders found.", orders: [] });
+        }
+
+        res.json({ orders });
+    } catch (error) {
+        console.error("Error fetching orders:", error.message);
+        console.error("Stack trace:", error.stack); // Log stack trace for debugging
+        res.status(500).json({ error: "Failed to fetch orders." });
+    }
+});
+
+app.get("/api/events", async (req, res) => {
   try {
     const pool = await getConnection();
-    const result = await pool.request()
-      .input('email', sql.NVarChar, email)
-      .query('SELECT id, email, password FROM Admin WHERE email = @Email');
-    
-    const admin = result.recordset[0];
-    if (!admin) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, admin.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
-    const token = jwt.sign({ id: admin.id, email: admin.email }, SECRET_KEY, { expiresIn: '1h' });
-    res.json({ token });
-  } catch (error) {
-    console.error('Error during admin login:', error);
-    res.status(500).json({ error: 'Failed to login' });
-  }
-});
-
-app.get('/admin/events', authenticateToken, async (req, res) => {
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .query('SELECT id, title, description, event_start_date, event_end_date, location, event_website FROM Events');
+    const result = await pool.request().query(`
+      SELECT id, title, description, event_start_date AS startDate, event_end_date AS endDate, location, event_website
+      FROM Events
+      ORDER BY event_start_date ASC -- Changed to ascending order
+    `);
     res.json(result.recordset);
   } catch (error) {
-    console.error('Error fetching admin events:', error);
-    res.status(500).json({ error: 'Failed to fetch admin events' });
+    console.error("Error fetching events:", error.message);
+    res.status(500).json({ error: "Failed to load events. Please try again later." });
   }
 });
 
-
-// Get public events (accessible via /api/events)
-app.get('/api/events', async (req, res) => {
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .query('SELECT id, title, description, event_start_date, event_end_date, location, event_website FROM Events ORDER BY event_start_date ASC');
-
-    console.log("Fetched Events:", result.recordset); // Debugging: Log the fetched events
-
-    const events = result.recordset.map(event => ({
-      id: event.id,
-      title: event.title,
-      description: event.description,
-      event_start_date: new Date(event.event_start_date).toISOString(),
-      event_end_date: new Date(event.event_end_date).toISOString(),
-      location: event.location,
-      event_website: event.event_website || "", // Ensure the field is named `event_website`
-    }));
-
-    res.json(events);
-  } catch (error) {
-    console.error('Error fetching events:', error);
-    res.status(500).json({ error: 'Failed to fetch events' });
-  }
-});
-
-app.put('/api/events/:id', async (req, res) => {
+app.put("/api/events/:id", async (req, res) => {
   const { id } = req.params;
   const { title, description, event_start_date, event_end_date, location, website } = req.body;
 
-  if (!title || !description || !event_start_date || !event_end_date || !location || !website) {
-    return res.status(400).json({ error: 'All fields are required.' });
-  }
-
   try {
     const pool = await getConnection();
     const result = await pool.request()
-      .input('title', sql.NVarChar, title)
-      .input('description', sql.NVarChar, description)
-      .input('event_start_date', sql.DateTime, new Date(event_start_date))
-      .input('event_end_date', sql.DateTime, new Date(event_end_date))
-      .input('location', sql.NVarChar, location)
-      .input('website', sql.NVarChar, website) // Include website field
-      .input('id', sql.Int, id)
+      .input("id", sql.Int, id)
+      .input("title", sql.NVarChar, title)
+      .input("description", sql.NVarChar, description)
+      .input("event_start_date", sql.DateTime, event_start_date)
+      .input("event_end_date", sql.DateTime, event_end_date)
+      .input("location", sql.NVarChar, location)
+      .input("website", sql.NVarChar, website)
       .query(`
         UPDATE Events
         SET title = @title,
@@ -577,1328 +619,571 @@ app.put('/api/events/:id', async (req, res) => {
       `);
 
     if (result.rowsAffected[0] === 0) {
-      return res.status(404).json({ error: 'Event not found.' });
+      return res.status(404).json({ error: "Event not found" });
     }
 
-    res.status(200).json({ message: 'Event updated successfully.' });
+    res.json({ message: "Event updated successfully" });
   } catch (error) {
-    console.error('Error updating event:', error);
-    res.status(500).json({ error: 'An error occurred while updating the event.' });
+    console.error("Error updating event:", error.message);
+    res.status(500).json({ error: "Failed to update event" });
   }
 });
 
-app.post('/api/events', async (req, res) => {
+app.delete("/api/events/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const pool = await getConnection();
+    const result = await pool.request()
+      .input("id", sql.Int, id)
+      .query(`
+        DELETE FROM Events
+        WHERE id = @id
+      `);
+
+    if (result.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    res.json({ message: "Event deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting event:", error.message);
+    res.status(500).json({ error: "Failed to delete event" });
+  }
+});
+
+app.post("/api/events", async (req, res) => {
   const { title, description, event_start_date, event_end_date, location, website } = req.body;
 
-  console.log("Received Event Data:", req.body); // Debugging: Log the incoming request data
-
-  // Validate required fields
   if (!title || !description || !event_start_date || !event_end_date || !location || !website) {
-    console.error("Validation failed: Missing required fields.");
-    return res.status(400).send("Missing required fields.");
+    return res.status(400).json({ error: "All fields are required." });
   }
 
   try {
     const pool = await getConnection();
     const result = await pool.request()
-      .input('title', sql.NVarChar, title)
-      .input('description', sql.NVarChar, description)
-      .input('event_start_date', sql.DateTime, new Date(event_start_date))
-      .input('event_end_date', sql.DateTime, new Date(event_end_date))
-      .input('location', sql.NVarChar, location)
-      .input('website', sql.NVarChar, website) // Ensure website is included
+      .input("title", sql.NVarChar, title)
+      .input("description", sql.NVarChar, description)
+      .input("event_start_date", sql.DateTime, event_start_date)
+      .input("event_end_date", sql.DateTime, event_end_date)
+      .input("location", sql.NVarChar, location)
+      .input("website", sql.NVarChar, website)
       .query(`
         INSERT INTO Events (title, description, event_start_date, event_end_date, location, event_website)
+        OUTPUT INSERTED.id, INSERTED.title, INSERTED.description, INSERTED.event_start_date AS startDate, 
+               INSERTED.event_end_date AS endDate, INSERTED.location, INSERTED.event_website AS website
         VALUES (@title, @description, @event_start_date, @event_end_date, @location, @website)
       `);
 
-    console.log("Event added successfully:", result); // Debugging: Log the result
-    res.status(201).send("Event added successfully.");
+    res.status(201).json(result.recordset[0]);
   } catch (error) {
-    console.error("Error adding event:", error.message);
-    res.status(500).send("Failed to add event.");
+    console.error("Error creating event:", error.message);
+    res.status(500).json({ error: "Failed to create event." });
   }
 });
 
-app.delete('/api/events/:id', async (req, res) => {
-  const eventId = req.params.id;
+app.get("/api/images", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("mediaType", sql.NVarChar, "image") // Filter by MediaType = 'image'
+            .query(`
+                SELECT MediaID AS id, MediaTitle AS title, MediaPath AS path, UploadedAt AS uploadedAt, UploadedBy AS uploadedBy, ProductID AS productId
+                FROM Media
+                WHERE MediaType = @mediaType
+                ORDER BY UploadedAt DESC
+            `);
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching images:", error.message);
+        res.status(500).json({ error: "Failed to load images. Please try again later." });
+    }
+});
 
-  try {
-    const pool = await getConnection();
-    console.log(`Attempting to delete event with ID: ${eventId}`); // Debug log
+app.get("/api/videos", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .query(`
+                SELECT MediaID AS id, MediaType AS type, MediaTitle AS title, MediaPath AS path, UploadedAt AS uploadedAt, UploadedBy AS uploadedBy, ProductID AS productId
+                FROM Media
+                WHERE LOWER(MediaType) IN ('video', 'youtube') -- Case-insensitive comparison for both types
+                  AND MediaPath IS NOT NULL -- Ensure MediaPath is not null
+                  AND LEN(MediaPath) > 0 -- Ensure MediaPath is not empty
+                ORDER BY UploadedAt DESC
+            `);
+        if (result.recordset.length === 0) {
+            return res.json([]);
+        }
 
-    const result = await pool.request()
-      .input('id', sql.Int, eventId)
-      .query('DELETE FROM Events WHERE id = @id');
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching videos:", error.message);
+        res.status(500).json({ error: "Failed to load videos. Please try again later." });
+    }
+});
 
-    if (result.rowsAffected[0] === 0) {
-      console.warn(`Event with ID ${eventId} not found.`); // Debug log
-      return res.status(404).json({ error: 'Event not found.' });
+app.get("/api/cart-products", async (req, res) => {
+    const { ids } = req.query;
+
+    if (!ids) {
+        return res.status(400).json({ error: "Product IDs are required." });
     }
 
-    console.log(`Event with ID ${eventId} deleted successfully.`); // Debug log
-    res.status(200).send("Event deleted successfully.");
-  } catch (error) {
-    console.error('Error deleting event:', error.message); // Debug log
-    res.status(500).send("Failed to delete event.");
-  }
-});
+    const productIds = ids.split(",").map((id) => parseInt(id, 10));
 
-// Ensure upload folders exist
-["uploads", "uploads/images", "uploads/videos"].forEach(async (folder) => {
-  if (!fs.existsSync(folder)) await fs.promises.mkdir(folder, { recursive: true });
-});
+    try {
+        const pool = await getConnection();
+        const request = pool.request();
 
+        // Dynamically construct the WHERE clause with parameterized inputs
+        const conditions = productIds.map((id, index) => {
+            const paramName = `id${index}`;
+            request.input(paramName, sql.Int, id);
+            return `@${paramName}`;
+        });
 
-// Multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadFolder = file.mimetype.startsWith("image/")
-      ? "uploads/images"
-      : "uploads/videos";
-    cb(null, uploadFolder);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Unique filename
-  },
-});
-const upload = multer({ storage });
+        const query = `
+            SELECT id, name, price, image_url
+            FROM Products
+            WHERE id IN (${conditions.join(",")})
+        `;
 
-app.get("/api/media", async (req, res) => {
-  try {
-    const pool = await getConnection();
-    const result= await pool.request().query("SELECT * FROM Media ORDER BY UploadedAt DESC");
-    res.status(200).json(result.recordset);
-  } catch (err) {
-    console.error("Error fetching media:", err.message);
-    res.status(500).send("Error fetching media.");
-  }
-});
+        const result = await request.query(query);
 
-app.post("/api/media", upload.single("mediaFile"), async (req, res) => {
-  // Debugging: Log the full request body
-  console.log("Full Request Body:", req.body);
-
-  const { MediaType, MediaTitle, UploadedBy, MediaPath } = req.body;
-
-  // Debugging: Log the received MediaPath
-  console.log("YouTube Embed Code Received:", MediaPath);
-
-  let finalMediaPath = null;
-
-  if (MediaType === "youtube") {
-    if (!MediaPath || !MediaPath.trim()) {
-      console.error("Validation failed: MediaPath is missing or empty.");
-      return res.status(400).send("Error: No valid YouTube embed code provided.");
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching cart products:", error.message);
+        res.status(500).json({ error: "Failed to fetch cart products." });
     }
-
-    // Extract the src attribute from the iframe
-    const iframeSrcMatch = MediaPath.match(/src="([^"]+)"/);
-    if (!iframeSrcMatch) {
-      console.error("Validation failed: Unable to extract src attribute from YouTube embed code.");
-      return res.status(400).send("Error: Invalid YouTube embed code. Missing src attribute.");
-    }
-
-    const srcUrl = iframeSrcMatch[1];
-    if (!srcUrl.startsWith("https://www.youtube.com/embed/")) {
-      console.error("Validation failed: src attribute does not point to a valid YouTube embed URL.");
-      return res.status(400).send("Error: Invalid YouTube embed URL in iframe.");
-    }
-
-    finalMediaPath = MediaPath.trim(); // Use the provided embed code
-  } else if (req.file) {
-    finalMediaPath = req.file.path.replace(/\\/g, "/"); // Use local file path for uploaded files
-  } else {
-    console.error("Validation failed: No valid media file uploaded.");
-    return res.status(400).send("Error: No valid media file uploaded.");
-  }
-
-  try {
-    const pool = await getConnection();
-    const query = `
-      INSERT INTO Media (MediaType, MediaTitle, MediaPath, UploadedBy)
-      VALUES (@MediaType, @MediaTitle, @MediaPath, @UploadedBy);
-    `;
-    console.log("Inserting into database:", { MediaType, MediaTitle, finalMediaPath, UploadedBy });
-
-    await pool.request()
-      .input("MediaType", sql.NVarChar, MediaType)
-      .input("MediaTitle", sql.NVarChar, MediaTitle)
-      .input("MediaPath", sql.NVarChar, finalMediaPath)
-      .input("UploadedBy", sql.NVarChar, UploadedBy)
-      .query(query);
-
-    console.log("Media uploaded successfully.");
-    res.status(201).send("Media uploaded successfully.");
-  } catch (err) {
-    console.error("Error saving media to database:", err.message);
-    res.status(500).send("Error saving media to database: " + err.message);
-  }
 });
 
-app.delete('/api/media/:id', async (req, res) => {
-  const mediaId = req.params.id;
-
-  try {
-      const pool = await getConnection();
-      const result = await pool.request()
-          .input('mediaId', sql.Int, mediaId)
-          .query('SELECT MediaPath FROM Media WHERE MediaID = @mediaId');
-      
-      const mediaPath = result.recordset[0]?.MediaPath;
-      if (mediaPath && fs.existsSync(mediaPath)) {
-          fs.unlinkSync(mediaPath); // Delete the file
-      }
-
-      await pool.request()
-          .input('mediaId', sql.Int, mediaId)
-          .query('DELETE FROM Media WHERE MediaID = @mediaId');
-      
-      res.status(200).send("Media deleted successfully.");
-  } catch (error) {
-      console.error('Error deleting media:', error.message);
-      res.status(500).send("Failed to delete media.");
-  }
-});
-
-
-app.delete('/api/products/:id', async (req, res) => {
-  const productId = req.params.id;
-
-  try {
-      const pool = await getConnection();
-      await pool.request()
-          .input('productId', sql.Int, productId)
-          .query('DELETE FROM Products WHERE id = @productId');
-
-      res.status(200).send("Product deleted successfully.");
-  } catch (error) {
-      console.error('Error deleting product:', error.message);
-      res.status(500).send("Failed to delete product.");
-  }
-});
-
-// Get images
-app.get('/api/images', async (req, res) => {
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .query(`
-        SELECT MediaID AS id, 
-               CONCAT('http://localhost:5000/', MediaPath) AS image_url, 
-               MediaTitle AS description 
-        FROM Media 
-        WHERE MediaType = 'image' 
-        ORDER BY UploadedAt DESC
-      `);
-
-    // Add additional validation or transformation if needed
-    const images = result.recordset.map(image => ({
-      ...image,
-      isValid: image.image_url && image.description // Example validation
-    }));
-
-    res.json(images);
-  } catch (error) {
-    console.error('Error fetching images:', error.message);
-    res.status(500).json({ error: 'Failed to fetch images' });
-  }
-});
-
-// Get videos
-app.get('/api/videos', async (req, res) => {
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .query(`
-        SELECT MediaID AS id, 
-               MediaPath AS video_url, 
-               MediaTitle AS title, 
-               MediaType AS type 
-        FROM Media 
-        WHERE MediaType IN ('video', 'youtube') 
-        ORDER BY UploadedAt DESC
-      `);
-
-    res.json(result.recordset);
-  } catch (error) {
-    console.error('Error fetching videos:', error.message);
-    res.status(500).json({ error: 'Failed to fetch videos' });
-  }
-});
-
-// API for managing categories
-app.get('/api/categories', async (req, res) => {
-  try {
-    const pool = await getConnection();
-    const result = await pool.request().query('SELECT CategoryID, Name FROM Categories');
-    res.json(result.recordset);
-  } catch (error) {
-    console.error('Error fetching categories:', error.message);
-    res.status(500).send('Failed to fetch categories.');
-  }
-});
-
-// Fix: Add category
-app.post('/api/categories', async (req, res) => {
-  const { name } = req.body;
-
-  if (!name) {
-    console.error('Category name is required.');
-    return res.status(400).send('Category name is required.');
-  }
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('name', sql.NVarChar, name)
-      .query('INSERT INTO Categories (Name) VALUES (@name)');
-    console.log(`Category "${name}" added successfully.`);
-    res.status(201).send('Category added successfully.');
-  } catch (error) {
-    console.error('Error adding category:', error.message);
-    res.status(500).send('Failed to add category.');
-  }
-});
-
-app.post('/api/categories', async (req, res) => {
-  const { name } = req.body;
-  if (!name) return res.status(400).send('Category name is required.');
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('name', sql.NVarChar, name)
-      .query('INSERT INTO Categories (Name) VALUES (@name)');
-    res.status(201).send('Category added successfully.');
-  } catch (error) {
-    console.error('Error adding category:', error.message);
-    res.status(500).send('Failed to add category.');
-  }
-});
-
-app.delete('/api/categories/:id', async (req, res) => {
-  const categoryId = req.params.id;
-
-  try {
-    const pool = await getConnection();
-
-    // Check for associated subcategories
-    const subcategories = await pool.request()
-      .input('categoryId', sql.Int, categoryId)
-      .query('SELECT SubCategoryID FROM SubCategories WHERE CategoryID = @categoryId');
-
-    if (subcategories.recordset.length > 0) {
-      return res.status(400).json({ error: 'Category has associated subcategories. Delete them first.' });
-    }
-
-    // Delete the category
-    await pool.request()
-      .input('categoryId', sql.Int, categoryId)
-      .query('DELETE FROM Categories WHERE CategoryID = @categoryId');
-
-    res.status(200).send('Category deleted successfully.');
-  } catch (error) {
-    console.error('Error deleting category:', error.message);
-    res.status(500).send('Failed to delete category.');
-  }
-});
-
-// Update category
-app.put('/api/categories/:id', async (req, res) => {
-  const categoryId = req.params.id;
-  const { name } = req.body;
-
-  if (!name) return res.status(400).send('Category name is required.');
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('categoryId', sql.Int, categoryId)
-      .input('name', sql.NVarChar, name)
-      .query('UPDATE Categories SET Name = @name WHERE CategoryID = @categoryId');
-    res.status(200).send('Category updated successfully.');
-  } catch (error) {
-    console.error('Error updating category:', error.message);
-    res.status(500).send('Failed to update category.');
-  }
-});
-
-// API for managing subcategories
-app.get('/api/subcategories', async (req, res) => {
-  const { categoryId } = req.query;
-
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input('categoryId', sql.Int, categoryId || null)
-      .query(`
-        SELECT SubCategoryID, SubCategoryName, CategoryID 
-        FROM SubCategories 
-        WHERE @categoryId IS NULL OR CategoryID = @categoryId
-      `);
-    res.json(result.recordset);
-  } catch (error) {
-    console.error('Error fetching subcategories:', error.message);
-    res.status(500).send('Failed to fetch subcategories.');
-  }
-});
-
-// Fix: Add subcategory
-app.post('/api/subcategories', async (req, res) => {
-  const { name, categoryId } = req.body;
-
-  if (!name || !categoryId) {
-    console.error('Subcategory name and category ID are required.');
-    return res.status(400).send('Subcategory name and category ID are required.');
-  }
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('name', sql.NVarChar, name)
-      .input('categoryId', sql.Int, categoryId)
-      .query('INSERT INTO SubCategories (SubCategoryName, CategoryID) VALUES (@name, @categoryId)');
-    console.log(`Subcategory "${name}" added successfully.`);
-    res.status(201).send('Subcategory added successfully.');
-  } catch (error) {
-    console.error('Error adding subcategory:', error.message);
-    res.status(500).send('Failed to add subcategory.');
-  }
-});
-
-app.post('/api/subcategories', async (req, res) => {
-  const { name, categoryId } = req.body;
-  if (!name || !categoryId) return res.status(400).send('Subcategory name and category ID are required.');
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('name', sql.NVarChar, name)
-      .input('categoryId', sql.Int, categoryId)
-      .query('INSERT INTO SubCategories (SubCategoryName, CategoryID) VALUES (@name, @categoryId)');
-    res.status(201).send('Subcategory added successfully.');
-  } catch (error) {
-    console.error('Error adding subcategory:', error.message);
-    res.status(500).send('Failed to add subcategory.');
-  }
-});
-
-app.delete('/api/subcategories/:id', async (req, res) => {
-  const subcategoryId = req.params.id;
-
-  try {
-    const pool = await getConnection();
-
-    // Check for associated descriptors
-    const descriptors = await pool.request()
-      .input('subcategoryId', sql.Int, subcategoryId)
-      .query('SELECT DescriptorID FROM Descriptors WHERE SubCategoryID = @subcategoryId');
-
-    if (descriptors.recordset.length > 0) {
-      return res.status(400).json({ error: 'Subcategory has associated descriptors. Delete them first.' });
-    }
-
-    // Delete the subcategory
-    await pool.request()
-      .input('subcategoryId', sql.Int, subcategoryId)
-      .query('DELETE FROM SubCategories WHERE SubCategoryID = @subcategoryId');
-
-    res.status(200).send('Subcategory deleted successfully.');
-  } catch (error) {
-    console.error('Error deleting subcategory:', error.message);
-    res.status(500).send('Failed to delete subcategory.');
-  }
-});
-
-// Update subcategory
-app.put('/api/subcategories/:id', async (req, res) => {
-  const subcategoryId = req.params.id;
-  const { name } = req.body;
-
-  if (!name) return res.status(400).send('Subcategory name is required.');
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('subcategoryId', sql.Int, subcategoryId)
-      .input('name', sql.NVarChar, name)
-      .query('UPDATE SubCategories SET SubCategoryName = @name WHERE SubCategoryID = @subcategoryId');
-    res.status(200).send('Subcategory updated successfully.');
-  } catch (error) {
-    console.error('Error updating subcategory:', error.message);
-    res.status(500).send('Failed to update subcategory.');
-  }
-});
-
-// API for managing descriptors
-app.get('/api/descriptors', async (req, res) => {
-  const { subCategoryId } = req.query;
-
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input('subCategoryId', sql.Int, subCategoryId || null)
-      .query(`
-        SELECT DescriptorID, DescriptorName, SubCategoryID 
-        FROM Descriptors 
-        WHERE @subCategoryId IS NULL OR SubCategoryID = @subCategoryId
-      `);
-    res.json(result.recordset);
-  } catch (error) {
-    console.error('Error fetching descriptors:', error.message);
-    res.status(500).send('Failed to fetch descriptors.');
-  }
-});
-
-// Fix: Add descriptor
-app.post('/api/descriptors', async (req, res) => {
-  const { name, subCategoryId } = req.body;
-
-  if (!name || !subCategoryId) {
-    console.error('Descriptor name and subcategory ID are required.');
-    return res.status(400).send('Descriptor name and subcategory ID are required.');
-  }
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('name', sql.NVarChar, name)
-      .input('subCategoryId', sql.Int, subCategoryId)
-      .query('INSERT INTO Descriptors (DescriptorName, SubCategoryID) VALUES (@name, @subCategoryId)');
-    console.log(`Descriptor "${name}" added successfully.`);
-    res.status(201).send('Descriptor added successfully.');
-  } catch (error) {
-    console.error('Error adding descriptor:', error.message);
-    res.status(500).send('Failed to add descriptor.');
-  }
-});
-
-app.post('/api/descriptors', async (req, res) => {
-  const { name, subCategoryId } = req.body;
-  if (!name || !subCategoryId) return res.status(400).send('Descriptor name and subcategory ID are required.');
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('name', sql.NVarChar, name)
-      .input('subCategoryId', sql.Int, subCategoryId)
-      .query('INSERT INTO Descriptors (DescriptorName, SubCategoryID) VALUES (@name, @subCategoryId)');
-    res.status(201).send('Descriptor added successfully.');
-  } catch (error) {
-    console.error('Error adding descriptor:', error.message);
-    res.status(500).send('Failed to add descriptor.');
-  }
-});
-
-app.delete('/api/descriptors/:id', async (req, res) => {
-  const descriptorId = req.params.id;
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('descriptorId', sql.Int, descriptorId)
-      .query('DELETE FROM Descriptors WHERE DescriptorID = @descriptorId');
-    res.status(200).send('Descriptor deleted successfully.');
-  } catch (error) {
-    console.error('Error deleting descriptor:', error.message);
-    res.status(500).send('Failed to delete descriptor.');
-  }
-});
-
-// Update descriptor
-app.put('/api/descriptors/:id', async (req, res) => {
-  const descriptorId = req.params.id;
-  const { name } = req.body;
-
-  if (!name) return res.status(400).send('Descriptor name is required.');
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('descriptorId', sql.Int, descriptorId)
-      .input('name', sql.NVarChar, name)
-      .query('UPDATE Descriptors SET DescriptorName = @name WHERE DescriptorID = @descriptorId');
-    res.status(200).send('Descriptor updated successfully.');
-  } catch (error) {
-    console.error('Error updating descriptor:', error.message);
-    res.status(500).send('Failed to update descriptor.');
-  }
-});
-
-// Fetch associated subcategories for a category
-app.get('/api/categories/:id/subcategories', async (req, res) => {
-  const categoryId = req.params.id;
-
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input('categoryId', sql.Int, categoryId)
-      .query('SELECT SubCategoryID, SubCategoryName FROM SubCategories WHERE CategoryID = @categoryId');
-    res.json(result.recordset);
-  } catch (error) {
-    console.error('Error fetching subcategories for category:', error.message);
-    res.status(500).send('Failed to fetch subcategories.');
-  }
-});
-
-// Fetch associated descriptors for a subcategory
-app.get('/api/subcategories/:id/descriptors', async (req, res) => {
-  const subcategoryId = req.params.id;
-
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input('subcategoryId', sql.Int, subcategoryId)
-      .query('SELECT DescriptorID, DescriptorName FROM Descriptors WHERE SubCategoryID = @subcategoryId');
-    res.json(result.recordset);
-  } catch (error) {
-    console.error('Error fetching descriptors for subcategory:', error.message);
-    res.status(500).send('Failed to fetch descriptors.');
-  }
-});
-
-// Signup endpoint
-app.post("/api/signup", async (req, res) => {
-  const { firstName, lastName, email, password, phone, address } = req.body;
-
-  try {
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Save the user to the database
-    const pool = await getConnection();
-    await pool.request()
-      .input("firstName", sql.NVarChar, firstName)
-      .input("lastName", sql.NVarChar, lastName)
-      .input("email", sql.NVarChar, email)
-      .input("password", sql.NVarChar, hashedPassword)
-      .input("phone", sql.NVarChar, phone)
-      .input("address", sql.NVarChar, address)
-      .query(`
-        INSERT INTO users (first_name, last_name, email, password, phone, address)
-        VALUES (@firstName, @lastName, @email, @password, @phone, @address)
-      `);
-
-    res.status(201).json({ message: "User created successfully!" });
-  } catch (error) {
-    console.error("Error during signup:", error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-// Login endpoint
-app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    // Fetch the user from the database
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input("email", sql.NVarChar, email)
-      .query("SELECT * FROM users WHERE email = @email");
-
-    const user = result.recordset[0];
-    if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
-
-    // Compare the provided password with the hashed password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
-
-    // Generate a token with a longer expiration time (e.g., 7 days)
-    const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
-
-    res.status(200).json({ token });
-  } catch (error) {
-    console.error("Error during login:", error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-// Endpoint to fetch user information
-app.get("/api/user-info", async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    console.error("Authorization header missing");
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const token = authHeader.split(" ")[1];
-  try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    console.log("Decoded token:", decoded); // Debugging: Log the decoded token
-
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input("userId", sql.Int, decoded.id)
-      .query("SELECT first_name, last_name, email, address FROM users WHERE id = @userId");
-
-    if (result.recordset.length === 0) {
-      console.error("User not found for ID:", decoded.id);
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json(result.recordset[0]);
-  } catch (error) {
-    console.error("Error fetching user info:", error.message); // Log the error message
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-app.post("/api/refresh-token", (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const token = authHeader.split(" ")[1];
-  try {
-    const decoded = jwt.verify(token, SECRET_KEY, { ignoreExpiration: true }); // Ignore expiration for renewal
-    const newToken = jwt.sign({ id: decoded.id, email: decoded.email }, SECRET_KEY, { expiresIn: "7d" });
-    res.status(200).json({ token: newToken });
-  } catch (error) {
-    console.error("Error refreshing token:", error.message);
-    res.status(500).json({ message: "Failed to refresh token" });
-  }
-});
-
-// Validate token endpoint
-app.post("/api/validate-token", (req, res) => {
-  const { token } = req.body;
-
-  if (!token) {
-    return res.status(400).json({ error: "Token is required" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    res.status(200).json({ valid: true, user: decoded });
-  } catch (error) {
-    res.status(401).json({ valid: false, error: "Invalid or expired token" });
-  }
-});
-
-// Fix: New endpoint for fetching product details for the cart
-app.get('/api/cart-products', async (req, res) => {
-  const ids = req.query.ids?.split(",").map((id) => parseInt(id)).filter((id) => !isNaN(id));
-
-  if (!ids || ids.length === 0) {
-    return res.status(400).json({ error: "No valid product IDs provided." });
-  }
-
-  try {
-    const pool = await getConnection();
-    const request = pool.request();
-
-    // Dynamically add inputs for each ID
-    ids.forEach((id, i) => {
-      request.input(`id${i}`, sql.Int, id);
-    });
-
-    const query = `
-      SELECT id, name, price, image_url 
-      FROM Products 
-      WHERE id IN (${ids.map((_, i) => `@id${i}`).join(",")})
-    `;
-
-    const result = await request.query(query);
-    res.json(result.recordset);
-  } catch (error) {
-    console.error("Error fetching cart products:", error.message);
-    res.status(500).json({ error: "Failed to fetch cart products." });
-  }
-});
-
-// Add a product to the cart
-app.post('/api/cart', async (req, res) => {
-  const { product_id, quantity } = req.body;
-  const user_id = req.user?.id || null; // Use user_id if logged in
-  const session_id = req.cookies.session_id; // Use session_id for guest users
-
-  if (!product_id || !quantity) {
-    return res.status(400).json({ error: "Missing required fields." });
-  }
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('user_id', sql.Int, user_id)
-      .input('session_id', sql.NVarChar, session_id)
-      .input('product_id', sql.Int, product_id)
-      .input('quantity', sql.Int, quantity)
-      .query(`
-        MERGE Cart AS target
-        USING (SELECT @user_id AS user_id, @session_id AS session_id, @product_id AS product_id) AS source
-        ON (target.user_id = source.user_id OR target.session_id = source.session_id) AND target.product_id = source.product_id
-        WHEN MATCHED THEN
-          UPDATE SET quantity = quantity + @quantity, updated_at = GETDATE()
-        WHEN NOT MATCHED THEN
-          INSERT (user_id, session_id, product_id, quantity, created_at, updated_at)
-          VALUES (@user_id, @session_id, @product_id, @quantity, GETDATE(), GETDATE());
-      `);
-
-    res.status(200).json({ message: "Product added to cart." });
-  } catch (error) {
-    console.error("Error adding product to cart:", error.message);
-    res.status(500).json({ error: "Failed to add product to cart." });
-  }
-});
-
-// Fetch cart items for a user or guest
-app.get('/api/cart', async (req, res) => {
-  const user_id = req.user?.id || null; // Use user_id if logged in
-  const session_id = req.cookies.session_id; // Use session_id for guest users
-
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input('user_id', sql.Int, user_id)
-      .input('session_id', sql.NVarChar, session_id)
-      .query(`
-        SELECT c.id AS cart_id, c.quantity, p.id AS product_id, p.name, p.price, p.image_url
-        FROM Cart c
-        JOIN Products p ON c.product_id = p.id
-        WHERE (c.user_id = @user_id OR c.session_id = @session_id)
-      `);
-
-    res.json(result.recordset);
-  } catch (error) {
-    console.error("Error fetching cart items:", error.message);
-    res.status(500).json({ error: "Failed to fetch cart items." });
-  }
-});
-
-// Remove a product from the cart
-app.delete('/api/cart/:id', authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  const user_id = req.user.id;
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input('id', sql.Int, id)
-      .input('user_id', sql.Int, user_id)
-      .query(`
-        DELETE FROM Cart
-        WHERE id = @id AND user_id = @user_id
-      `);
-
-    res.status(200).json({ message: "Product removed from cart." });
-  } catch (error) {
-    console.error("Error removing product from cart:", error.message);
-    res.status(500).json({ error: "Failed to remove product from cart." });
-  }
-});
-
-app.post("/api/mastercard-checkout", authenticateToken, async (req, res) => {
-  const { items, total, paymentIntentId } = req.body;
-
-  if (!items || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: "Invalid or missing items in the order" });
-  }
-
-  if (!total || typeof total !== "number" || total <= 0) {
-    return res.status(400).json({ error: "Invalid or missing total amount" });
-  }
-
-  if (!paymentIntentId || typeof paymentIntentId !== "string") {
-    return res.status(400).json({ error: "Invalid or missing paymentIntentId" });
-  }
-
-  try {
-    const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-
-    // Retrieve the payment intent from Stripe
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-    console.log("Payment Intent Status:", paymentIntent.status); // Log the payment intent status for debugging
-
-    if (paymentIntent.status !== "succeeded") {
-      return res.status(400).json({ error: "Payment not successful. Order not created." });
-    }
-
-    const pool = await getConnection();
-    const userId = req.user.id;
-
-    // Deduct inventory and check for insufficient stock
-    const insufficientStock = await deductInventory(items);
-
-    // Insert the order into the database
-    const orderResult = await pool.request()
-      .input("userId", sql.Int, userId)
-      .input("totalAmount", sql.Decimal(18, 2), total)
-      .input("status", sql.NVarChar, "Pending")
-      .input("shippingStatus", sql.NVarChar, "Not Shipped")
-      .query(`
-        INSERT INTO orders (user_id, total_amount, status, shipping_status, created_at)
-        OUTPUT INSERTED.id
-        VALUES (@userId, @totalAmount, @status, @shippingStatus, GETDATE());
-      `);
-
-    const orderId = orderResult.recordset[0].id;
-
-    // Insert order items into the order_items table
-    for (const item of items) {
-      await pool.request()
-        .input("orderId", sql.Int, orderId)
-        .input("productId", sql.Int, item.id)
-        .input("quantity", sql.Int, item.quantity)
-        .input("price", sql.Decimal(18, 2), item.price)
-        .query(`
-          INSERT INTO order_items (order_id, product_id, quantity, price)
-          VALUES (@orderId, @productId, @quantity, @price);
+app.get("/api/low-stock-products", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request().query(`
+            SELECT id, name, stock_quantity, restock_threshold, price
+            FROM Products
+            WHERE stock_quantity < 2 -- Adjust the threshold as needed
+            ORDER BY stock_quantity ASC
         `);
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching low-stock products:", error.message);
+        res.status(500).json({ error: "Failed to fetch low-stock products." });
     }
-
-    // Fetch user email for sending the order confirmation
-    const userResult = await pool.request()
-      .input("userId", sql.Int, userId)
-      .query("SELECT email FROM users WHERE id = @userId");
-
-    const userEmail = userResult.recordset[0]?.email;
-
-    if (userEmail) {
-      // Send order confirmation email
-      const orderDetails = items
-        .map(
-          (item) =>
-            `<li>${item.name} - Quantity: ${item.quantity}, Price: $${item.price.toFixed(2)}</li>`
-        )
-        .join("");
-
-      const emailContent = `
-        <h1>Order Confirmation</h1>
-        <p>Thank you for your order! Your order ID is <strong>${orderId}</strong>.</p>
-        <p><strong>Order Details:</strong></p>
-        <ul>${orderDetails}</ul>
-        <p><strong>Total Amount:</strong> $${total.toFixed(2)}</p>
-        <p>We will notify you once your order is shipped.</p>
-      `;
-
-      await sendEmail(
-        userEmail,
-        "Order Confirmation - Point FX BladeZ",
-        emailContent
-      );
-    }
-
-    res.status(200).json({
-      message: insufficientStock
-        ? "Order placed successfully. Note: Insufficient stock available. Shipping may be delayed."
-        : "Order placed successfully.",
-    });
-  } catch (error) {
-    console.error("Error processing order:", error.message);
-    res.status(500).json({ error: "Failed to process order" });
-  }
 });
 
-async function initiateMastercardPayment({ amount, currency, items, callbackUrl }) {
-  try {
-    const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+app.get("/api/products/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("id", sql.Int, id)
+            .query(`
+                SELECT id, name, description, price, stock_quantity, image_url, category_id, sub_category_id, tag_id
+                FROM Products
+                WHERE id = @id
+            `);
+        const product = result.recordset[0];
+        if (!product) {
+            return res.status(404).json({ error: "Product not found" });
+        }
 
-    // Ensure metadata is properly formatted
-    const metadata = items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      quantity: item.quantity,
-    }));
+        res.json(product);
+    } catch (error) {
+        console.error("Error fetching product details:", error.message);
+        res.status(500).json({ error: "Failed to fetch product details." });
+    }
+});
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
-      currency: currency || "usd", // Default to USD if not provided
-      metadata: { items: JSON.stringify(metadata).slice(0, 500) }, // Truncate metadata if necessary
-      description: "Point FX BladeZ Order",
-      receipt_email: "customer@example.com", // Replace with actual customer email
-    });
+app.post("/api/products", async (req, res) => {
+    const { name, description, price, stock_quantity, category_id, sub_category_id, tag_id, image_url, is_showcase } = req.body;
 
-    console.log("Stripe Payment Intent Response:", paymentIntent);
-
-    if (!paymentIntent.client_secret) {
-      throw new Error("Failed to generate clientSecret from Stripe");
+    if (!name || !price || !stock_quantity || !category_id) {
+        return res.status(400).json({ error: "Name, price, stock quantity, and category ID are required." });
     }
 
-    return {
-      redirectUrl: paymentIntent.next_action?.redirect_to_url?.url || "",
-      clientSecret: paymentIntent.client_secret,
-    };
-  } catch (error) {
-    console.error("Error in initiateMastercardPayment:", error.message);
-    throw new Error("Failed to initiate Mastercard payment");
-  }
-}
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("name", sql.NVarChar, name)
+            .input("description", sql.NVarChar, description || null)
+            .input("price", sql.Decimal(10, 2), price)
+            .input("stock_quantity", sql.Int, stock_quantity)
+            .input("category_id", sql.Int, category_id)
+            .input("sub_category_id", sql.Int, sub_category_id || null)
+            .input("tag_id", sql.Int, tag_id || null)
+            .input("image_url", sql.NVarChar, image_url || null)
+            .input("is_showcase", sql.Bit, is_showcase || false)
+            .query(`
+                INSERT INTO Products (name, description, price, stock_quantity, category_id, sub_category_id, tag_id, image_url, is_showcase)
+                OUTPUT INSERTED.id, INSERTED.name, INSERTED.description, INSERTED.price, INSERTED.stock_quantity, INSERTED.category_id, INSERTED.sub_category_id, INSERTED.tag_id, INSERTED.image_url, INSERTED.is_showcase
+                VALUES (@name, @description, @price, @stock_quantity, @category_id, @sub_category_id, @tag_id, @image_url, @is_showcase)
+            `);
 
-// Update order status
-app.put("/api/orders/:id/status", authenticateToken, async (req, res) => {
+        res.status(201).json(result.recordset[0]);
+    } catch (error) {
+        console.error("Error creating product:", error.message);
+        res.status(500).json({ error: "Failed to create product." });
+    }
+});
+
+app.put("/api/products/:id", async (req, res) => {
+    const { id } = req.params;
+    const { name, description, price, stock_quantity, category_id, sub_category_id, tag_id, image_url, is_showcase } = req.body;
+
+    if (!name || !price || !stock_quantity || !category_id) {
+        return res.status(400).json({ error: "Name, price, stock quantity, and category ID are required." });
+    }
+
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("id", sql.Int, id)
+            .input("name", sql.NVarChar, name)
+            .input("description", sql.NVarChar, description || null)
+            .input("price", sql.Decimal(10, 2), price)
+            .input("stock_quantity", sql.Int, stock_quantity)
+            .input("category_id", sql.Int, category_id)
+            .input("sub_category_id", sql.Int, sub_category_id || null)
+            .input("tag_id", sql.Int, tag_id || null)
+            .input("image_url", sql.NVarChar, image_url || null)
+            .input("is_showcase", sql.Bit, is_showcase || false)
+            .query(`
+                UPDATE Products
+                SET name = @name,
+                    description = @description,
+                    price = @price,
+                    stock_quantity = @stock_quantity,
+                    category_id = @category_id,
+                    sub_category_id = @sub_category_id,
+                    tag_id = @tag_id,
+                    image_url = @image_url,
+                    is_showcase = @is_showcase
+                WHERE id = @id
+            `);
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: "Product not found." });
+        }
+
+        res.json({ message: "Product updated successfully" });
+    } catch (error) {
+        console.error("Error updating product:", error.message);
+        res.status(500).json({ error: "Failed to update product." });
+    }
+});
+
+// GET /api/media - Fetch media data
+app.get("/api/media", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request().query(`
+            SELECT MediaID AS id, MediaType AS MediaType, MediaTitle AS MediaTitle, MediaPath AS MediaPath
+            FROM Media
+            ORDER BY UploadedAt DESC
+        `);
+
+        if (result.recordset.length === 0) {
+            return res.json([]);
+        }
+
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching media:", error.message);
+        res.status(500).json({ error: "Failed to load media. Please try again later." });
+    }
+});
+
+// POST /api/media - Upload a new media item
+app.post("/api/media", upload.single("mediaFile"), async (req, res) => {
+    const { MediaTitle, MediaType, UploadedBy, MediaPath } = req.body;
+    const file = req.file;
+
+    try {
+        const pool = await getConnection();
+
+        // Determine the media path
+        let mediaPath = MediaPath; // For YouTube or other external links
+        if (file) {
+            mediaPath = `/uploads/${file.mimetype.startsWith("image/") ? "images" : "videos"}/${file.filename}`;
+        }
+
+        // Insert the media item into the database
+        const result = await pool.request()
+            .input("MediaTitle", sql.NVarChar, MediaTitle)
+            .input("MediaType", sql.NVarChar, MediaType)
+            .input("UploadedBy", sql.NVarChar, UploadedBy)
+            .input("MediaPath", sql.NVarChar, mediaPath)
+            .query(`
+                INSERT INTO Media (MediaTitle, MediaType, UploadedBy, MediaPath, UploadedAt)
+                OUTPUT INSERTED.MediaID AS id, INSERTED.MediaTitle AS title, INSERTED.MediaType AS type, INSERTED.MediaPath AS path
+                VALUES (@MediaTitle, @MediaType, @UploadedBy, @MediaPath, GETDATE())
+            `);
+
+        res.status(201).json(result.recordset[0]);
+    } catch (error) {
+        console.error("Error uploading media:", error.message);
+        res.status(500).json({ error: "Failed to upload media." });
+    }
+});
+
+// DELETE /api/media/:id - Delete a media item by ID
+app.delete("/api/media/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const pool = await getConnection();
+
+        // Check if the media item exists
+        const checkResult = await pool.request()
+            .input("id", sql.Int, id)
+            .query("SELECT MediaPath FROM Media WHERE MediaID = @id");
+
+        const mediaItem = checkResult.recordset[0];
+        if (!mediaItem) {
+            return res.status(404).json({ error: "Media item not found." });
+        }
+
+        // Delete the media file from the filesystem
+        const mediaPath = path.join(__dirname, mediaItem.MediaPath);
+        if (fs.existsSync(mediaPath)) {
+            fs.unlinkSync(mediaPath);
+        }
+
+        // Delete the media item from the database
+        await pool.request()
+            .input("id", sql.Int, id)
+            .query("DELETE FROM Media WHERE MediaID = @id");
+
+        res.json({ message: "Media item deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting media item:", error.message);
+        res.status(500).json({ error: "Failed to delete media item." });
+    }
+});
+
+app.get("/api/admin/orders", async (req, res) => {
+    try {
+        const pool = await getConnection();
+
+        // Fetch all orders with user details
+        const result = await pool.request().query(`
+            SELECT o.id AS id, 
+                   o.total_amount AS total_amount, 
+                   o.status AS status,
+                   o.tracking_number AS tracking_number,
+                   o.created_at AS created_at, 
+                   u.first_name + ' ' + u.last_name AS user_name
+            FROM orders o
+            LEFT JOIN Users u ON o.user_id = u.id
+            ORDER BY o.created_at DESC
+        `);
+
+        const orders = result.recordset;
+
+        console.log("Orders fetched from database:", orders); // Debugging log
+
+        if (orders.length === 0) {
+            console.log("No orders found in the database."); // Debugging log
+            return res.json([]); // Return an empty array if no orders are found
+        }
+
+        res.json(orders);
+    } catch (error) {
+        console.error("Error fetching admin orders:", error.message);
+        res.status(500).json({ error: "Failed to fetch orders." });
+    }
+});
+
+app.put("/api/admin/orders/:id/status", async (req, res) => {
+    const { id } = req.params;
+    const { status, trackingNumber } = req.body;
+
+    if (!status) {
+        return res.status(400).json({ error: "Order status is required." });
+    }
+
+    try {
+        const pool = await getConnection();
+
+        const result = await pool.request()
+            .input("id", sql.Int, id)
+            .input("status", sql.NVarChar, status)
+            .input("trackingNumber", sql.NVarChar, trackingNumber || null)
+            .query(`
+                UPDATE orders
+                SET status = @status,
+                    tracking_number = @trackingNumber
+                WHERE id = @id
+            `);
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: "Order not found." });
+        }
+
+        res.json({ message: "Order status updated successfully." });
+    } catch (error) {
+        console.error("Error updating order status:", error.message);
+        res.status(500).json({ error: "Failed to update order status." });
+    }
+});
+
+app.put("/api/admin/orders/:id/tracking", async (req, res) => {
   const { id } = req.params;
-  const { status, trackingNumber } = req.body;
+  const { trackingNumber } = req.body;
 
-  if (!status) {
-    return res.status(400).json({ error: "Status is required" });
+  if (!trackingNumber) {
+    return res.status(400).json({ error: "Tracking number is required." });
   }
 
   try {
     const pool = await getConnection();
 
-    // Validate tracking number for "Shipped" status
-    if (status === "Shipped" && !trackingNumber) {
-      return res.status(400).json({ error: "Tracking number is required for shipped orders." });
-    }
-
-    // Update the order status and tracking number
     const result = await pool.request()
-      .input("orderId", sql.Int, id)
-      .input("status", sql.NVarChar, status)
-      .input("trackingNumber", sql.NVarChar, trackingNumber || null)
+      .input("id", sql.Int, id)
+      .input("trackingNumber", sql.NVarChar, trackingNumber)
       .query(`
-        UPDATE Orders
-        SET status = @status,
-            tracking_number = @trackingNumber
-        WHERE id = @orderId
+        UPDATE orders
+        SET tracking_number = @trackingNumber
+        WHERE id = @id
       `);
 
     if (result.rowsAffected[0] === 0) {
       return res.status(404).json({ error: "Order not found." });
     }
 
-    // Log success and send response
-    console.log(`Order ${id} status updated to ${status}`);
-    res.status(200).json({ message: "Order status updated successfully" });
+    res.json({ message: "Tracking number updated successfully." });
   } catch (error) {
-    console.error("Error updating order status:", error.message);
-    res.status(500).json({ error: "Failed to update order status" });
+    console.error("Error updating tracking number:", error.message);
+    res.status(500).json({ error: "Failed to update tracking number." });
   }
 });
 
-// Update shipping status
-app.put("/api/orders/:id/shipping", authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  const { shippingStatus, trackingNumber, carrier } = req.body;
+// Route to fetch user information
+app.get("/api/user-info", authenticateToken, async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("userId", sql.Int, req.user.id)
+            .query(`
+                SELECT id, first_name, last_name, email, address
+                FROM Users
+                WHERE id = @userId
+            `);
 
-  if (!shippingStatus) {
-    return res.status(400).json({ error: "Shipping status is required" });
-  }
+        const user = result.recordset[0];
+        if (!user) return res.status(404).json({ error: "User not found." });
 
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input("orderId", sql.Int, id)
-      .input("shippingStatus", sql.NVarChar, shippingStatus)
-      .input("trackingNumber", sql.NVarChar, trackingNumber || null)
-      .input("carrier", sql.NVarChar, carrier || null)
-      .query(`
-        UPDATE Orders
-        SET shipping_status = @shippingStatus,
-            tracking_number = @trackingNumber,
-            carrier = @carrier
-        WHERE id = @orderId
-      `);
+        res.json(user);
+    } catch (error) {
+        console.error("Error fetching user information:", error.message);
+        res.status(500).json({ error: "Failed to fetch user information." });
+    }
+});
 
-    // Fetch order details for email
-    const result = await pool.request()
-      .input("orderId", sql.Int, id)
-      .query(`
-        SELECT o.id, o.total_amount, u.email
-        FROM Orders o
-        JOIN Users u ON o.user_id = u.id
-        WHERE o.id = @orderId
-      `);
+app.post("/api/cart/sync", async (req, res) => {
+    const { items } = req.body;
+    const sessionId = req.cookies.session_id;
+    const userId = req.user?.id || null; // Use user ID if logged in, otherwise null
 
-    const order = result.recordset[0];
-    if (order) {
-      await sendEmail(
-        order.email,
-        `Order #${order.id} Shipping Update`,
-        `<p>Your order shipping status has been updated to: <strong>${shippingStatus}</strong>.</p>
-         <p>Tracking Number: ${trackingNumber || "N/A"}</p>
-         <p>Carrier: ${carrier || "N/A"}</p>
-         <p>Total Amount: $${order.total_amount.toFixed(2)}</p>`
-      );
+    if (!items || !Array.isArray(items)) {
+        return res.status(400).json({ error: "Invalid cart data." });
     }
 
-    res.status(200).json({ message: "Shipping status updated successfully" });
-  } catch (error) {
-    console.error("Error updating shipping status:", error.message);
-    res.status(500).json({ error: "Failed to update shipping status" });
-  }
+    try {
+        const pool = await getConnection();
+
+        // Clear existing cart items for the user or session
+        await pool.request()
+            .input("userId", sql.Int, userId)
+            .input("sessionId", sql.NVarChar, sessionId)
+            .query(`
+                DELETE FROM Cart
+                WHERE (user_id = @userId OR session_id = @sessionId)
+            `);
+
+        // Insert new cart items
+        for (const item of items) {
+            await pool.request()
+                .input("userId", sql.Int, userId)
+                .input("sessionId", sql.NVarChar, sessionId)
+                .input("productId", sql.Int, item.id)
+                .input("quantity", sql.Int, item.quantity)
+                .query(`
+                    INSERT INTO Cart (user_id, session_id, product_id, quantity, created_at, updated_at)
+                    VALUES (@userId, @sessionId, @productId, @quantity, GETDATE(), GETDATE())
+                `);
+        }
+
+        res.json({ message: "Cart synchronized successfully." });
+    } catch (error) {
+        console.error("Error syncing cart:", error.message);
+        res.status(500).json({ error: "Failed to sync cart." });
+    }
 });
 
-// Get shipping details
-app.get("/api/orders/:id/shipping", authenticateToken, async (req, res) => {
+app.put("/api/categories/:id", async (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name) {
+        return res.status(400).json({ error: "Category name is required." });
+    }
+
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("id", sql.Int, id)
+            .input("name", sql.NVarChar, name)
+            .query(`
+                UPDATE Categories
+                SET Name = @name
+                WHERE CategoryID = @id
+            `);
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: "Category not found." });
+        }
+
+        res.json({ message: "Category updated successfully." });
+    } catch (error) {
+        console.error("Error updating category:", error.message);
+        res.status(500).json({ error: "Failed to update category." });
+    }
+});
+
+app.get("/api/admin/orders/:id/items", async (req, res) => {
   const { id } = req.params;
 
   try {
     const pool = await getConnection();
+
+    // Fetch order items for the given order ID, including the image_url
     const result = await pool.request()
       .input("orderId", sql.Int, id)
       .query(`
-        SELECT shipping_status, tracking_number, carrier
-        FROM Orders
-        WHERE id = @orderId
+        SELECT oi.product_id AS productId, 
+               p.name AS productName, 
+               oi.quantity, 
+               oi.price, 
+               p.image_url AS imageUrl
+        FROM order_items oi
+        INNER JOIN Products p ON oi.product_id = p.id
+        WHERE oi.order_id = @orderId
       `);
 
     if (result.recordset.length === 0) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(404).json({ error: "No items found for this order." });
     }
-
-    res.json(result.recordset[0]);
-  } catch (error) {
-    console.error("Error fetching shipping details:", error.message);
-    res.status(500).json({ error: "Failed to fetch shipping details" });
-  }
-});
-
-// Fetch orders for the logged-in user
-app.get("/orders", authenticateToken, async (req, res) => {
-  const userId = req.user.id; // Extract user ID from the authenticated token
-
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input("userId", sql.Int, userId)
-      .query(`
-        SELECT 
-          id, 
-          total_amount, 
-          status, 
-          shipping_status, 
-          tracking_number, 
-          created_at 
-        FROM Orders 
-        WHERE user_id = @userId
-        ORDER BY created_at DESC
-      `);
 
     res.json(result.recordset);
   } catch (error) {
-    console.error("Error fetching orders:", error.message);
-    res.status(500).json({ error: "Failed to fetch orders" });
+    console.error("Error fetching order items:", error.message);
+    res.status(500).json({ error: "Failed to fetch order items." });
   }
 });
 
-app.get("/api/admin/orders", authenticateToken, async (req, res) => {
-  try {
-    const pool = await getConnection();
-    const result = await pool.request().query(`
-      SELECT 
-        o.id, 
-        o.total_amount, 
-        o.status, 
-        o.shipping_status, 
-        o.created_at, 
-        u.email AS user_email
-      FROM Orders o
-      JOIN Users u ON o.user_id = u.id
-      ORDER BY o.created_at DESC
-    `);
-
-    res.json(result.recordset); // Ensure this returns an array of orders
-  } catch (error) {
-    console.error("Error fetching admin orders:", error.message);
-    res.status(500).json({ error: "Failed to fetch orders" });
-  }
-});
-
-app.get("/api/orders", authenticateToken, async (req, res) => {
-  const { search = "", status = "" } = req.query;
-  const userId = req.user.id; // Extract user ID from the authenticated token
-
-  try {
-    const pool = await getConnection();
-    let query = `
-      SELECT 
-        id, 
-        total_amount, 
-        status, 
-        shipping_status, 
-        created_at 
-      FROM Orders 
-      WHERE user_id = @userId
-    `;
-
-    if (search) {
-      query += ` AND (CAST(id AS NVARCHAR) LIKE '%' + @search + '%' OR CAST(user_id AS NVARCHAR) LIKE '%' + @search + '%')`;
-    }
-
-    if (status) {
-      query += ` AND status = @status`;
-    }
-
-    query += ` ORDER BY created_at DESC`;
-
-    const result = await pool.request()
-      .input("userId", sql.Int, userId)
-      .input("search", sql.NVarChar, search)
-      .input("status", sql.NVarChar, status)
-      .query(query);
-
-    res.json(result.recordset);
-  } catch (error) {
-    console.error("Error fetching orders:", error.message);
-    res.status(500).json({ error: "Failed to fetch orders" });
-  }
-});
-
-// Endpoint to update inventory after a purchase
-app.post("/api/update-inventory", authenticateToken, async (req, res) => {
-  const { items } = req.body;
-
-  if (!items || items.length === 0) {
-    return res.status(400).json({ error: "No items provided for inventory update." });
-  }
-
-  try {
-    const pool = await getConnection();
-    const lowStockItems = [];
-
-    for (const item of items) {
-      const result = await pool.request()
-        .input("productId", sql.Int, item.id)
-        .query("SELECT stock_quantity, name, restock_threshold FROM Products WHERE id = @productId");
-
-      const product = result.recordset[0];
-      if (!product) {
-        return res.status(404).json({ error: `Product with ID ${item.id} not found.` });
-      }
-
-      if (product.stock_quantity < item.quantity) {
-        return res.status(400).json({ error: `Insufficient stock for product: ${product.name}` });
-      }
-
-      await pool.request()
-        .input("productId", sql.Int, item.id)
-        .input("quantity", sql.Int, item.quantity)
-        .query("UPDATE Products SET stock_quantity = stock_quantity - @quantity WHERE id = @productId");
-
-      if (product.stock_quantity - item.quantity <= product.restock_threshold) {
-        lowStockItems.push({ id: item.id, name: product.name });
-      }
-    }
-
-    res.status(200).json({ message: "Inventory updated successfully.", lowStockItems });
-  } catch (error) {
-    console.error("Error updating inventory:", error.message);
-    res.status(500).json({ error: "Failed to update inventory." });
-  }
-});
-
-// Endpoint to fetch low-stock products
-app.get("/api/low-stock-products", authenticateToken, async (req, res) => {
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .query("SELECT id, name, stock_quantity, restock_threshold FROM Products WHERE stock_quantity <= restock_threshold");
-
-    res.status(200).json(result.recordset);
-  } catch (error) {
-    console.error("Error fetching low-stock products:", error.message);
-    res.status(500).json({ error: "Failed to fetch low-stock products." });
-  }
-});
-
-// Endpoint to update product stock and restock threshold
-app.patch("/api/products/:id/stock", async (req, res) => {
-  const { id } = req.params;
-  const { stockChange } = req.body;
-
-  try {
-    const pool = await getConnection();
-    await pool.request()
-      .input("productId", sql.Int, id)
-      .input("stockChange", sql.Int, stockChange)
-      .query("UPDATE Products SET stock_quantity = stock_quantity + @stockChange WHERE id = @productId");
-
-    res.status(200).json({ message: "Stock updated successfully." });
-  } catch (error) {
-    console.error("Error updating stock:", error.message);
-    res.status(500).json({ error: "Failed to update stock." });
-  }
-});
-
-// Ensure the `restock_threshold` column exists in the database
-app.post("/api/ensure-restock-threshold", async (req, res) => {
-  try {
-    const pool = await getConnection();
-    await pool.request().query(`
-      IF NOT EXISTS (
-        SELECT 1
-        FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_NAME = 'Products' AND COLUMN_NAME = 'restock_threshold'
-      )
-      BEGIN
-        ALTER TABLE Products ADD restock_threshold INT DEFAULT 2;
-      END
-    `);
-    res.status(200).json({ message: "Restock threshold column ensured." });
-  } catch (error) {
-    console.error("Error ensuring restock_threshold column:", error.message);
-    res.status(500).json({ error: "Failed to ensure restock_threshold column." });
-  }
-});
-
-// Test email endpoint
-app.get("/test-email", async (req, res) => {
-  try {
-    await sendEmail(
-      process.env.EMAIL_USER,
-      "Test Email",
-      "This is a test email from Point FX BladeZ."
-    );
-    res.status(200).send("Test email sent successfully!");
-  } catch (error) {
-    console.error("Error sending test email:", error.message);
-    res.status(500).send("Failed to send test email.");
-  }
-});
-
+// Start the server
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
-
-// Fix: Add missing error handling for Stripe API test endpoint
-app.get("/test-stripe", async (req, res) => {
-  try {
-    const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: 1000, // $10.00 in cents
-      currency: "usd",
-      description: "Test Payment",
-    });
-
-    res.status(200).json({
-      clientSecret: paymentIntent.client_secret,
-      message: "Stripe API is working correctly.",
-    });
-  } catch (error) {
-    console.error("Error testing Stripe API:", error.message);
-    res.status(500).json({ error: "Failed to test Stripe API" });
-  }
-});
-
-app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
-  try {
-    const { amount } = req.body;
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ error: "Invalid amount" });
-    }
-
-    const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
-      currency: "usd",
-      description: "Point FX BladeZ Order",
-    });
-
-    res.status(200).json({
-      paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret, // Include client_secret in the response
-    });
-  } catch (error) {
-    console.error("Error creating payment intent:", error.message);
-    res.status(500).json({ error: "Failed to create payment intent" });
-  }
-});

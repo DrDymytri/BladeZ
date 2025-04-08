@@ -16,9 +16,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById("productSearch");
     const toggleShowcaseBtn = document.getElementById("toggleShowcaseBtn");
     const lowStockBtn = document.getElementById("lowStockBtn");
+    const lowStockSection = document.querySelector(".low-stock-section");
 
     if (!productForm) {
-        console.warn("Product form not found in the DOM. Exiting script.");
         return; // Exit early if the form is not found
     }
 
@@ -76,12 +76,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 resetForm();
                 loadProducts();
             } else {
-                const errorText = await response.text();
-                console.error("Failed to save product:", errorText);
-                alert("Failed to save product. Please check your input.");
+                const errorData = await response.json();
+                alert(`Failed to save product: ${errorData.error || "Unknown error occurred."}`);
             }
         } catch (error) {
-            console.error("Error saving product:", error);
             alert("An error occurred while saving the product. Please try again later.");
         }
     });
@@ -117,13 +115,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     alert("Product updated successfully!");
                     resetForm();
                     loadProducts();
+                    location.reload(); // Refresh the screen
                 } else {
                     const errorText = await response.text();
-                    console.error("Failed to update product:", errorText);
                     alert("Failed to update product. Please check your input.");
                 }
             } catch (error) {
-                console.error("Error updating product:", error);
                 alert("An error occurred while updating the product. Please try again later.");
             }
         });
@@ -149,7 +146,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (lowStockBtn) {
-        lowStockBtn.addEventListener("click", loadLowStockProducts);
+        lowStockBtn.addEventListener("click", () => {
+            loadLowStockProducts();
+            lowStockSection.scrollIntoView({ behavior: "smooth" }); // Scroll to the low-stock section
+        });
     }
 
     loadProducts();
@@ -164,7 +164,6 @@ async function loadCategories() {
         const categories = await response.json();
         populateDropdown(document.getElementById("productCategory"), categories, "id", "name"); // Use 'id' and 'name'
     } catch (error) {
-        console.error("Error loading categories:", error);
     }
 }
 
@@ -174,7 +173,6 @@ async function loadSubcategories(categoryId) {
         const subcategories = await response.json();
         populateDropdown(document.getElementById("productSubCategory"), subcategories, "id", "name");
     } catch (error) {
-        console.error("Error loading subcategories:", error);
     }
 }
 
@@ -184,7 +182,6 @@ async function loadTags(subCategoryId) {
         const tags = await response.json();
         populateDropdown(document.getElementById("productTag"), tags, "id", "name");
     } catch (error) {
-        console.error("Error loading tags:", error);
     }
 }
 
@@ -218,7 +215,6 @@ async function loadProducts() {
         allProducts = products; // Populate the global allProducts array
         renderProducts(products);
     } catch (error) {
-        console.error("Error loading products:", error);
     }
 }
 
@@ -327,7 +323,6 @@ async function editProduct(productId) {
         // Scroll to the top of the page
         window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
-        console.error("Error editing product:", error);
         alert("Failed to load product details. Please try again.");
     }
 }
@@ -347,11 +342,9 @@ async function deleteProduct(productId) {
             loadProducts(); // Reload the product list
         } else {
             const errorText = await response.text();
-            console.error("Failed to delete product:", errorText);
             alert("Failed to delete product. Please try again.");
         }
     } catch (error) {
-        console.error("Error deleting product:", error);
         alert("An error occurred while deleting the product. Please try again later.");
     }
 }
@@ -392,7 +385,6 @@ async function loadLowStockProducts() {
         const lowStockProducts = await response.json();
         renderLowStockTable(lowStockProducts);
     } catch (error) {
-        console.error("Error loading low-stock products:", error.message);
         alert("Failed to load low-stock products.");
     }
 }
@@ -402,7 +394,6 @@ function renderLowStockTable(products) {
     const rowCountElement = document.getElementById("row-count");
 
     if (!lowStockTableBody) {
-        console.error("Low-stock table body not found.");
         return;
     }
 
@@ -425,7 +416,7 @@ function renderLowStockTable(products) {
                 <td style="border: 1px solid #ddd; padding: 8px; color: ${product.stock_quantity < 0 ? 'red' : 'black'};">${product.stock_quantity}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">${product.restock_threshold}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">
-                    <button onclick="populateSearch('${product.name}')">Search</button>
+                    <button onclick="filterByProductId(${product.id})">View Product</button>
                 </td>
             </tr>
         `
@@ -498,6 +489,10 @@ async function updateStock(productId, stockChange) {
         loadProducts(); // Reload the product list
         loadLowStockProducts(); // Refresh the low-stock table
     } catch (error) {
-        console.error("Error updating stock:", error);
     }
+}
+
+function filterByProductId(productId) {
+    const filteredProducts = allProducts.filter(product => product.id === productId);
+    renderProducts(filteredProducts); // Render only the filtered product
 }

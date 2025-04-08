@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   async function loadMedia() {
     const mediaList = document.getElementById("mediaList");
+    const placeholder = document.getElementById("mediaPlaceholder");
     if (!mediaList) {
       console.error('Element with ID "mediaList" not found.');
       return;
@@ -12,6 +13,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const media = await response.json();
       mediaList.innerHTML = ""; // Clear existing content
+
+      if (media.length === 0) {
+        mediaList.innerHTML = "<p>No media available.</p>";
+        return;
+      }
 
       media.forEach((item) => {
         const div = document.createElement("div");
@@ -29,8 +35,9 @@ document.addEventListener("DOMContentLoaded", () => {
           `;
         }
 
+        // Ensure the correct mediaId is passed to deleteMedia
         div.innerHTML += `<p>${item.MediaTitle}</p>
-          <button onclick="deleteMedia(${item.MediaID})">Delete</button>`;
+          <button onclick="deleteMedia(${item.id})">Delete</button>`; // Use item.id instead of item.MediaID
         mediaList.appendChild(div);
       });
     } catch (error) {

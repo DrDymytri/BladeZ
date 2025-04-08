@@ -4,40 +4,75 @@ document.addEventListener("DOMContentLoaded", async () => {
   const totalQuantity = cart.reduce((count, item) => count + item.quantity, 0);
   document.getElementById("cart-count").textContent = totalQuantity;
 
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Please log in to view your orders.");
-      window.location.href = "login.html";
-      return;
-    }
+  fetchOrders();
+});
 
-    const response = await fetch("http://localhost:5000/orders", {
+async function fetchOrders() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("Please log in to view your orders.");
+    localStorage.setItem("intendedDestination", "orders.html"); // Save intended destination
+    window.location.href = "login.html";
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:5000/api/orders", {
       method: "GET",
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
     });
 
-    if (!response.ok) throw new Error("Failed to fetch orders");
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem("token"); // Remove expired or invalid token
+      alert("Your session has expired. Please log in again.");
+      localStorage.setItem("intendedDestination", "orders.html"); // Save intended destination
+      window.location.href = "login.html";
+      return;
+    }
 
-    const orders = await response.json();
-    const tbody = document.querySelector("#orders-table tbody");
-    tbody.innerHTML = orders
-      .map(
-        (order) => `
-        <tr>
-          <td>${order.id}</td>
-          <td>$${order.total_amount.toFixed(2)}</td>
-          <td>${order.status}</td>
-          <td>${order.tracking_number || "N/A"}</td>
-          <td>${new Date(order.created_at).toLocaleDateString()}</td>
-        </tr>
-      `
-      )
-      .join("");
+    if (!response.ok) {
+      throw new Error("Failed to fetch orders.");
+    }
+
+    const data = await response.json();
+    const orders = data.orders || [];
+    displayOrders(orders);
   } catch (error) {
-    console.error("Error loading orders:", error.message);
     alert("Error loading orders: " + error.message);
   }
-});
+}
+
+function displayOrders(orders) {
+  const ordersTableBody = document.querySelector("#orders-table tbody");
+  if (!ordersTableBody) {
+    console.error("Orders table body not found.");
+    return;
+  }
+
+  if (!orders || orders.length === 0) {
+    ordersTableBody.innerHTML = "<tr><td colspan='5'>No orders found.</td></tr>";
+    return;
+  }
+
+  // Group orders by unique orderId to avoid duplicates
+  const uniqueOrders = Array.from(
+    new Map(orders.map((order) => [order.orderId, order])).values()
+  );
+
+  ordersTableBody.innerHTML = uniqueOrders
+    .map(
+      (order) => `
+      <tr>
+        <td>${order.orderId}</td>
+        <td>$${order.total?.toFixed(2) || "0.00"}</td>
+        <td>${order.status}</td>
+        <td>${order.trackingNumber || "N/A"}</td>
+        <td>${order.orderDate ? new Date(order.orderDate).toLocaleDateString() : "N/A"}</td>
+      </tr>
+    `
+    )
+    .join("");
+}

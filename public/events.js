@@ -17,32 +17,28 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      events.forEach((event) => {
-        if (!event.event_start_date || !event.event_end_date || !event.title) {
-          console.warn("Invalid event data:", event);
-          return;
-        }
-
-        // Create event card
-        const eventCard = document.createElement("div");
-        eventCard.classList.add("event-card");
-
-        eventCard.innerHTML = `
-          <h3>${event.title}</h3>
-          <p>${event.description}</p>
-          <p><strong>Start:</strong> ${new Date(event.event_start_date).toLocaleString()}</p>
-          <p><strong>End:</strong> ${new Date(event.event_end_date).toLocaleString()}</p>
-          <p><strong>Location:</strong> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank">${event.location}</a></p>
-          ${
-            event.event_website
-              ? `<p><strong>Website:</strong> <a href="${event.event_website}" target="_blank">Visit Website</a></p>`
-              : ""
-          }
-        `;
-
-        // Append card to container
-        eventsContainer.appendChild(eventCard);
-      });
+      eventsContainer.innerHTML = events
+        .map(
+          (event) => `
+          <div class="event">
+            <h3>${event.title}</h3>
+            <p>${event.description}</p>
+            <p><strong>Start Date:</strong> ${new Date(event.startDate).toLocaleDateString()}</p>
+            <p><strong>End Date:</strong> ${new Date(event.endDate).toLocaleDateString()}</p>
+            <p><strong>Location:</strong> 
+              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank">
+                ${event.location}
+              </a>
+            </p>
+            ${
+              event.event_website
+                ? `<p><a href="${event.event_website}" target="_blank">Event Website</a></p>`
+                : ""
+            }
+          </div>
+        `
+        )
+        .join("");
     })
     .catch((error) => {
       console.error("Error fetching events:", error);

@@ -49,67 +49,48 @@
       }
     </style>
   </head>
-  <body>    
+  <body>
     <nav class="Tabs">
       <a href="admin.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
       <a href="index.html"><i class="fas fa-home"></i> Products</a>
       <a href="admin-products.html"><i class="fas fa-box-open"></i> Product Management</a>
-      <a href="admin-orders.html"><i class="fas fa-box-open"></i> Orders</a>
+      <a href="admin-events.html"><i class="fas fa-calendar" aria-hidden="true"></i> Events</a>
       <a href="admin-media.html"><i class="fas fa-photo-video"></i> Media</a>
+      <a href="manage-categories.html"><i class="fas fa-filter"></i> Filtering</a>
     </nav>
     <main>
-      <table id="orders-table" class="display">
-        <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>User</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th>Order Placed Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Orders will be dynamically loaded here -->
-        </tbody>
-      </table>
+      <div style="overflow-x: auto; margin: 20px;">
+        <label for="status-filter" style="font-weight: bold; margin-right: 10px;">Filter by Status:</label>
+        <select id="status-filter" onchange="filterByStatus()">
+          <option value="All">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Processing">Processing</option>
+          <option value="Boxed">Boxed</option>
+          <option value="Shipped">Shipped</option>
+        </select>
+        <table id="orders-table" class="display">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>User Name</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Tracking Number</th>
+              <th>Order Placed Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Orders will be dynamically loaded here -->
+          </tbody>
+        </table>
+      </div>
     </main>
+    <footer>
+      <!-- Footer content -->
+    </footer>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="admin-orders.js"></script>
-    <script>
-      async function updateOrderStatus(orderId, newStatus) {
-        let trackingNumber = null;
-
-        if (newStatus === "Shipped") {
-          trackingNumber = prompt("Enter the tracking number:");
-          if (!trackingNumber) {
-            alert("Tracking number is required for shipped orders.");
-            return;
-          }
-        }
-
-        try {
-          const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({ status: newStatus, trackingNumber }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to update order status");
-          }
-
-          alert("Order status updated successfully!");
-          await loadOrders(); // Reload the orders table
-        } catch (error) {
-          console.error("Error updating order status:", error.message);
-          alert("Failed to update order status: " + error.message);
-        }
-      }
-    </script>
   </body>
 </html>

@@ -29,9 +29,6 @@
             <a href="index.html"><i class="fas fa-home"></i> Product Catalog</a>
           </li>
           <li>
-            <a href="checkout.html"><i class="fas fa-credit-card"></i> Checkout</a>
-          </li>
-          <li>
             <a href="orders.html"><i class="fas fa-box"></i> My Orders</a>
           </li>
         </ul>
@@ -58,33 +55,13 @@
               <!-- Cart summary rows will be dynamically inserted here -->
             </tbody>
           </table>
-          <p><strong>Grand Total: $<span id="cart-total">0.00</span></strong></p>
-          <button id="clear-cart-btn">Clear Cart</button>
-          <a href="checkout.html" class="checkout-button">Proceed to Checkout</a>
+          <p class="grand-total"><strong>Grand Total: $<span id="cart-total">0.00</span></strong></p>
+          <div class="cart-actions">
+            <button id="clear-cart-btn" class="action-btn">Clear Cart</button>
+            <button id="checkout-button" class="action-btn">Checkout</button>
+          </div>
         </div>
-        <script src="cart.js"></script> <!-- Ensure this file exists in the same directory -->
-        <script>
-          // Removed authentication validation logic
-          const userId = 1; // Replace with the actual logged-in user ID
-
-          document.getElementById("clear-cart-btn").addEventListener("click", async () => {
-            try {
-              const response = await fetch(`/api/cart?user_id=${userId}`);
-              const cartItems = await response.json();
-
-              // Remove each item from the cart
-              for (const item of cartItems) {
-                await fetch(`/api/cart/${item.cart_id}`, { method: "DELETE" });
-              }
-
-              alert("Cart cleared!");
-              window.location.reload();
-            } catch (error) {
-              console.error("Error clearing cart:", error);
-              alert("Failed to clear cart. Please try again.");
-            }
-          });
-        </script>
+        <script src="cart.js"></script>
       </section>
     </main>
     <footer>

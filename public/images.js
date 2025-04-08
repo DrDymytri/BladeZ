@@ -1,8 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const imagesContainer = document.getElementById("imageGallery");
+  const imagesContainer = document.getElementById("images-container");
+
+  if (!imagesContainer) {
+    console.error("Error: Element with ID 'images-container' not found in the DOM.");
+    return;
+  }
 
   // Fetch images from the server
-  fetch("http://localhost:5000/api/images") // Ensure this URL matches your backend
+  fetch("http://localhost:5000/api/images")
     .then((response) => {
       if (!response.ok) {
         console.error(`Error: Received status ${response.status}`);
@@ -17,51 +22,49 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      images.forEach((image) => {
-        if (!image.image_url || !image.description) {
-          console.warn("Invalid image data:", image);
-          return;
-        }
-
-        // Create image card
-        const imageCard = document.createElement("div");
-        imageCard.classList.add("image-card");
-
-        imageCard.innerHTML = `
-          <img src="${image.image_url}" alt="${image.description}" class="gallery-image" />
-          <p>${image.description}</p>
-        `;
-
-        // Add click event to open the image in a larger view
-        imageCard.querySelector("img").addEventListener("click", () => {
-          openImageInPopup(image.image_url);
-        });
-
-        // Append card to container
-        imagesContainer.appendChild(imageCard);
-      });
+      imagesContainer.innerHTML = images
+        .map(
+          (image) => `
+          <div class="image-card">
+            <img src="${image.path}" alt="${image.title}" onclick="openImagePopup('${image.path}', '${image.title}')" />
+            <p>${image.title}</p>
+          </div>
+        `
+        )
+        .join("");
     })
     .catch((error) => {
       console.error("Error fetching images:", error);
       imagesContainer.innerHTML = "<p>Failed to load images. Please try again later.</p>";
     });
-
-  // Function to open the image in a popup
-  function openImageInPopup(imageUrl) {
-    const popup = document.createElement("div");
-    popup.classList.add("image-popup");
-    popup.innerHTML = `
-      <div class="popup-content">
-        <span class="close-popup">&times;</span>
-        <img src="${imageUrl}" alt="Image" />
-      </div>
-    `;
-
-    // Close popup on click
-    popup.querySelector(".close-popup").addEventListener("click", () => {
-      popup.remove();
-    });
-
-    document.body.appendChild(popup);
-  }
 });
+
+// Function to open the image in a popup
+function openImagePopup(imagePath, imageTitle) {
+  // Create the popup container
+  const popup = document.createElement("div");
+  popup.classList.add("image-popup");
+
+  // Add the popup content
+  popup.innerHTML = `
+    <div class="popup-content">
+      <span class="close-popup" onclick="closeImagePopup()">&times;</span>
+      <img src="${imagePath}" alt="${imageTitle}" />
+      <p>${imageTitle}</p>
+    </div>
+  `;
+
+  // Ensure the popup is scrollable if needed
+  popup.style.overflow = "auto";
+
+  // Append the popup to the body
+  document.body.appendChild(popup);
+}
+
+// Function to close the popup
+function closeImagePopup() {
+  const popup = document.querySelector(".image-popup");
+  if (popup) {
+    popup.remove();
+  }
+}

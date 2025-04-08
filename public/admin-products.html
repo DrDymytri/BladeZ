@@ -23,6 +23,7 @@
       <a href="admin-orders.html"><i class="fas fa-box-open"></i> Orders</a>
       <a href="admin-events.html"><i class="fas fa-calendar"></i> Events</a>
       <a href="admin-media.html"><i class="fas fa-photo-video"></i> Media</a>
+      <a href="manage-categories.html"><i class="fas fa-filter"></i> Filtering</a>
     </nav>
     <main>
       <div class="centered-container">
@@ -92,6 +93,11 @@
             </thead>
             <tbody id="low-stock-table-body">
               <!-- Low-stock products will be dynamically populated here -->
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                  <button onclick="filterByProductId(PLACEHOLDER_PRODUCT_ID)">View Product</button>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>

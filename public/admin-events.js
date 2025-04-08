@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
   eventForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const eventId = document.getElementById("eventId")?.value || null; // Ensure eventId is handled properly
+    const eventId = document.getElementById("eventId")?.value || null;
     const newEvent = {
       title: document.getElementById("eventTitle").value.trim(),
       description: document.getElementById("eventDescription").value.trim(),
@@ -29,24 +29,17 @@ document.addEventListener("DOMContentLoaded", () => {
       website: document.getElementById("eventWebsite").value.trim(),
     };
 
-    console.log("Submitting Event:", newEvent); // Debugging: Log the event payload
-
-    // Validate required fields
     if (!newEvent.title || !newEvent.description || !newEvent.event_start_date || !newEvent.event_end_date || !newEvent.location || !newEvent.website) {
       alert("All fields are required. Please fill in all fields.");
       return;
     }
 
-    if (!validateDate(newEvent.event_start_date) || !validateDate(newEvent.event_end_date)) {
-      alert("Invalid date format. Please use the format YYYY-MM-DD HH:mm.");
-      return;
-    }
+    console.log("Submitting event data:", newEvent); // Debugging log
 
     try {
       const url = eventId
-        ? `http://localhost:5000/api/events/${eventId}` // Update existing event
-        : "http://localhost:5000/api/events"; // Add new event
-
+        ? `http://localhost:5000/api/events/${eventId}` // Corrected endpoint
+        : "http://localhost:5000/api/events"; // Corrected endpoint
       const method = eventId ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -55,14 +48,15 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(newEvent),
       });
 
+      console.log("Server response status:", response.status); // Debugging log
+      console.log("Server response text:", await response.text()); // Debugging log
+
       if (response.ok) {
         alert(eventId ? "Event updated successfully!" : "Event added successfully!");
         eventForm.reset();
         resetForm();
         loadEvents();
       } else {
-        const errorText = await response.text();
-        console.error("Failed to save event:", errorText);
         alert("Failed to save event. Please check your input.");
       }
     } catch (error) {
@@ -91,8 +85,8 @@ async function loadEvents() {
 
     eventsContainer.innerHTML = events
       .map((event) => {
-        const startDate = formatLocalDate(event.event_start_date);
-        const endDate = formatLocalDate(event.event_end_date);
+        const startDate = formatLocalDate(event.startDate);
+        const endDate = formatLocalDate(event.endDate);
 
         return `
           <div class="event-card" data-id="${event.id}">
@@ -133,7 +127,14 @@ async function loadEvents() {
 }
 
 function formatLocalDate(dateString) {
+  if (!dateString) return "Invalid Date";
+
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    console.warn(`Invalid date format: ${dateString}`);
+    return "Invalid Date";
+  }
+
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -147,7 +148,7 @@ function attachEventListeners() {
     button.addEventListener("click", (event) => {
       const eventCard = event.target.closest(".event-card");
       toggleEditMode(eventCard, true);
-      initializeDatePickers(eventCard); // Initialize date pickers for inline editing
+      initializeDatePickers(eventCard);
     });
   });
 
@@ -163,7 +164,7 @@ function attachEventListeners() {
     button.addEventListener("click", (event) => {
       const eventCard = event.target.closest(".event-card");
       toggleEditMode(eventCard, false);
-      loadEvents(); // Reload events to reset changes
+      loadEvents();
     });
   });
 
@@ -183,10 +184,6 @@ function toggleEditMode(eventCard, isEditing) {
       field.readOnly = !isEditing;
       field.style.border = isEditing ? "1px solid #ccc" : "none";
       field.style.backgroundColor = isEditing ? "#f9f9f9" : "transparent";
-      if (field.tagName === "A") {
-        field.contentEditable = isEditing; // Make the website link editable
-        field.style.textDecoration = isEditing ? "none" : "underline";
-      }
     } else {
       field.contentEditable = isEditing;
       field.style.border = isEditing ? "1px solid #ccc" : "none";
@@ -200,13 +197,19 @@ function toggleEditMode(eventCard, isEditing) {
 }
 
 function initializeDatePickers(eventCard) {
-  flatpickr(eventCard.querySelector(".event-start"), {
+  const startInput = eventCard.querySelector(".event-start");
+  const endInput = eventCard.querySelector(".event-end");
+
+  flatpickr(startInput, {
     enableTime: true,
     dateFormat: "Y-m-d H:i",
+    defaultDate: startInput.value || null,
   });
-  flatpickr(eventCard.querySelector(".event-end"), {
+
+  flatpickr(endInput, {
     enableTime: true,
     dateFormat: "Y-m-d H:i",
+    defaultDate: endInput.value || null,
   });
 }
 
@@ -216,18 +219,15 @@ async function saveEvent(eventCard, eventId) {
     description: eventCard.querySelector(".event-description").textContent.trim(),
     event_start_date: eventCard.querySelector(".event-start").value.trim(),
     event_end_date: eventCard.querySelector(".event-end").value.trim(),
-    location: eventCard.querySelector(".event-location-link").textContent.trim(), // Fix location field
+    location: eventCard.querySelector(".event-location-link").textContent.trim(),
     website: eventCard.querySelector(".event-website").textContent.trim(),
   };
 
-  // Validate input fields
+  console.log("Updating event with ID:", eventId); // Debugging log
+  console.log("Event data being sent:", updatedEvent); // Debugging log
+
   if (!updatedEvent.title || !updatedEvent.description || !updatedEvent.event_start_date || !updatedEvent.event_end_date || !updatedEvent.location || !updatedEvent.website) {
     alert("All fields are required. Please fill in all fields.");
-    return;
-  }
-
-  if (!validateDate(updatedEvent.event_start_date) || !validateDate(updatedEvent.event_end_date)) {
-    alert("Invalid date format. Please use the format YYYY-MM-DD HH:mm.");
     return;
   }
 
@@ -241,7 +241,7 @@ async function saveEvent(eventCard, eventId) {
     if (response.ok) {
       alert("Event updated successfully!");
       toggleEditMode(eventCard, false);
-      loadEvents(); // Reload events to reflect changes
+      loadEvents();
     } else {
       const errorText = await response.text();
       console.error("Failed to update event:", errorText);
@@ -254,6 +254,8 @@ async function saveEvent(eventCard, eventId) {
 }
 
 async function deleteEvent(eventId) {
+  console.log("Deleting event with ID:", eventId); // Debugging log
+
   if (!confirm("Are you sure you want to delete this event?")) return;
 
   try {
@@ -267,22 +269,7 @@ async function deleteEvent(eventId) {
     }
 
     alert("Event deleted successfully!");
-
-    // Remove the event card from the UI
-    const eventCard = document.querySelector(`.event-card[data-id="${eventId}"]`);
-    if (eventCard) {
-      eventCard.remove();
-    } else {
-      console.warn(`Event card with ID ${eventId} not found in the UI.`);
-    }
-
-    // Remove the event row from the table if it exists
-    const eventRow = document.querySelector(`#admin-events-table tbody tr[data-id="${eventId}"]`);
-    if (eventRow) {
-      eventRow.remove();
-    } else {
-      console.warn(`Event row with ID ${eventId} not found in the table.`);
-    }
+    loadEvents();
   } catch (error) {
     console.error("Error deleting event:", error);
     alert(`Failed to delete event: ${error.message}`);
@@ -291,12 +278,6 @@ async function deleteEvent(eventId) {
 
 function resetForm() {
   document.getElementById("eventForm").reset();
-  
-  const eventIdInput = document.getElementById("eventId");
-  if (eventIdInput) {
-    eventIdInput.value = ""; // Only set the value if the element exists
-  }
-
   document.getElementById("addEventBtn").style.display = "block";
   document.getElementById("updateEventBtn").style.display = "none";
 }
@@ -305,97 +286,3 @@ function validateDate(dateString) {
   const dateRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
   return dateRegex.test(dateString);
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  const eventsTableBody = document.querySelector("#admin-events-table tbody");
-
-  if (!eventsTableBody) {
-    console.warn('Element with ID "admin-events-table" or its <tbody> not found. Skipping table initialization.');
-    return; // Exit early if the element does not exist
-  }
-
-  // Fetch events from the server
-  fetch("http://localhost:5000/api/events")
-    .then((response) => {
-      if (!response.ok) {
-        console.error(`Error: Received status ${response.status}`);
-        throw new Error("Failed to fetch events");
-      }
-      return response.json();
-    })
-    .then((events) => {
-      if (!events || events.length === 0) {
-        console.warn("No events found in the response.");
-        eventsTableBody.innerHTML = "<tr><td colspan='6'>No events available at the moment.</td></tr>";
-        return;
-      }
-
-      eventsTableBody.innerHTML = events
-        .map(
-          (event) => `
-          <tr>
-            <td>${event.title}</td>
-            <td>${new Date(event.event_start_date).toLocaleString()}</td>
-            <td>${new Date(event.event_end_date).toLocaleString()}</td>
-            <td>${event.location}</td>
-            <td>${event.description}</td>
-            <td>
-              <button class="edit-event" data-id="${event.id}">Edit</button>
-              <button class="delete-event" data-id="${event.id}">Delete</button>
-            </td>
-          </tr>
-        `
-        )
-        .join("");
-    })
-    .catch((error) => {
-      console.error("Error fetching events:", error);
-
-      if (eventsTableBody) {
-        eventsTableBody.innerHTML = "<tr><td colspan='6'>Failed to load events. Please try again later.</td></tr>";
-      }
-    });
-
-  // Attach event listeners for edit and delete buttons
-  function attachEventListeners() {
-    document.querySelectorAll(".edit-event").forEach((button) => {
-      button.addEventListener("click", (event) => {
-        const eventId = event.target.dataset.id;
-        editEvent(eventId);
-      });
-    });
-
-    document.querySelectorAll(".delete-event").forEach((button) => {
-      button.addEventListener("click", (event) => {
-        const eventId = event.target.dataset.id;
-        deleteEvent(eventId);
-      });
-    });
-  }
-
-  // Function to edit an event
-  function editEvent(eventId) {
-    // Fetch event details and show edit form (implementation omitted for brevity)
-    console.log(`Edit event with ID: ${eventId}`);
-  }
-
-  // Function to delete an event
-  function deleteEvent(eventId) {
-    if (!confirm("Are you sure you want to delete this event?")) return;
-
-    fetch(`http://localhost:5000/api/events/${eventId}`, {
-      method: "DELETE",
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to delete event");
-        }
-        alert("Event deleted successfully!");
-        location.reload(); // Reload the page to fetch updated events
-      })
-      .catch((error) => {
-        console.error("Error deleting event:", error);
-        alert("Failed to delete event. Please try again.");
-      });
-  }
-});

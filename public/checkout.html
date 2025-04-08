@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Checkout - Point FX BladeZ</title>
     <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="admin.css" />
+    <link rel="stylesheet" href="checkout.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,32 +16,6 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
     />
-    <style>
-      #checkout-form {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-      }
-
-      #checkout-form label {
-        display: block;
-        margin-bottom: 5px;
-      }
-
-      #checkout-form input,
-      #checkout-form textarea,
-      #checkout-form select {
-        width: 100%;
-        max-width: 400px;
-        padding: 8px;
-        margin-bottom: 5px;
-      }
-
-      #credit-card-fields {
-        display: none;
-      }
-    </style>
   </head>
   <body>
     <header>
@@ -63,7 +37,7 @@
     <main>
       <section id="checkout-section">
         <h2>Checkout</h2>
-        <form id="checkout-form">
+        <form id="checkout-form" class="vertical-form">
           <label for="first-name">First Name:</label>
           <input type="text" id="first-name" name="first-name" placeholder="First Name" required />
 
@@ -76,54 +50,79 @@
           <label for="address">Address:</label>
           <textarea id="address" name="address" placeholder="Shipping Address" required></textarea>
 
-          <label for="payment">Payment Method:</label>
-          <select id="payment" name="payment" required>
-            <option value="paypal">PayPal</option>
-            <option value="square">Square</option>
-            <option value="mastercard">Mastercard</option>
-          </select>
-
-          <div id="credit-card-fields">
-            <label for="card-element">Credit or Debit Card:</label>
-            <div id="card-element" style="width: 100%; max-width: 400px; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"></div>
-            <small style="color: gray; font-size: 12px;">
-              Enter a valid card number, expiration date, and CVV. For testing, use card number <strong>4242 4242 4242 4242</strong>, any future expiration date, and any 3-digit CVV.
-            </small>
-            <div id="card-errors" role="alert" style="color: red; margin-top: 10px;"></div>
-          </div>
-
           <div id="cart-summary">
             <h3>Cart Summary</h3>
-            <div id="cart-items"></div>
-            <p>Total: $<span id="cart-total">0.00</span></p>
+            <div id="cart-items" class="cart-items-container">
+              <!-- Dynamically rendered cart items -->
+              
+            </div>
+            <p class="cart-total">Total: $<span id="cart-total">0.00</span></p>
           </div>
-
-          <button type="submit">Place Order</button>
         </form>
       </section>
+      <div class="payment-container">
+        <h2>Payment Details</h2>
+
+        <!-- Stripe Credit Card Fields -->
+        <div id="credit-card-fields">
+          <label for="card-element">Card Details</label>
+          <div id="card-element" class="ElementsApp"><!-- Stripe will mount the card input here --></div>
+          <div id="card-errors" role="alert"></div>
+          <button id="pay-now-btn-card" type="button" class="submit-btn">Pay with Credit/Debit Card</button>
+        </div>
+
+        <!-- PayPal Button Container -->
+        <div id="paypal-button-container">
+          <!-- PayPal buttons will be dynamically rendered here -->
+        </div>
+      </div>
     </main>
     <footer>
       <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
     </footer>
+    <script src="checkout.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
-      function updateCartCount() {
-        const cart = JSON.parse(localStorage.getItem("cart")) || [];
-        document.getElementById("cart-count").textContent = cart.length;
+      async function loadPayPalScript() {
+        try {
+          const response = await fetch("/api/paypal-client-id");
+          if (!response.ok) throw new Error("Failed to fetch PayPal client ID");
+          const { clientId } = await response.json();
+
+          if (document.querySelector(`script[src*="paypal.com/sdk/js"]`)) {
+            console.warn("PayPal SDK script is already loaded.");
+            return;
+          }
+
+          const script = document.createElement("script");
+          script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
+          script.onload = () => {
+            console.log("PayPal SDK loaded successfully.");
+            initializePayPalButtons(); // Ensure buttons are initialized after the script loads
+          };
+          script.onerror = () => console.error("Failed to load PayPal SDK.");
+          document.head.appendChild(script);
+        } catch (error) {
+          console.error("Error loading PayPal script:", error.message);
+        }
       }
 
-      // Update cart count on page load
-      document.addEventListener("DOMContentLoaded", updateCartCount);
-
-      document.getElementById("payment").addEventListener("change", (event) => {
-        const creditCardFields = document.getElementById("credit-card-fields");
-        if (event.target.value === "credit-card" || event.target.value === "mastercard" || event.target.value === "visa") {
-          creditCardFields.style.display = "block";
-        } else {
-          creditCardFields.style.display = "none";
+      loadPayPalScript();
+    </script>
+    <script>
+      document.addEventListener("touchstart", () => {
+        console.log("Touchstart event triggered."); // Replace with actual logic if needed
+      }, { passive: true });
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const cart = JSON.parse(localStorage.getItem("cart")) || [];
+        const totalQuantity = cart.reduce((count, item) => count + item.quantity, 0); // Calculate total quantity
+        const cartCountElement = document.getElementById("cart-count");
+        if (cartCountElement) {
+          cartCountElement.textContent = totalQuantity; // Update cart count
         }
       });
     </script>
-    <script src="checkout.js"></script>
-    <script src="https://js.stripe.com/v3/"></script>
   </body>
 </html>

@@ -197,58 +197,86 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.editSubcategory = async function (subcategoryId) {
+    console.log(`Editing subcategory with ID: ${subcategoryId}`); // Debug log
     const newName = prompt('Enter the new name for the subcategory:');
     if (!newName) {
-      alert('Subcategory name cannot be empty.');
-      return;
+        alert('Subcategory name cannot be empty.');
+        return;
+    }
+
+    // Fetch categories to allow the user to select a new category
+    const categoriesResponse = await fetch('/api/categories');
+    const categories = await categoriesResponse.json();
+
+    const categoryOptions = categories.map(category => `${category.id}: ${category.name}`).join('\n');
+    const newCategoryId = prompt(`Select a new category ID for the subcategory:\n${categoryOptions}`);
+
+    if (!newCategoryId || isNaN(newCategoryId)) {
+        alert('A valid category ID is required.');
+        return;
     }
 
     try {
-      const response = await fetch(`/api/subcategories/${subcategoryId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName }),
-      });
+        const response = await fetch(`/api/subcategories/${subcategoryId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName, categoryId: parseInt(newCategoryId, 10) }),
+        });
 
-      if (response.ok) {
-        alert('Subcategory updated successfully.');
-        fetchSubcategories(); // Refresh the subcategories table
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to update subcategory: ${errorText}`);
-      }
+        if (response.ok) {
+            alert('Subcategory updated successfully.');
+            fetchSubcategories(); // Refresh the subcategories table
+        } else {
+            const errorText = await response.text();
+            console.error(`Failed to update subcategory: ${errorText}`); // Log error details
+            alert(`Failed to update subcategory: ${errorText}`);
+        }
     } catch (error) {
-      console.error('Error updating subcategory:', error);
-      alert('An error occurred while updating the subcategory.');
+        console.error('Error updating subcategory:', error);
+        alert('An error occurred while updating the subcategory.');
     }
-  };
+};
 
   window.editDescriptor = async function (descriptorId) {
+    console.log(`Editing descriptor with ID: ${descriptorId}`); // Debug log
     const newName = prompt('Enter the new name for the descriptor:');
     if (!newName) {
-      alert('Descriptor name cannot be empty.');
-      return;
+        alert('Descriptor name cannot be empty.');
+        return;
+    }
+
+    // Create a dropdown for selecting a new subcategory
+    const subcategoriesResponse = await fetch('/api/subcategories');
+    const subcategories = await subcategoriesResponse.json();
+
+    const subcategoryOptions = subcategories.map(subcategory => `${subcategory.id}: ${subcategory.name}`).join('\n');
+    const newSubCategoryId = prompt(`Select a new subcategory ID for the descriptor:\n${subcategoryOptions}`);
+
+    if (!newSubCategoryId || isNaN(newSubCategoryId)) {
+        alert('A valid subcategory ID is required.');
+        return;
     }
 
     try {
-      const response = await fetch(`/api/descriptors/${descriptorId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName }),
-      });
+        const response = await fetch(`/api/descriptors/${descriptorId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName, subCategoryId: parseInt(newSubCategoryId, 10) }),
+        });
 
-      if (response.ok) {
-        alert('Descriptor updated successfully.');
-        fetchDescriptors(); // Refresh the descriptors table
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to update descriptor: ${errorText}`);
-      }
+        if (response.ok) {
+            alert('Descriptor updated successfully.');
+            fetchDescriptors(); // Refresh the descriptors table
+        } else {
+            const errorText = await response.text();
+            console.error(`Failed to update descriptor: ${errorText}`); // Log error details
+            alert(`Failed to update descriptor: ${errorText}`);
+        }
     } catch (error) {
-      console.error('Error updating descriptor:', error);
-      alert('An error occurred while updating the descriptor.');
+        console.error('Error updating descriptor:', error);
+        alert('An error occurred while updating the descriptor.');
     }
-  };
+};
 
   window.deleteDescriptor = async function (descriptorId) {
     if (confirm('Are you sure you want to delete this descriptor?')) {

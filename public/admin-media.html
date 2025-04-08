@@ -115,14 +115,14 @@
         text-align: center;
       }
 
-      .media-item img, .media-item video {
+      .media-item img, .media-item video, .media-item iframe {
         max-width: 100%;
         height: auto;
         object-fit: contain; /* Ensures the entire media fits within the card */
       }
 
-      .media-item video {
-        max-height: 200px; /* Limit the height of video previews */
+      .media-item video, .media-item iframe {
+        max-height: 200px; /* Limit the height of video previews and iframes */
       }
 
       .media-item button{        
@@ -164,6 +164,7 @@
       <a href="admin-products.html"><i class="fas fa-box-open"></i> Product Management</a>
       <a href="admin-orders.html"><i class="fas fa-box-open"></i> Orders</a>
       <a href="admin-events.html"><i class="fas fa-calendar"></i> Events</a>
+      <a href="manage-categories.html"><i class="fas fa-filter"></i> Filtering</a>
     </nav>
     <main>
       <h1>Media Management</h1>
@@ -187,13 +188,13 @@
       </form>
 
       <div id="mediaList" class="media-gallery">
+        <p id="mediaPlaceholder">Loading media...</p> <!-- Placeholder for loading or empty state -->
         <!-- Media items will be dynamically loaded here -->
       </div>
     </main>
     <footer>
       <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
     </footer>
-    <script src="admin.js"></script>
     <script src="media.js"></script>
   </body>
 </html>

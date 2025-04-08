@@ -227,4 +227,154 @@ h2 {
   gap: 10px;
 }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 16px;
+  text-align: left;
+}
+
+table thead tr {
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+}
+
+table th,
+table td {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+}
+
+table tbody tr:nth-child(even) {
+  background-color: #f3f3f3;
+}
+
+table tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+div {
+  overflow-x: auto;
+}
+
+/* Modal Styles */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1000; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0, 0, 0, 0.4); /* Black background with opacity */
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 10% auto; /* 10% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 90%; /* 90% of the screen width */
+  max-width: 600px; /* Limit the width on larger screens */
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.close-btn {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+  color: black;
+  text-decoration: none;
+}
+
+.verify-boxed-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.verify-boxed-btn:hover {
+  background-color: #218838;
+}
+
+/* Order Items Modal Styles */
+.order-items-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.order-item-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 0 40px 5px rgb(30, 0, 0);
+  width: 200px;
+  text-align: center;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Ensure content is spaced evenly */
+  overflow: hidden; /* Ensure content does not overflow the card */
+}
+
+.order-item-image {
+  width: 100%;
+  height: auto;
+  object-fit: contain; /* Ensure the image fits within the container */
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.order-item-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-grow: 1; /* Allow the details section to grow and push the checkbox down */
+}
+
+.order-item-details h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #333;
+  text-overflow: ellipsis; /* Truncate long text */
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.order-item-details p {
+  margin: 5px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.order-item-details label {
+  margin-top: auto; /* Push the checkbox to the bottom */
+  font-size: 14px;
+  color: #333;
+}
+
+.order-item-details input[type="checkbox"] {
+  margin-right: 5px;
+}
+
 
