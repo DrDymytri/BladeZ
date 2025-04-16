@@ -12,9 +12,18 @@ const { v4: uuidv4 } = require("uuid");
 const nodemailer = require("nodemailer");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY); // Ensure STRIPE_SECRET_KEY is set in .env
 const jwt = require("jsonwebtoken");
+const paypal = require("@paypal/checkout-server-sdk");
 
 const SECRET_KEY = process.env.JWT_SECRET;
 const PORT = 5000;
+
+// Initialize PayPal client
+const paypalClient = new paypal.core.PayPalHttpClient(
+    new paypal.core.SandboxEnvironment(
+        process.env.PAYPAL_CLIENT_ID,
+        process.env.PAYPAL_CLIENT_SECRET
+    )
+);
 
 const app = express();
 
@@ -405,22 +414,31 @@ app.get("/api/products", async (req, res) => {
 
         if (categoryId) {
             query += " AND category_id = @categoryId";
-            request.input("categoryId", sql.Int, categoryId);
+            request.input("categoryId", sql.Int, parseInt(categoryId, 10));
         }
         if (subCategoryId) {
             query += " AND sub_category_id = @subCategoryId";
-            request.input("subCategoryId", sql.Int, subCategoryId);
+            request.input("subCategoryId", sql.Int, parseInt(subCategoryId, 10));
         }
         if (descriptorId) {
             query += " AND tag_id = @descriptorId";
-            request.input("descriptorId", sql.Int, descriptorId);
+            request.input("descriptorId", sql.Int, parseInt(descriptorId, 10));
         }
+
+        // Ensure limit and offset are integers
+        const parsedLimit = parseInt(limit, 10);
+        const parsedOffset = (parseInt(page, 10) - 1) * parsedLimit;
+
+        if (isNaN(parsedLimit) || isNaN(parsedOffset)) {
+            return res.status(400).json({ error: "Invalid pagination parameters." });
+        }
+
         query += `
             ORDER BY name ASC
             OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;
         `;
-        request.input("offset", sql.Int, (page - 1) * limit);
-        request.input("limit", sql.Int, limit);
+        request.input("offset", sql.Int, parsedOffset);
+        request.input("limit", sql.Int, parsedLimit);
 
         const result = await request.query(query);
 
@@ -781,11 +799,12 @@ app.get("/api/products/:id", async (req, res) => {
         const result = await pool.request()
             .input("id", sql.Int, id)
             .query(`
-                SELECT id, name, description, price, stock_quantity, image_url, category_id, sub_category_id, tag_id
+                SELECT id, name, description, price, stock_quantity, image_url, category_id, sub_category_id, tag_id, restock_threshold, manufacturer_product_number
                 FROM Products
                 WHERE id = @id
-            `);
+            `); // Added manufacturer_product_number to the SELECT statement
         const product = result.recordset[0];
+        console.log("Fetched product:", product); // Debug log to verify the product data
         if (!product) {
             return res.status(404).json({ error: "Product not found" });
         }
@@ -798,7 +817,7 @@ app.get("/api/products/:id", async (req, res) => {
 });
 
 app.post("/api/products", async (req, res) => {
-    const { name, description, price, stock_quantity, category_id, sub_category_id, tag_id, image_url, is_showcase } = req.body;
+    const { name, description, price, stock_quantity, category_id, sub_category_id, tag_id, image_url, is_showcase, manufacturer_product_number, restock_threshold } = req.body;
 
     if (!name || !price || !stock_quantity || !category_id) {
         return res.status(400).json({ error: "Name, price, stock quantity, and category ID are required." });
@@ -816,10 +835,12 @@ app.post("/api/products", async (req, res) => {
             .input("tag_id", sql.Int, tag_id || null)
             .input("image_url", sql.NVarChar, image_url || null)
             .input("is_showcase", sql.Bit, is_showcase || false)
+            .input("manufacturer_product_number", sql.NVarChar, manufacturer_product_number || null)
+            .input("restock_threshold", sql.Int, restock_threshold || 0)
             .query(`
-                INSERT INTO Products (name, description, price, stock_quantity, category_id, sub_category_id, tag_id, image_url, is_showcase)
-                OUTPUT INSERTED.id, INSERTED.name, INSERTED.description, INSERTED.price, INSERTED.stock_quantity, INSERTED.category_id, INSERTED.sub_category_id, INSERTED.tag_id, INSERTED.image_url, INSERTED.is_showcase
-                VALUES (@name, @description, @price, @stock_quantity, @category_id, @sub_category_id, @tag_id, @image_url, @is_showcase)
+                INSERT INTO Products (name, description, price, stock_quantity, category_id, sub_category_id, tag_id, image_url, is_showcase, manufacturer_product_number, restock_threshold, created_at, updated_at)
+                OUTPUT INSERTED.id, INSERTED.name, INSERTED.description, INSERTED.price, INSERTED.stock_quantity, INSERTED.category_id, INSERTED.sub_category_id, INSERTED.tag_id, INSERTED.image_url, INSERTED.is_showcase, INSERTED.manufacturer_product_number, INSERTED.restock_threshold, INSERTED.created_at, INSERTED.updated_at
+                VALUES (@name, @description, @price, @stock_quantity, @category_id, @sub_category_id, @tag_id, @image_url, @is_showcase, @manufacturer_product_number, @restock_threshold, GETDATE(), GETDATE())
             `);
 
         res.status(201).json(result.recordset[0]);
@@ -831,10 +852,10 @@ app.post("/api/products", async (req, res) => {
 
 app.put("/api/products/:id", async (req, res) => {
     const { id } = req.params;
-    const { name, description, price, stock_quantity, category_id, sub_category_id, tag_id, image_url, is_showcase } = req.body;
+    const { name, description, price, stock_quantity, category_id, sub_category_id, tag_id, image_url, is_showcase, manufacturer_product_number, restock_threshold } = req.body;
 
-    if (!name || !price || !stock_quantity || !category_id) {
-        return res.status(400).json({ error: "Name, price, stock quantity, and category ID are required." });
+    if (!name || !price || !stock_quantity || !category_id || !manufacturer_product_number) {
+        return res.status(400).json({ error: "Name, price, stock quantity, category ID, and manufacturer product number are required." });
     }
 
     try {
@@ -850,6 +871,8 @@ app.put("/api/products/:id", async (req, res) => {
             .input("tag_id", sql.Int, tag_id || null)
             .input("image_url", sql.NVarChar, image_url || null)
             .input("is_showcase", sql.Bit, is_showcase || false)
+            .input("manufacturer_product_number", sql.NVarChar, manufacturer_product_number) // Ensure this is not null
+            .input("restock_threshold", sql.Int, restock_threshold || 0)
             .query(`
                 UPDATE Products
                 SET name = @name,
@@ -860,7 +883,10 @@ app.put("/api/products/:id", async (req, res) => {
                     sub_category_id = @sub_category_id,
                     tag_id = @tag_id,
                     image_url = @image_url,
-                    is_showcase = @is_showcase
+                    is_showcase = @is_showcase,
+                    manufacturer_product_number = @manufacturer_product_number,
+                    restock_threshold = @restock_threshold,
+                    updated_at = GETDATE()
                 WHERE id = @id
             `);
 
@@ -1086,34 +1112,35 @@ app.get("/api/user-info", authenticateToken, async (req, res) => {
 app.post("/api/cart/sync", async (req, res) => {
     const { items } = req.body;
     const sessionId = req.cookies.session_id;
-    const userId = req.user?.id || null; // Use user ID if logged in, otherwise null
 
     if (!items || !Array.isArray(items)) {
         return res.status(400).json({ error: "Invalid cart data." });
     }
 
+    if (!sessionId) {
+        return res.status(400).json({ error: "Session ID is required to sync the cart." });
+    }
+
     try {
         const pool = await getConnection();
 
-        // Clear existing cart items for the user or session
+        // Clear existing cart items for the session
         await pool.request()
-            .input("userId", sql.Int, userId)
             .input("sessionId", sql.NVarChar, sessionId)
             .query(`
                 DELETE FROM Cart
-                WHERE (user_id = @userId OR session_id = @sessionId)
+                WHERE session_id = @sessionId
             `);
 
         // Insert new cart items
         for (const item of items) {
             await pool.request()
-                .input("userId", sql.Int, userId)
                 .input("sessionId", sql.NVarChar, sessionId)
                 .input("productId", sql.Int, item.id)
                 .input("quantity", sql.Int, item.quantity)
                 .query(`
-                    INSERT INTO Cart (user_id, session_id, product_id, quantity, created_at, updated_at)
-                    VALUES (@userId, @sessionId, @productId, @quantity, GETDATE(), GETDATE())
+                    INSERT INTO Cart (session_id, product_id, quantity, created_at, updated_at)
+                    VALUES (@sessionId, @productId, @quantity, GETDATE(), GETDATE())
                 `);
         }
 
@@ -1185,5 +1212,266 @@ app.get("/api/admin/orders/:id/items", async (req, res) => {
   }
 });
 
-// Start the server
+app.post("/api/create-checkout-session", async (req, res) => {
+  const { cartItems } = req.body;
+  const userId = req.user?.id || "guest"; // Use user ID if available, otherwise "guest"
+
+  try {
+    if (!cartItems || cartItems.length === 0) {
+      console.error("Cart items are missing or empty:", cartItems);
+      return res.status(400).json({ error: "Cart items are required." });
+    }
+
+    const lineItems = cartItems.map((item) => ({
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: item.name,
+          images: [item.image_url],
+        },
+        unit_amount: Math.round(item.price * 100),
+      },
+      quantity: item.quantity,
+    }));
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode: "payment",
+      success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/cancel.html`,
+      metadata: {
+        cartItems: JSON.stringify(cartItems),
+        userId: userId, // Pass "guest" or the actual user ID
+      },
+    });
+
+    console.log("Stripe Checkout session created successfully:", session.id);
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error("Error creating checkout session:", error.message);
+    res.status(500).json({ error: "Failed to create checkout session" });
+  }
+});
+
+app.post("/api/confirm-order", authenticateToken, async (req, res) => {
+  const { session_id } = req.query;
+
+  if (!session_id) {
+    console.error("Session ID is missing in the request.");
+    return res.status(400).json({ error: "Session ID is required." });
+  }
+
+  try {
+    console.log("Received request to confirm order. Session ID:", session_id);
+
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    if (!session) {
+      console.error(`Stripe session not found for session ID: ${session_id}`);
+      return res.status(404).json({ error: "Stripe session not found." });
+    }
+
+    console.log("Session metadata:", session.metadata);
+
+    const cartItems = JSON.parse(session.metadata.cartItems || "[]");
+    const total = session.amount_total / 100;
+
+    console.log("Cart items:", cartItems);
+    console.log("Total amount:", total);
+
+    if (!cartItems.length) {
+      console.error("Cart items are empty. Cannot process order.");
+      return res.status(400).json({ error: "Cart items are required to process the order." });
+    }
+
+    // Ensure the user ID is valid
+    const userId = req.user?.id;
+    if (!userId) {
+      console.error("User ID is missing or invalid. User must create an account.");
+      return res.status(401).json({ error: "User authentication required. Please log in or create an account." });
+    }
+
+    const pool = await getConnection();
+
+    // Verify the user exists in the database
+    const userResult = await pool.request()
+      .input("userId", sql.Int, userId)
+      .query("SELECT id FROM Users WHERE id = @userId");
+
+    if (userResult.recordset.length === 0) {
+      console.error("User not found in the database. User must create an account.");
+      return res.status(404).json({ error: "User not found. Please create an account." });
+    }
+
+    // Insert order into Orders table
+    const orderResult = await pool.request()
+      .input("userId", sql.Int, userId)
+      .input("total", sql.Decimal(10, 2), total)
+      .query(`
+        INSERT INTO orders (user_id, total_amount, created_at)
+        OUTPUT INSERTED.id
+        VALUES (@userId, @total, GETDATE())
+      `);
+    const orderId = orderResult.recordset[0]?.id;
+
+    if (!orderId) {
+      console.error("Failed to insert order. No order ID returned.");
+      return res.status(500).json({ error: "Failed to insert order." });
+    }
+
+    console.log("Order ID:", orderId);
+
+    // Insert order items into the order_items table and update stock
+    for (const item of cartItems) {
+      console.log("Processing item:", item);
+
+      await pool.request()
+        .input("orderId", sql.Int, orderId)
+        .input("productId", sql.Int, item.id)
+        .input("quantity", sql.Int, item.quantity)
+        .input("price", sql.Decimal(10, 2), item.price)
+        .query(`
+          INSERT INTO order_items (order_id, product_id, quantity, price)
+          VALUES (@orderId, @productId, @quantity, @price)
+        `);
+
+      console.log("Inserted order item for product ID:", item.id);
+
+      await pool.request()
+        .input("productId", sql.Int, item.id)
+        .input("quantity", sql.Int, item.quantity)
+        .query(`
+          UPDATE Products
+          SET stock_quantity = stock_quantity - @quantity
+          WHERE id = @productId
+        `);
+
+      console.log("Updated stock for product ID:", item.id);
+    }
+
+    console.log("Order and order items inserted successfully for user ID:", userId);
+    res.json({ message: "Order confirmed successfully." });
+  } catch (error) {
+    console.error("Error confirming order:", error.message);
+    res.status(500).json({ error: "Failed to confirm order." });
+  }
+});
+
+app.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    let event;
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+        console.error("Webhook signature verification failed:", err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    if (event.type === "checkout.session.completed") {
+        const session = event.data.object;
+        console.log("Webhook received for session:", session.id);
+        console.log("Session metadata:", session.metadata);
+        const cartItems = JSON.parse(session.metadata.cartItems || "[]");
+        const userId = parseInt(session.metadata.userId, 10);
+        console.log("Cart items:", cartItems);
+        console.log("User ID:", userId);
+        try {
+            const pool = await getConnection();
+            const total = session.amount_total / 100; // Convert from cents to dollars
+            console.log("Processing order for user ID:", userId);
+            console.log("Total amount:", total);
+            // Insert order into Orders table
+            const orderResult = await pool.request()
+                .input("userId", sql.Int, userId)
+                .input("total", sql.Decimal(10, 2), total)
+                .query(`
+                    INSERT INTO orders (user_id, total_amount, created_at)
+                    OUTPUT INSERTED.id
+                    VALUES (@userId, @total, GETDATE())
+                `);
+            const orderId = orderResult.recordset[0]?.id;
+            if (!orderId) {
+                console.error("Failed to insert order. No order ID returned.");
+                return res.status(500).send("Failed to insert order.");
+            }
+            console.log("Order ID:", orderId);
+            // Insert order items into the order_items table and update stock
+            for (const item of cartItems) {
+                console.log("Processing item:", item);
+                await pool.request()
+                    .input("orderId", sql.Int, orderId)
+                    .input("productId", sql.Int, item.id)
+                    .input("quantity", sql.Int, item.quantity)
+                    .input("price", sql.Decimal(10, 2), item.price)
+                    .query(`
+                        INSERT INTO order_items (order_id, product_id, quantity, price)
+                        VALUES (@orderId, @productId, @quantity, @price)
+                    `);
+                console.log("Inserted order item for product ID:", item.id);
+                // Reduce stock
+                await pool.request()
+                    .input("productId", sql.Int, item.id)
+                    .input("quantity", sql.Int, item.quantity)
+                    .query(`
+                        UPDATE Products
+                        SET stock_quantity = stock_quantity - @quantity
+                        WHERE id = @productId
+                    `);
+                console.log("Updated stock for product ID:", item.id);
+            }
+            console.log("Order and order items inserted successfully for user ID:", userId);
+        } catch (error) {
+            console.error("Error handling checkout session completed webhook:", error.message);
+            console.error("Stack trace:", error.stack);
+            return res.status(500).send("Failed to process order.");
+        }
+    }
+    res.status(200).send("Webhook received");
+});
+
+app.post("/api/paypal/create-order", async (req, res) => {
+    try {
+        const { items, total } = req.body;
+        if (!items || items.length === 0 || !total) {
+            return res.status(400).json({ error: "Invalid request. Items and total are required." });
+        }
+        // Create PayPal order
+        const request = new paypal.orders.OrdersCreateRequest();
+        request.prefer("return=representation");
+        request.requestBody({
+            intent: "CAPTURE",
+            purchase_units: [
+                {
+                    amount: {
+                        currency_code: "USD",
+                        value: total.toFixed(2),
+                    },
+                },
+            ],
+        });
+        const order = await paypalClient.execute(request);
+        res.json({ orderId: order.result.id });
+    } catch (error) {
+        console.error("Error creating PayPal order:", error.message);
+        res.status(500).json({ error: "Failed to create PayPal order." });
+    }
+});
+
+app.post("/api/paypal/capture-order", async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        if (!orderId) {
+            return res.status(400).json({ error: "Order ID is required." });
+        }
+        // Capture PayPal order
+        const request = new paypal.orders.OrdersCaptureRequest(orderId);
+        request.requestBody({});
+        const capture = await paypalClient.execute(request);
+        res.json({ message: "Order captured successfully.", capture });
+    } catch (error) {
+        console.error("Error capturing PayPal order:", error.message);
+        res.status(500).json({ error: "Failed to capture PayPal order." });
+    }
+});
+
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

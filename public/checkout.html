@@ -3,126 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Checkout - Point FX BladeZ</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>Checkout</title>
     <link rel="stylesheet" href="checkout.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-    />
   </head>
   <body>
-    <header>
-      <div class="logo-container">
-        <img src="./Images/Logo only.gif" alt="Logo" class="responsive-logo" />
-      </div>
-      <h1 class="businessName">Point FX BladeZ</h1>
-      <nav>
-        <ul class="responsive-nav">
-          <li>
-            <a href="index.html"><i class="fas fa-home"></i> Products</a>
-          </li>
-          <li>
-            <a href="cart.html"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count">0</span>)</a>
-          </li>
-        </ul>
-      </nav>
-    </header>
     <main>
-      <section id="checkout-section">
-        <h2>Checkout</h2>
-        <form id="checkout-form" class="vertical-form">
-          <label for="first-name">First Name:</label>
-          <input type="text" id="first-name" name="first-name" placeholder="First Name" required />
-
-          <label for="last-name">Last Name:</label>
-          <input type="text" id="last-name" name="last-name" placeholder="Last Name" required />
-
-          <label for="email">Email:</label>
-          <input type="email" id="email" name="email" placeholder="Email Address" required />
-
-          <label for="address">Address:</label>
-          <textarea id="address" name="address" placeholder="Shipping Address" required></textarea>
-
-          <div id="cart-summary">
-            <h3>Cart Summary</h3>
-            <div id="cart-items" class="cart-items-container">
-              <!-- Dynamically rendered cart items -->
-              
-            </div>
-            <p class="cart-total">Total: $<span id="cart-total">0.00</span></p>
-          </div>
-        </form>
-      </section>
-      <div class="payment-container">
-        <h2>Payment Details</h2>
-
-        <!-- Stripe Credit Card Fields -->
-        <div id="credit-card-fields">
-          <label for="card-element">Card Details</label>
-          <div id="card-element" class="ElementsApp"><!-- Stripe will mount the card input here --></div>
-          <div id="card-errors" role="alert"></div>
-          <button id="pay-now-btn-card" type="button" class="submit-btn">Pay with Credit/Debit Card</button>
-        </div>
-
-        <!-- PayPal Button Container -->
-        <div id="paypal-button-container">
-          <!-- PayPal buttons will be dynamically rendered here -->
+      <h1 class="CheckoutTag">Checkout</h1>
+      <p class="Statement">If using a major credit card (for instance, Mastercard, Visa, Discover) please choose the Pay with Card (Stripe) button.</p>
+      <div id="payment-methods">
+        <button id="stripe-checkout-button">Pay with Card (Stripe)</button>
+        
+        <h2>Or Pay with PayPal</h2>
+        <div id="paypal-section">
+          <div id="paypal-button-container"></div> <!-- Ensure this exists -->
         </div>
       </div>
+      <p class="ReturnCart"><a href="cart.html">Return to Cart</a></p>
     </main>
-    <footer>
-      <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
-    </footer>
-    <script src="checkout.js"></script>
     <script src="https://js.stripe.com/v3/"></script>
-    <script>
-      async function loadPayPalScript() {
-        try {
-          const response = await fetch("/api/paypal-client-id");
-          if (!response.ok) throw new Error("Failed to fetch PayPal client ID");
-          const { clientId } = await response.json();
-
-          if (document.querySelector(`script[src*="paypal.com/sdk/js"]`)) {
-            console.warn("PayPal SDK script is already loaded.");
-            return;
-          }
-
-          const script = document.createElement("script");
-          script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
-          script.onload = () => {
-            console.log("PayPal SDK loaded successfully.");
-            initializePayPalButtons(); // Ensure buttons are initialized after the script loads
-          };
-          script.onerror = () => console.error("Failed to load PayPal SDK.");
-          document.head.appendChild(script);
-        } catch (error) {
-          console.error("Error loading PayPal script:", error.message);
-        }
-      }
-
-      loadPayPalScript();
-    </script>
-    <script>
-      document.addEventListener("touchstart", () => {
-        console.log("Touchstart event triggered."); // Replace with actual logic if needed
-      }, { passive: true });
-    </script>
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const cart = JSON.parse(localStorage.getItem("cart")) || [];
-        const totalQuantity = cart.reduce((count, item) => count + item.quantity, 0); // Calculate total quantity
-        const cartCountElement = document.getElementById("cart-count");
-        if (cartCountElement) {
-          cartCountElement.textContent = totalQuantity; // Update cart count
-        }
-      });
-    </script>
+    <script src="checkout.js"></script>
   </body>
 </html>

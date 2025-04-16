@@ -57,6 +57,8 @@ document.addEventListener("DOMContentLoaded", () => {
             tag_id: parseInt(document.getElementById("productTag").value) || null,
             image_url: document.getElementById("productImageUrl").value.trim(),
             is_showcase: document.getElementById("productShowcase").checked,
+            manufacturer_product_number: document.getElementById("manufacturerProductNumber").value.trim(),
+            restock_threshold: parseInt(document.getElementById("restockThreshold").value),
         };
 
         try {
@@ -102,6 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 tag_id: parseInt(document.getElementById("productTag").value) || null,
                 image_url: document.getElementById("productImageUrl").value.trim(),
                 is_showcase: document.getElementById("productShowcase").checked,
+                manufacturer_product_number: document.getElementById("manufacturerProductNumber").value.trim(),
+                restock_threshold: parseInt(document.getElementById("restockThreshold").value),
             };
 
             try {
@@ -290,6 +294,7 @@ async function editProduct(productId) {
         if (!response.ok) throw new Error("Failed to fetch product details");
 
         const product = await response.json();
+        console.log("Editing product:", product); // Debug log to verify the product data
 
         // Populate the form fields with the product details
         document.getElementById("productId").value = product.id;
@@ -299,6 +304,8 @@ async function editProduct(productId) {
         document.getElementById("productStock").value = product.stock_quantity;
         document.getElementById("productImageUrl").value = product.image_url || "";
         document.getElementById("productShowcase").checked = product.is_showcase;
+        document.getElementById("manufacturerProductNumber").value = product.manufacturer_product_number || ""; // Ensure manufacturer_product_number is populated
+        document.getElementById("restockThreshold").value = product.restock_threshold || 0;
 
         // Load categories and set the selected category
         await loadCategories();

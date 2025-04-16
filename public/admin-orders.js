@@ -18,7 +18,10 @@ async function loadOrders() {
 
     const orders = await response.json();
 
-    if (orders.length === 0) {
+    // Filter out "Shipped" orders from the table
+    const filteredOrders = orders.filter(order => order.status !== "Shipped");
+
+    if (filteredOrders.length === 0) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No orders found</td></tr>`;
       return;
     }
@@ -26,8 +29,8 @@ async function loadOrders() {
     // Clear the table body before populating
     tbody.innerHTML = "";
 
-    // Populate the table rows
-    orders.forEach((order) => {
+    // Populate the table rows with filtered orders
+    filteredOrders.forEach((order) => {
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${order.id}</td>
@@ -38,7 +41,7 @@ async function loadOrders() {
             <option value="Pending" ${order.status === "Pending" ? "selected" : ""}>Pending</option>
             <option value="Processing" ${order.status === "Processing" ? "selected" : ""}>Processing</option>
             <option value="Boxed" ${order.status === "Boxed" ? "selected" : ""}>Boxed</option>
-            <option value="Shipped" ${order.status === "Shipped" ? "selected" : ""}>Shipped</option>
+            <option value="Shipped" ${order.status === "Shipped" ? "selected" : ""}>Shipped</option> <!-- Ensure "Shipped" remains -->
           </select>
         </td>
         <td>
@@ -67,6 +70,7 @@ async function loadOrders() {
       searching: true,
       ordering: true,
       pageLength: 10, // Default number of rows per page
+      stateSave: true, // Enable state saving to persist sort order
     });
   } catch (error) {
     console.error("Error loading orders:", error.message);

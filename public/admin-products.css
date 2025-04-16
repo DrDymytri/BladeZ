@@ -212,6 +212,12 @@ select {
   margin-top: 0px;
 }
 
+#manufacturerProductNumber {
+  width: 400px;
+  height: 40px;
+  margin-top: 0px;
+}
+
 .form-row {
   display: flex;
   flex-wrap: wrap;

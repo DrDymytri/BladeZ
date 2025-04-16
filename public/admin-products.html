@@ -42,6 +42,9 @@
             <input type="text" id="productImageUrl" name="productImageUrl" placeholder="Image URL" />
           </div>
           <div class="form-row">
+            <input type="text" id="manufacturerProductNumber" name="manufacturerProductNumber" placeholder="Manufacturer Product Number" required />
+          </div>
+          <div class="form-row">
             <select id="productCategory" name="productCategory" required>
               <option value="">Select Category</option>
             </select>
@@ -60,6 +63,9 @@
           </div>
           <div class="form-row">
             <textarea id="productDescription" name="productDescription" placeholder="Description" required></textarea>
+          </div>
+          <div class="form-row">
+            <input type="number" id="restockThreshold" name="restockThreshold" placeholder="Restock Threshold" required />
           </div>
           <div class="form-buttons">
             <button type="submit" id="addProductBtn">Add Product</button>

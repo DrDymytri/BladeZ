@@ -185,24 +185,31 @@ function attachEventListeners(cartItems) {
 }
 
 async function syncCartWithBackend(cartItems) {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    console.warn("User is not logged in. Skipping cart sync.");
+  const sessionId = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("session_id="))
+    ?.split("=")[1];
+
+  if (!sessionId) {
+    console.warn("No session ID available. Skipping cart sync.");
     return;
   }
 
   try {
-    await fetch("/api/cart/sync", {
+    const response = await fetch("/api/cart/sync", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ items: cartItems }),
+      body: JSON.stringify({ items: cartItems }), // Only send cart items
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error syncing cart:", errorText);
+    }
   } catch (error) {
     console.error("Error syncing cart with backend:", error.message);
-    console.error("Stack trace:", error.stack); // Log stack trace for debugging
   }
 }
 
@@ -300,12 +307,13 @@ function clearCart() {
 
 function updateCartCount() {
   const cart = JSON.parse(localStorage.getItem("cart")) || [];
-  const totalQuantity = cart.reduce((count, item) => count + item.quantity, 0); // Sum up quantities
+  const totalQuantity = cart.reduce((count, item) => count + item.quantity, 0);
   const cartCountElement = document.getElementById("cart-count");
+
   if (cartCountElement) {
     cartCountElement.textContent = totalQuantity;
   } else {
-    console.warn("Cart count element not found in the DOM.");
+    console.warn("Cart count element not found in the DOM."); // Handle missing element gracefully
   }
 }
 
@@ -336,4 +344,53 @@ if (checkoutButton) {
 } else {
   console.warn("Checkout button not found in the DOM.");
 }
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const checkoutButton = document.getElementById("checkout-button");
+
+  if (checkoutButton) {
+    checkoutButton.addEventListener("click", async () => {
+      const cartItems = JSON.parse(localStorage.getItem("cart")) || []; // Get cart items from localStorage
+
+      if (cartItems.length === 0) {
+        alert("Your cart is empty. Please add items before proceeding to checkout.");
+        return;
+      }
+
+      // Ensure Stripe library is loaded
+      if (typeof Stripe === "undefined") {
+        console.error("Stripe library is not loaded.");
+        alert("Failed to load Stripe library. Please refresh the page and try again.");
+        return;
+      }
+
+      const stripe = Stripe("pk_test_51R6vESFYn7sHYN0fcoSvCAZfuigJ1DkuyUVHFRdmghYeXCWetZf17MBOlkdyFKCWP5USQKWA75vJwoMsxy1kdtTf00bKQ7OBbJ");
+
+      try {
+        // Send cart items to the backend to create a Stripe Checkout session
+        const response = await fetch("/api/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cartItems }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text(); // Log response body for debugging
+          console.error("Error response from server:", errorText);
+          throw new Error("Failed to create Stripe Checkout session");
+        }
+
+        const { url } = await response.json();
+
+        // Redirect to Stripe Checkout
+        window.location.href = url;
+      } catch (error) {
+        console.error("Error redirecting to Stripe Checkout:", error.message);
+        alert("Failed to proceed to checkout. Please try again.");
+      }
+    });
+  } else {
+    console.warn("Checkout button not found in the DOM.");
+  }
+});
 

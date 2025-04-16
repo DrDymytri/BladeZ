@@ -29,6 +29,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+  document.getElementById("products-per-page").addEventListener("change", () => {
+    loadProducts(1); // Reload products with the first page when the selection changes
+  });
+
   updateCartCount();
 
   function updateCartCount() {
@@ -148,17 +152,31 @@ function resetDropdown(selectElement, placeholder) {
   selectElement.innerHTML = `<option value="">${placeholder}</option>`;
 }
 
-async function loadProducts(filters = {}) {
+async function loadProducts(page = 1) {
   try {
-    const { categoryId, subCategoryId, descriptorId, page = 1, limit = 30 } = filters;
+    const categoryFilter = document.getElementById("category-filter");
+    const subCategoryFilter = document.getElementById("subcategory-filter");
+    const descriptorFilter = document.getElementById("descriptor-filter");
+    const productsPerPage = document.getElementById("products-per-page").value;
+
+    // Ensure page is an integer
+    page = parseInt(page, 10);
+
+    const filters = {
+      categoryId: categoryFilter?.value || null,
+      subCategoryId: subCategoryFilter?.value || null,
+      descriptorId: descriptorFilter?.value || null,
+      page,
+      limit: parseInt(productsPerPage, 10), // Ensure limit is an integer
+    };
 
     // Construct the query string dynamically
     const queryParams = new URLSearchParams();
-    if (categoryId) queryParams.append("categoryId", categoryId);
-    if (subCategoryId) queryParams.append("subCategoryId", subCategoryId);
-    if (descriptorId) queryParams.append("descriptorId", descriptorId);
-    queryParams.append("page", page);
-    queryParams.append("limit", limit);
+    if (filters.categoryId) queryParams.append("categoryId", filters.categoryId);
+    if (filters.subCategoryId) queryParams.append("subCategoryId", filters.subCategoryId);
+    if (filters.descriptorId) queryParams.append("descriptorId", filters.descriptorId);
+    queryParams.append("page", filters.page);
+    queryParams.append("limit", filters.limit);
 
     console.log("Fetching products with query:", queryParams.toString()); // Debugging log
 
@@ -171,8 +189,8 @@ async function loadProducts(filters = {}) {
     renderProducts(data.products);
 
     // Render pagination controls if applicable
-    const totalPages = Math.ceil(data.total / limit); // Assuming `data.total` contains the total number of products
-    renderPaginationControls(page, totalPages);
+    const totalPages = Math.ceil(data.total / filters.limit); // Assuming `data.total` contains the total number of products
+    renderPaginationControls(filters.page, totalPages);
   } catch (error) {
     console.error("Error loading products:", error.message);
     alert("Error loading products: " + error.message);
@@ -218,7 +236,7 @@ function renderPaginationControls(currentPage, totalPages) {
   paginationContainer.querySelectorAll(".pagination-button").forEach((button) => {
     button.addEventListener("click", (event) => {
       const page = parseInt(event.target.dataset.page, 10);
-      loadProducts(page);
+      loadProducts(page); // Pass the selected page
     });
   });
 }
@@ -257,8 +275,8 @@ function applyFilters() {
 
   console.log("Applying filters:", { categoryId, subCategoryId, descriptorId }); // Debugging log
 
-  // Pass the filters to the loadProducts function
-  loadProducts({ categoryId, subCategoryId, descriptorId, page: 1 });
+  // Pass the filters to the loadProducts function with page reset to 1
+  loadProducts(1);
 }
 
 function clearFilters() {

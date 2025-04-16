@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Orders - Point FX BladeZ</title>
+    <title>Archived Orders - Point FX BladeZ</title>
     <link rel="stylesheet" href="admin-events.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,33 +20,7 @@
       href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"
     />
     <style>
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 20px 0;
-        font-size: 16px;
-        text-align: left;
-      }
-
-      table thead tr {
-        background-color: #333;
-        color: #fff;
-        text-align: center;
-      }
-
-      table th,
-      table td {
-        padding: 12px 15px;
-        border: 1px solid #ddd;
-      }
-
-      table tbody tr:nth-child(even) {
-        background-color: #f3f3f3;
-      }
-
-      table tbody tr:hover {
-        background-color: #f1f1f1;
-      }
+      /* ...existing table styles from admin-orders.html... */
     </style>
   </head>
   <body>
@@ -59,17 +33,10 @@
       <a href="manage-categories.html"><i class="fas fa-filter"></i> Filtering</a>
     </nav>
     <main>
-      <div style="overflow-x: auto; margin: 20px;">        
-        <h2>New Orders</h2>
-        <label for="status-filter" style="font-weight: bold; margin-right: 10px;">Filter by Status:</label>
-        <select id="status-filter" onchange="filterByStatus()">
-          <option value="All">All</option>
-          <option value="Pending">Pending</option>
-          <option value="Processing">Processing</option>
-          <option value="Boxed">Boxed</option>
-          <option value="Shipped">Shipped</option> <!-- Ensure "Shipped" remains in the dropdown -->
-        </select>
-        <button onclick="location.href='admin-orders-legacy.html'" style="margin-left: 20px;">View Archived Orders</button>
+      <div style="overflow-x: auto; margin: 20px;">
+        <h2>Archived Orders</h2>
+        
+        <button onclick="location.href='admin-orders.html'" style="margin-left: 20px;">View New Orders</button>
         <table id="orders-table" class="display">
           <thead>
             <tr>
@@ -93,6 +60,6 @@
     </footer>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="admin-orders.js"></script>
+    <script src="admin-orders-legacy.js"></script>
   </body>
 </html>
