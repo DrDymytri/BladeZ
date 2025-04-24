@@ -45,22 +45,26 @@
 
 .product-item .add-to-cart {
   width: auto;
+  font-family: "MedievalSharp", serif;
+  text-decoration: none;
+  padding: 5px;
   margin-bottom: 5px;
-  margin-top: 0;
+  margin-top: 5px;
+  border-top: 4px solid rgb(189, 209, 230);
+  border-bottom: 4px solid rgb(121, 141, 160);
+  border-right: 4px solid rgb(149, 172, 190);
+  border-left: 4px solid rgb(156, 175, 194);
+  box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466);
+  outline: 1px solid black;
+  background: linear-gradient(to right, #570505, #cc0000, #b30000, #cc0000, #570505); 
   box-sizing: border-box;
   font-family: serif;
   font-size: 20px;
   font-weight: bold;
   color: aliceblue;
-  text-shadow: black 0.125px 0.25px, black 0.25px 0.5px, black 0.375px 0.75px, black 0.5px 1px, black 0.625px 1.25px, black 0.75px 1.5px;
-  box-shadow: aliceblue 0px 0px 15px 1px;
-  padding: 5px;
-  border-top: 4px solid rgb(189, 209, 230);
-  border-bottom: 4px solid rgb(121, 141, 160);
-  border-right: 4px solid rgb(149, 172, 190);
-  border-left: 4px solid rgb(156, 175, 194);
-  outline: black solid 1px;
-  background: linear-gradient(to right, rgba(255, 0, 0, 0.533), rgb(161, 0, 0), rgb(139, 0, 0), rgb(161, 0, 0), rgba(255, 0, 0, 0.533));
+  text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black, 0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+  box-shadow: 0 0 15px 1px aliceblue;
+  cursor: pointer;
 }
 
 .product-item .add-to-cart:hover {

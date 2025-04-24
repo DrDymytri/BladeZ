@@ -23,8 +23,8 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="event">
             <h3>${event.title}</h3>
             <p>${event.description}</p>
-            <p><strong>Start Date:</strong> ${new Date(event.startDate).toLocaleDateString()}</p>
-            <p><strong>End Date:</strong> ${new Date(event.endDate).toLocaleDateString()}</p>
+            <p><strong>Start Date:</strong> ${new Date(event.startDate).toLocaleString()}</p>
+            <p><strong>End Date:</strong> ${new Date(event.endDate).toLocaleString()}</p>
             <p><strong>Location:</strong> 
               <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank">
                 ${event.location}

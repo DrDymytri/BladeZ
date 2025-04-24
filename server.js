@@ -144,6 +144,50 @@ app.post("/api/login", async (req, res) => {
     }
 });
 
+app.post("/api/signup", async (req, res) => {
+    const { firstName, lastName, email, password, phone, address } = req.body;
+
+    if (!firstName || !lastName || !email || !password || !phone || !address) {
+        return res.status(400).json({ error: "All fields are required." });
+    }
+
+    try {
+        const pool = await getConnection();
+
+        // Check if the email is already registered
+        const existingUser = await pool.request()
+            .input("email", sql.NVarChar, email)
+            .query("SELECT id FROM Users WHERE email = @Email");
+
+        if (existingUser.recordset.length > 0) {
+            return res.status(409).json({ error: "Email is already registered." });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Insert the new user into the database
+        const result = await pool.request()
+            .input("firstName", sql.NVarChar, firstName)
+            .input("lastName", sql.NVarChar, lastName)
+            .input("email", sql.NVarChar, email)
+            .input("password", sql.NVarChar, hashedPassword)
+            .input("phone", sql.NVarChar, phone)
+            .input("address", sql.NVarChar, address)
+            .query(`
+                INSERT INTO Users (first_name, last_name, email, password, phone, address)
+                OUTPUT INSERTED.id, INSERTED.first_name, INSERTED.last_name, INSERTED.email
+                VALUES (@firstName, @lastName, @Email, @Password, @Phone, @Address)
+            `);
+
+        const newUser = result.recordset[0];
+        res.status(201).json({ message: "User registered successfully.", user: newUser });
+    } catch (error) {
+        console.error("Error during user registration:", error.message);
+        res.status(500).json({ error: "Failed to register user." });
+    }
+});
+
 app.get("/api/subcategories", async (req, res) => {
     const { categoryId } = req.query;
     try {
@@ -425,6 +469,25 @@ app.get("/api/products", async (req, res) => {
             request.input("descriptorId", sql.Int, parseInt(descriptorId, 10));
         }
 
+        // Fetch total count for pagination
+        let totalQuery = `
+            SELECT COUNT(*) AS total
+            FROM Products
+            WHERE 1=1
+        `;
+        if (categoryId) {
+            totalQuery += " AND category_id = @categoryId";
+        }
+        if (subCategoryId) {
+            totalQuery += " AND sub_category_id = @subCategoryId";
+        }
+        if (descriptorId) {
+            totalQuery += " AND tag_id = @descriptorId";
+        }
+
+        const totalResult = await request.query(totalQuery);
+        const total = totalResult.recordset[0].total;
+
         // Ensure limit and offset are integers
         const parsedLimit = parseInt(limit, 10);
         const parsedOffset = (parseInt(page, 10) - 1) * parsedLimit;
@@ -442,15 +505,9 @@ app.get("/api/products", async (req, res) => {
 
         const result = await request.query(query);
 
-        if (result.recordset.length === 0) {
-            return res.json({ products: [], total: 0 });
-        }
+        const totalPages = Math.ceil(total / parsedLimit);
 
-        // Fetch total count for pagination
-        const totalResult = await pool.request().query("SELECT COUNT(*) AS total FROM Products");
-        const total = totalResult.recordset[0].total;
-
-        res.json({ products: result.recordset, total });
+        res.json({ products: result.recordset, total, totalPages });
     } catch (error) {
         console.error("Error fetching products:", error.message);
         res.status(500).json({ error: "Failed to fetch products." });
@@ -799,10 +856,10 @@ app.get("/api/products/:id", async (req, res) => {
         const result = await pool.request()
             .input("id", sql.Int, id)
             .query(`
-                SELECT id, name, description, price, stock_quantity, image_url, category_id, sub_category_id, tag_id, restock_threshold, manufacturer_product_number
+                SELECT id, name, description, price, stock_quantity, image_url, category_id, sub_category_id, tag_id, restock_threshold, manufacturer_product_number, is_showcase
                 FROM Products
                 WHERE id = @id
-            `); // Added manufacturer_product_number to the SELECT statement
+            `); // Added is_showcase to the SELECT statement
         const product = result.recordset[0];
         console.log("Fetched product:", product); // Debug log to verify the product data
         if (!product) {
@@ -991,41 +1048,50 @@ app.delete("/api/media/:id", async (req, res) => {
 });
 
 app.get("/api/admin/orders", async (req, res) => {
-    try {
-        const pool = await getConnection();
+  const { status } = req.query; // Get the status filter from the query parameters
 
-        // Fetch all orders with user details
-        const result = await pool.request().query(`
-            SELECT o.id AS id, 
-                   o.total_amount AS total_amount, 
-                   o.status AS status,
-                   o.tracking_number AS tracking_number,
-                   o.created_at AS created_at, 
-                   u.first_name + ' ' + u.last_name AS user_name
-            FROM orders o
-            LEFT JOIN Users u ON o.user_id = u.id
-            ORDER BY o.created_at DESC
-        `);
+  try {
+    const pool = await getConnection();
 
-        const orders = result.recordset;
+    let query = `
+      SELECT o.id AS id, 
+             o.total_amount AS total_amount, 
+             o.status AS status,
+             o.tracking_number AS tracking_number,
+             o.created_at AS created_at, 
+             o.closed_date AS closed_date,
+             o.received_confirmation_number AS received_confirmation_number,
+             o.confirmation_date_time AS confirmation_date_time,
+             u.first_name + ' ' + u.last_name AS user_name
+      FROM orders o
+      LEFT JOIN Users u ON o.user_id = u.id
+    `;
 
-        console.log("Orders fetched from database:", orders); // Debugging log
-
-        if (orders.length === 0) {
-            console.log("No orders found in the database."); // Debugging log
-            return res.json([]); // Return an empty array if no orders are found
-        }
-
-        res.json(orders);
-    } catch (error) {
-        console.error("Error fetching admin orders:", error.message);
-        res.status(500).json({ error: "Failed to fetch orders." });
+    if (status && status !== "All") {
+      query += ` WHERE o.status = @status`; // Add a WHERE clause if a specific status is provided
+    } else if (status === "All") {
+      query += ` WHERE o.status != 'Closed'`; // Exclude "Closed" orders when "All" is selected
     }
+
+    query += ` ORDER BY o.created_at DESC`;
+
+    const request = pool.request();
+    if (status && status !== "All") {
+      request.input("status", sql.NVarChar, status);
+    }
+
+    const result = await request.query(query);
+
+    res.json(result.recordset);
+  } catch (error) {
+    console.error("Error fetching admin orders:", error.message);
+    res.status(500).json({ error: "Failed to fetch orders." });
+  }
 });
 
 app.put("/api/admin/orders/:id/status", async (req, res) => {
     const { id } = req.params;
-    const { status, trackingNumber } = req.body;
+    const { status, trackingNumber, receivedConfirmationNumber } = req.body;
 
     if (!status) {
         return res.status(400).json({ error: "Order status is required." });
@@ -1034,14 +1100,39 @@ app.put("/api/admin/orders/:id/status", async (req, res) => {
     try {
         const pool = await getConnection();
 
+        // Retain the existing tracking number if none is provided
+        const existingOrder = await pool.request()
+            .input("id", sql.Int, id)
+            .query(`
+                SELECT tracking_number
+                FROM orders
+                WHERE id = @id
+            `);
+
+        if (existingOrder.recordset.length === 0) {
+            return res.status(404).json({ error: "Order not found." });
+        }
+
+        const existingTrackingNumber = existingOrder.recordset[0].tracking_number;
+
+        // Prepare additional fields for "Closed" or "Received" statuses
+        const closedDate = status === "Closed" ? new Date() : null;
+        const confirmationDateTime = receivedConfirmationNumber ? new Date() : null;
+
         const result = await pool.request()
             .input("id", sql.Int, id)
             .input("status", sql.NVarChar, status)
-            .input("trackingNumber", sql.NVarChar, trackingNumber || null)
+            .input("trackingNumber", sql.NVarChar, trackingNumber || existingTrackingNumber)
+            .input("closedDate", sql.Date, closedDate)
+            .input("receivedConfirmationNumber", sql.NVarChar, receivedConfirmationNumber || null)
+            .input("confirmationDateTime", sql.DateTime, confirmationDateTime)
             .query(`
                 UPDATE orders
                 SET status = @status,
-                    tracking_number = @trackingNumber
+                    tracking_number = @trackingNumber,
+                    closed_date = @closedDate,
+                    received_confirmation_number = @receivedConfirmationNumber,
+                    confirmation_date_time = @confirmationDateTime
                 WHERE id = @id
             `);
 

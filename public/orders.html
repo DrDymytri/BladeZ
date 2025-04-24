@@ -42,6 +42,7 @@
     </header>
 
     <main>
+      <div id="user-info" style="text-align: center; margin-bottom: 20px;"></div>
       <table id="orders-table">
         <thead>
           <tr>
@@ -58,5 +59,30 @@
       </table>
     </main>
     <script src="orders.js"></script>
+    <script>
+      async function fetchUserInfo() {
+        try {
+          const response = await fetch("http://localhost:5000/api/user-info", {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          });
+          if (!response.ok) throw new Error("Failed to fetch user info");
+
+          const user = await response.json();
+          document.getElementById("user-info").innerHTML = `
+            <h2>Welcome, ${user.first_name} ${user.last_name}</h2>
+            <p>Email: ${user.email}</p>
+          `;
+        } catch (error) {
+          console.error("Error fetching user info:", error);
+          document.getElementById("user-info").innerHTML = `
+            <p style="color: red;">Failed to load user information. Please log in again.</p>
+          `;
+        }
+      }
+
+      fetchUserInfo();
+    </script>
   </body>
 </html>

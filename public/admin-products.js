@@ -303,8 +303,8 @@ async function editProduct(productId) {
         document.getElementById("productPrice").value = product.price;
         document.getElementById("productStock").value = product.stock_quantity;
         document.getElementById("productImageUrl").value = product.image_url || "";
-        document.getElementById("productShowcase").checked = product.is_showcase;
-        document.getElementById("manufacturerProductNumber").value = product.manufacturer_product_number || ""; // Ensure manufacturer_product_number is populated
+        document.getElementById("productShowcase").checked = !!product.is_showcase; // Default to false if missing
+        document.getElementById("manufacturerProductNumber").value = product.manufacturer_product_number || "";
         document.getElementById("restockThreshold").value = product.restock_threshold || 0;
 
         // Load categories and set the selected category
@@ -423,7 +423,7 @@ function renderLowStockTable(products) {
                 <td style="border: 1px solid #ddd; padding: 8px; color: ${product.stock_quantity < 0 ? 'red' : 'black'};">${product.stock_quantity}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">${product.restock_threshold}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">
-                    <button onclick="filterByProductId(${product.id})">View Product</button>
+                    <button class="ViewProduct" onclick="filterByProductId(${product.id})">View Product</button>
                 </td>
             </tr>
         `

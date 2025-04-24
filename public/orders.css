@@ -87,6 +87,18 @@ h2 {
   border-radius: 4px;
 }
 
+/* Reset margins and padding for body and header */
+body, header {
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure the header spans the full width */
+header {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* Form Section */
 .form-section {
   background-color: #b4afaf;

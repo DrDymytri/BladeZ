@@ -67,7 +67,7 @@
       }
       button {
         width: auto;
-        font-family: "MedievalSharp", serif;width: auto;
+        font-family: "MedievalSharp", serif;
         text-decoration: none;
         padding: 5px;
         margin-bottom: 5px;
@@ -78,7 +78,7 @@
         border-left: 4px solid rgb(156, 175, 194);
         box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466);
         outline: 1px solid black;
-        background: linear-gradient(to right, #ff000088, #a10000, #8b0000, #a10000, #ff000088);
+        background: linear-gradient(to right, #570505, #cc0000, #b30000, #cc0000, #570505); 
         box-sizing: border-box;
         font-family: serif;
         font-size: 20px;
@@ -86,6 +86,7 @@
         color: aliceblue;
         text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black, 0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
         box-shadow: 0 0 15px 1px aliceblue;
+        cursor: pointer;
       }
       button:hover {
         color: greenyellow; 
@@ -117,16 +118,22 @@
         const address = document.getElementById("address").value;
 
         try {
-          const response = await fetch("http://localhost:5000/api/signup", { // Reverted port
+          const response = await fetch("http://localhost:5000/api/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ firstName, lastName, email, password, phone, address }),
           });
-          if (!response.ok) throw new Error("Sign up failed");
+
+          if (!response.ok) {
+            const errorDetails = await response.text();
+            console.error("Error details:", errorDetails);
+            throw new Error("Sign up failed");
+          }
 
           alert("Account created successfully! Please log in.");
           window.location.href = "login.html";
         } catch (error) {
+          console.error("Error:", error);
           alert("Error: " + error.message);
         }
       });

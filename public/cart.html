@@ -19,23 +19,29 @@
     <script src="https://js.stripe.com/v3/"></script> <!-- Ensure Stripe library is loaded -->
   </head>
   <body>
-    <header>
-      <div class="logo-container">
-        <img src="./Images/Logo only.gif" alt="Logo" class="responsive-logo" />
+    <header style="display: flex; justify-content: space-between; align-items: center; width: 100vw;">
+      <div>
+        <img src="./images/Chinese warrior dragon in red and gold.PNG" alt="./images/default-image.jpg" class="header-image" />
       </div>
-      <h1 class="businessName">Point FX BladeZ</h1>
-      <nav>
-        <ul class="responsive-nav">
-          <li>
-            <a href="index.html"><i class="fas fa-home"></i> Product Catalog</a>
-          </li>
-          <li>
-            <a href="orders.html"><i class="fas fa-box"></i> My Orders</a>
-          </li>
-        </ul>
-      </nav>
+      <div>
+        <div class="logo-container">
+          <img src="./Images/Logo only.gif" alt="Logo" class="responsive-logo" />
+        </div>
+        <h1 class="businessName">Point FX BladeZ</h1>
+        <p class="slogan">Premium BladeZ for the Modern Warrior</p>
+        <nav>
+          <ul class="responsive-nav">
+            <li><a href="index.html"><i class="fas fa-home"></i> Products</a></li>
+            <li><a href="orders.html"><i class="fas fa-box-open"></i> My Orders</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div>
+        <img src="./images/Chinese warrior dragon in red and gold.PNG" alt="./images/default-image.jpg" class="header-image-mirrored" />
+      </div>
     </header>
     <main>
+      <div id="user-info" style="text-align: center; margin-bottom: 20px;"></div>
       <section id="cart-section">
         <h2>Your Cart</h2>
         <div id="cart-container" class="product-cards-container">
@@ -67,6 +73,32 @@
     </main>
     <footer>
       <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
+      <p>Created By: <a href="https://www.mdoasolutions.com" target="_blank">MDOA Solutions</a></p>
     </footer>
+    <script>
+      async function fetchUserInfo() {
+        try {
+          const response = await fetch("http://localhost:5000/api/user-info", {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          });
+          if (!response.ok) throw new Error("Failed to fetch user info");
+
+          const user = await response.json();
+          document.getElementById("user-info").innerHTML = `
+            <h2>Welcome, ${user.first_name} ${user.last_name}</h2>
+            <p>Email: ${user.email}</p>
+          `;
+        } catch (error) {
+          console.error("Error fetching user info:", error);
+          document.getElementById("user-info").innerHTML = `
+            <p style="color: red;">Failed to load user information. Please log in again.</p>
+          `;
+        }
+      }
+
+      fetchUserInfo();
+    </script>
   </body>
 </html>

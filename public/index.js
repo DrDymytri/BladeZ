@@ -178,19 +178,15 @@ async function loadProducts(page = 1) {
     queryParams.append("page", filters.page);
     queryParams.append("limit", filters.limit);
 
-    console.log("Fetching products with query:", queryParams.toString()); // Debugging log
-
     const response = await fetch(`http://localhost:5000/api/products?${queryParams.toString()}`);
     if (!response.ok) throw new Error("Failed to fetch products");
 
     const data = await response.json();
-    console.log("Fetched products:", data); // Debugging log
 
     renderProducts(data.products);
 
-    // Render pagination controls if applicable
-    const totalPages = Math.ceil(data.total / filters.limit); // Assuming `data.total` contains the total number of products
-    renderPaginationControls(filters.page, totalPages);
+    // Render pagination controls using the totalPages value
+    renderPaginationControls(filters.page, data.totalPages);
   } catch (error) {
     console.error("Error loading products:", error.message);
     alert("Error loading products: " + error.message);
