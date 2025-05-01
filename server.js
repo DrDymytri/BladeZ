@@ -1059,6 +1059,7 @@ app.get("/api/admin/orders", async (req, res) => {
              o.status AS status,
              o.tracking_number AS tracking_number,
              o.created_at AS created_at, 
+             o.shipped_date AS shipped_date, -- Ensure shipped_date is included
              o.closed_date AS closed_date,
              o.received_confirmation_number AS received_confirmation_number,
              o.confirmation_date_time AS confirmation_date_time,
@@ -1082,7 +1083,10 @@ app.get("/api/admin/orders", async (req, res) => {
 
     const result = await request.query(query);
 
-    res.json(result.recordset);
+    res.json(result.recordset.map(order => ({
+      ...order,
+      shipped_date: order.shipped_date ? order.shipped_date.toISOString() : null // Convert to ISO string for full date and time
+    })));
   } catch (error) {
     console.error("Error fetching admin orders:", error.message);
     res.status(500).json({ error: "Failed to fetch orders." });
@@ -1100,11 +1104,11 @@ app.put("/api/admin/orders/:id/status", async (req, res) => {
     try {
         const pool = await getConnection();
 
-        // Retain the existing tracking number if none is provided
+        // Fetch the existing order to check the current status
         const existingOrder = await pool.request()
             .input("id", sql.Int, id)
             .query(`
-                SELECT tracking_number
+                SELECT status, tracking_number, shipped_date
                 FROM orders
                 WHERE id = @id
             `);
@@ -1113,7 +1117,15 @@ app.put("/api/admin/orders/:id/status", async (req, res) => {
             return res.status(404).json({ error: "Order not found." });
         }
 
+        const existingStatus = existingOrder.recordset[0].status;
         const existingTrackingNumber = existingOrder.recordset[0].tracking_number;
+
+        // Automatically set the shipped_date if transitioning from "Boxed" to "Shipped"
+        let shippedDate = null;
+        if (existingStatus === "Boxed" && status === "Shipped") {
+            shippedDate = new Date();
+            console.log(`Setting shipped_date to ${shippedDate} for order ID: ${id}`);
+        }
 
         // Prepare additional fields for "Closed" or "Received" statuses
         const closedDate = status === "Closed" ? new Date() : null;
@@ -1123,6 +1135,7 @@ app.put("/api/admin/orders/:id/status", async (req, res) => {
             .input("id", sql.Int, id)
             .input("status", sql.NVarChar, status)
             .input("trackingNumber", sql.NVarChar, trackingNumber || existingTrackingNumber)
+            .input("shippedDate", sql.DateTime, shippedDate)
             .input("closedDate", sql.Date, closedDate)
             .input("receivedConfirmationNumber", sql.NVarChar, receivedConfirmationNumber || null)
             .input("confirmationDateTime", sql.DateTime, confirmationDateTime)
@@ -1130,6 +1143,7 @@ app.put("/api/admin/orders/:id/status", async (req, res) => {
                 UPDATE orders
                 SET status = @status,
                     tracking_number = @trackingNumber,
+                    shipped_date = COALESCE(@shippedDate, shipped_date), -- Update shipped_date
                     closed_date = @closedDate,
                     received_confirmation_number = @receivedConfirmationNumber,
                     confirmation_date_time = @confirmationDateTime
@@ -1300,6 +1314,31 @@ app.get("/api/admin/orders/:id/items", async (req, res) => {
   } catch (error) {
     console.error("Error fetching order items:", error.message);
     res.status(500).json({ error: "Failed to fetch order items." });
+  }
+});
+
+app.get("/api/admin/orders/:id/user", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const pool = await getConnection();
+    const result = await pool.request()
+      .input("orderId", sql.Int, id)
+      .query(`
+        SELECT u.first_name, u.last_name, u.email, u.phone, u.address
+        FROM orders o
+        INNER JOIN Users u ON o.user_id = u.id
+        WHERE o.id = @orderId
+      `);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ error: "User not found for this order." });
+    }
+
+    res.json(result.recordset[0]);
+  } catch (error) {
+    console.error("Error fetching user information:", error.message);
+    res.status(500).json({ error: "Failed to fetch user information." });
   }
 });
 
@@ -1563,6 +1602,58 @@ app.post("/api/paypal/capture-order", async (req, res) => {
         console.error("Error capturing PayPal order:", error.message);
         res.status(500).json({ error: "Failed to capture PayPal order." });
     }
+});
+
+app.post("/api/admin/orders/:id/send-email", async (req, res) => {
+  const { id } = req.params;
+  const { email, trackingNumber } = req.body;
+
+  if (!email || !trackingNumber) {
+    return res.status(400).json({ error: "Email and tracking number are required." });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // Use your email service provider
+      auth: {
+        user: process.env.EMAIL_USER, // Your email address
+        pass: process.env.EMAIL_PASS, // Your email password
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "BladeZ - Product Shipped",
+      text: `Dear Customer,
+
+Your order has been shipped! Here is your tracking number: ${trackingNumber}.
+
+To view your order details, please log in to the BladeZ website and navigate to the "My Orders" section.
+
+BladeZ Website: http://localhost:5000/landing.html
+
+Thank you for shopping with BladeZ!
+
+Best regards,
+BladeZ Team`,
+      html: `
+        <p>Dear Customer,</p>
+        <p>Your order has been shipped! Here is your tracking number: <strong>${trackingNumber}</strong>.</p>
+        <p>To view your order details, please log in to the BladeZ website and navigate to the "My Orders" section.</p>
+        <p><a href="http://localhost:5000/landing.html" style="color: blue; text-decoration: underline;">BladeZ Website</a></p>
+        <p>Thank you for shopping with BladeZ!</p>
+        <p>Best regards,<br>BladeZ Team</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ message: "Email sent successfully." });
+  } catch (error) {
+    console.error("Error sending email:", error.message);
+    res.status(500).json({ error: "Failed to send email." });
+  }
 });
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

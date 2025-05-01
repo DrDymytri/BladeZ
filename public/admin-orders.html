@@ -106,6 +106,7 @@
               <th>Status</th>
               <th>Tracking Number</th>
               <th>Order Placed Date</th>
+              <th>Shipped Date</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -113,6 +114,21 @@
             <!-- Orders will be dynamically loaded here -->
           </tbody>
         </table>
+      </div>
+      <div id="order-items-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <span class="close-btn" onclick="closeModal()">&times;</span>
+          <h2>Order Details</h2>
+          <p><strong>First Name:</strong> <span id="user-first-name"></span></p>
+          <p><strong>Last Name:</strong> <span id="user-last-name"></span></p>
+          <p><strong>Email:</strong> <a id="user-email" href="#" style="text-decoration: underline; color: blue;"></a></p>
+          <p><strong>Phone:</strong> <span id="user-phone"></span></p>
+          <p><strong>Address:</strong> <span id="user-address"></span></p>
+          <h3>Purchased Items:</h3>
+          <div id="order-items-container">
+            <!-- Items will be dynamically loaded here -->
+          </div>
+        </div>
       </div>
     </main>
     <footer>

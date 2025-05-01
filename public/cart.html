@@ -92,9 +92,10 @@
           `;
         } catch (error) {
           console.error("Error fetching user info:", error);
-          document.getElementById("user-info").innerHTML = `
-            <p style="color: red;">Failed to load user information. Please log in again.</p>
-          `;
+          // Set intended destination to cart.html and redirect to login page
+          localStorage.setItem("intendedDestination", "cart.html");
+          alert("Failed to load user information. Please log in again.");
+          window.location.href = "login.html";
         }
       }
 

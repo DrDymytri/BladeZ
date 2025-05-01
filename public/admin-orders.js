@@ -67,6 +67,7 @@ async function loadOrders() {
           }
         </td>
         <td>${new Date(order.created_at).toLocaleDateString()}</td>
+        <td>${order.shipped_date ? new Date(order.shipped_date).toLocaleString() : "N/A"}</td> <!-- Render shipped_date with date and time -->
         <td>
           <button onclick="showOrderItems(${order.id})" class="view-items-btn">View Items</button>
         </td>
@@ -154,6 +155,7 @@ async function filterByStatus() {
             }
           </td>
           <td>${new Date(order.created_at).toLocaleDateString()}</td>
+          <td>${order.shipped_date ? new Date(order.shipped_date).toLocaleString() : "N/A"}</td> <!-- Render shipped_date with date and time -->
           <td>
             <button onclick="showOrderItems(${order.id})" class="view-items-btn">View Items</button>
           </td>
@@ -287,10 +289,8 @@ async function updateOrderStatus(orderId, newStatus) {
         throw new Error(errorData.error || "Failed to update order status");
       }
 
-      alert("Order status updated successfully!");
-
-      // Refresh the page to reflect the updated status
-      location.reload();
+      alert("Order status updated successfully! Use the email link in the 'View Items' modal to notify the customer.");
+      location.reload(); // Refresh the page to reflect the updated status
     } catch (error) {
       console.error("Error updating order status:", error.message);
       alert("Failed to update order status: " + error.message);
@@ -389,6 +389,28 @@ async function updateOrderStatus(orderId, newStatus) {
   }
 }
 
+async function sendEmail(orderId, email, trackingNumber) {
+  try {
+    const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, trackingNumber }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to send email");
+    }
+
+    alert("Email sent successfully!");
+  } catch (error) {
+    console.error("Error sending email:", error.message);
+    alert("Failed to send email: " + error.message);
+  }
+}
+
 async function showOrderItems(orderId) {
   try {
     const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/items`);
@@ -405,7 +427,7 @@ async function showOrderItems(orderId) {
       return;
     }
 
-    // Fetch the order details to get the user's name and status
+    // Fetch the order details to get the status and tracking number
     const orderResponse = await fetch(`http://localhost:5000/api/admin/orders`);
     if (!orderResponse.ok) {
       const errorData = await orderResponse.json();
@@ -414,10 +436,49 @@ async function showOrderItems(orderId) {
 
     const orders = await orderResponse.json();
     const order = orders.find((o) => o.id === orderId);
-    const userName = order?.user_name || "Unknown User";
     const orderStatus = order?.status || "Unknown";
+    const trackingNumber = order?.tracking_number || "N/A";
 
-    // Generate HTML for the modal with cards
+    // Fetch the user information for the order
+    const userResponse = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/user`);
+    if (!userResponse.ok) {
+      const errorData = await userResponse.json();
+      throw new Error(errorData.error || "Failed to fetch user information");
+    }
+
+    const user = await userResponse.json();
+
+    // Generate the list of purchased items
+    const purchasedItems = items
+      .map((item) => `- ✅ ${item.productName} (Quantity: ${item.quantity})`)
+      .join("\n");
+
+    // Generate the email body only if the status is "Shipped"
+    let emailBody = "";
+    if (orderStatus === "Shipped") {
+      emailBody = `
+        Dear ${user.first_name},\n\n
+        Your order has been shipped!\n\n
+        Here is your tracking number: ${trackingNumber}.\n\n
+        Purchased Items:\n
+        ${purchasedItems}\n\n
+        Instructions to find your order on the BladeZ website:\n
+        1. Go to the BladeZ website by clicking here: http://localhost:5000/landing.html\n
+        2. Enter the Realm.\n
+        3. Close the showcased items unless you see something else you want to purchase.\n
+        4. Go to Cart.\n
+        5. Go to My Orders.\n
+        6. Log into your account.\n\n
+        Thank you for your purchase!\n\n
+        Best regards,\n
+        BladeZ Team
+      `.trim();
+
+      // Encode the email body for the mailto link
+      emailBody = encodeURIComponent(emailBody);
+    }
+
+    // Generate HTML for the modal with user details, order number, and items
     const itemsHtml = items
       .map(
         (item) => `
@@ -429,8 +490,8 @@ async function showOrderItems(orderId) {
             <p>Price: $${item.price.toFixed(2)}</p>
             <label>
               <input type="checkbox" class="item-boxed-checkbox" data-product-id="${item.productId}" ${
-          orderStatus === "Boxed" || orderStatus === "Shipped" ? "checked" : ""
-        } />
+                ["Boxed", "Shipped", "Closed"].includes(orderStatus) ? "checked" : ""
+              } />
               Mark as Boxed
             </label>
           </div>
@@ -443,7 +504,16 @@ async function showOrderItems(orderId) {
       <div id="order-items-modal" class="modal">
         <div class="modal-content">
           <span class="close-btn" onclick="closeModal()">&times;</span>
-          <h2>${userName} - Order (${orderId}) <br>Purchased Items:</h2>
+          <h2>Order Details</h2>
+          <p><strong>Order Number:</strong> ${orderId}</p>
+          <div class="user-details">
+            <p><strong>First Name:</strong> ${user.first_name}</p>
+            <p><strong>Last Name:</strong> ${user.last_name}</p>
+            <p><strong>Email:</strong> <a href="mailto:${user.email}?subject=${orderStatus === "Shipped" ? "BladeZ - Your Product(s) have been Shipped" : ""}&body=${emailBody}" style="text-decoration: underline; color: blue;">${user.email}</a></p>
+            <p><strong>Phone:</strong> ${user.phone}</p>
+            <p><strong>Address:</strong> ${user.address}</p>
+          </div>
+          <h3>Purchased Items:</h3>
           <div class="order-items-container">
             ${itemsHtml}
           </div>
@@ -462,8 +532,8 @@ async function showOrderItems(orderId) {
     document.body.insertAdjacentHTML("beforeend", modalHtml);
     document.getElementById("order-items-modal").style.display = "block";
   } catch (error) {
-    console.error("Error fetching order items:", error.message);
-    alert("Failed to fetch order items: " + error.message);
+    console.error("Error fetching order items or user information:", error.message);
+    alert("Failed to fetch order details: " + error.message);
   }
 }
 

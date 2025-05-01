@@ -254,7 +254,7 @@ function addToCart(productId, productName, productPrice, productImage) {
   }
 
   localStorage.setItem("cart", JSON.stringify(cart));
-  alert(`${productName} has been added to your cart.`);
+  alert(`${productName} has been added to your cart.`); // Notify the user
   updateCartCount();
   renderCartItems(cart); // Use the correct rendering function
 }
@@ -292,8 +292,88 @@ function clearFilters() {
 }
 
 function displayShowcaseModal(products) {
+  const productsPerPage = 4;
+  let currentPage = 1;
+
   const modal = document.createElement("div");
   modal.classList.add("modal");
+
+  const renderShowcasePage = (page) => {
+    const startIndex = (page - 1) * productsPerPage;
+    const endIndex = startIndex + productsPerPage;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+
+    const productHTML = paginatedProducts
+      .map(
+        (product) => `
+        <div class="product-item">
+          <img src="${product.image_url || './images/default-image.jpg'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || './images/default-image.jpg'}')" />
+          <h3>${product.name}</h3>
+          <p>${product.description}</p>
+          <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
+          <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || './images/default-image.jpg'}">Add to Cart</button>
+        </div>
+      `
+      )
+      .join("");
+
+    modal.querySelector(".showcase-products-grid").innerHTML = productHTML;
+
+    // Add event listeners to "Add to Cart" buttons
+    modal.querySelectorAll(".add-to-cart-btn").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        const productId = parseInt(event.target.dataset.id, 10);
+        const productName = event.target.dataset.name;
+        const productPrice = parseFloat(event.target.dataset.price);
+        const productImage = event.target.dataset.image;
+
+        addToCart(productId, productName, productPrice, productImage);
+        alert(`${productName} has been added to your cart.`); // Notify the user
+      });
+    });
+
+    renderPaginationControls(page, Math.ceil(products.length / productsPerPage));
+  };
+
+  const renderPaginationControls = (currentPage, totalPages) => {
+    const paginationContainer = modal.querySelector(".pagination-container");
+    if (totalPages <= 1) {
+      paginationContainer.innerHTML = ""; // No pagination needed
+      return;
+    }
+
+    let paginationHTML = "";
+
+    // Previous button
+    if (currentPage > 1) {
+      paginationHTML += `<button class="pagination-button" data-page="${currentPage - 1}">Previous</button>`;
+    }
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      paginationHTML += `
+        <button class="pagination-button ${i === currentPage ? "active" : ""}" data-page="${i}">
+          ${i}
+        </button>
+      `;
+    }
+
+    // Next button
+    if (currentPage < totalPages) {
+      paginationHTML += `<button class="pagination-button" data-page="${currentPage + 1}">Next</button>`;
+    }
+
+    paginationContainer.innerHTML = paginationHTML;
+
+    // Add event listeners to pagination buttons
+    paginationContainer.querySelectorAll(".pagination-button").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        const page = parseInt(event.target.dataset.page, 10);
+        currentPage = page;
+        renderShowcasePage(page);
+      });
+    });
+  };
 
   modal.innerHTML = `
     <div class="modal-content">
@@ -305,21 +385,8 @@ function displayShowcaseModal(products) {
         Single Click on the Image to Enlarge.<br>
         Click the "X" Button in Top-Right-Hand Corner to Enter The Showroom.
       </p>
-      <div class="showcase-products-grid">
-        ${products
-          .map(
-            (product) => `
-          <div class="product-item">
-            <img src="${product.image_url || './images/default-image.jpg'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || './images/default-image.jpg'}')" />
-            <h3>${product.name}</h3>
-            <p>${product.description}</p>
-            <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
-            <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || './images/default-image.jpg'}">Add to Cart</button>
-          </div>
-        `
-          )
-          .join("")}
-      </div>
+      <div class="showcase-products-grid"></div>
+      <div class="pagination-container"></div>
     </div>
   `;
 
@@ -336,33 +403,7 @@ function displayShowcaseModal(products) {
     }
   });
 
-  // Add event listeners to "Add to Cart" buttons
-  modal.querySelectorAll(".add-to-cart-btn").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const productId = parseInt(event.target.dataset.id, 10);
-      const productName = event.target.dataset.name;
-      const productPrice = parseFloat(event.target.dataset.price);
-      const productImage = event.target.dataset.image;
-
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const existingProduct = cart.find((item) => item.id === productId);
-      if (existingProduct) {
-        existingProduct.quantity += 1;
-      } else {
-        cart.push({
-          id: productId,
-          name: productName,
-          price: productPrice,
-          image_url: productImage,
-          quantity: 1,
-        });
-      }
-
-      localStorage.setItem("cart", JSON.stringify(cart));
-      updateCartCount();
-      alert(`${productName} added to cart!`);
-    });
-  });
+  renderShowcasePage(currentPage);
 }
 
 function updateCartCount() {
@@ -447,6 +488,7 @@ function renderProducts(products) {
       const productImage = productCard.dataset.image; // Retrieve the correct image URL
 
       addToCart(productId, productName, productPrice, productImage); // Pass the image URL to addToCart
+      alert(`${productName} has been added to your cart.`); // Notify the user
     });
   });
 }

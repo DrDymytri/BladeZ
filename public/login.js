@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const intendedDestination = localStorage.getItem("intendedDestination");
       if (intendedDestination) {
         localStorage.removeItem("intendedDestination"); // Clear the intended destination
-        window.location.href = intendedDestination; // Redirect to the intended destination
+        window.location.href = intendedDestination === "cart.html" ? "cart.html" : intendedDestination; // Redirect to cart.html if it was the intended destination
       } else {
         window.location.href = "index.html"; // Default to index.html
       }
