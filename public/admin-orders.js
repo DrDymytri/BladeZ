@@ -500,6 +500,22 @@ async function showOrderItems(orderId) {
       )
       .join("");
 
+    // Determine button state and text based on orderStatus
+    let verifyBtnAttrs = '';
+    let verifyBtnText = 'Verify All Boxed';
+    let verifyBtnStyle = 'display:none;';
+    if (orderStatus === "Boxed") {
+      verifyBtnAttrs = 'disabled style="background: #ccc; color: #666; cursor: not-allowed; display:block;"';
+      verifyBtnText = 'These items are Boxed';
+    } else if (orderStatus === "Shipped") {
+      verifyBtnAttrs = 'disabled style="background: #ccc; color: #666; cursor: not-allowed; display:block;"';
+      verifyBtnText = 'Items are Shipped';
+    } else {
+      // Default: hidden, will be shown by JS if all checked
+      verifyBtnAttrs = 'style="display:none;"';
+      verifyBtnText = 'Verify All Boxed';
+    }
+
     const modalHtml = `
       <div id="order-items-modal" class="modal">
         <div class="modal-content">
@@ -517,7 +533,7 @@ async function showOrderItems(orderId) {
           <div class="order-items-container">
             ${itemsHtml}
           </div>
-          <button class="verify-boxed-btn" onclick="verifyAllBoxed(${orderId})">Verify All Boxed</button>
+          <button class="verify-boxed-btn" id="verify-boxed-btn" onclick="verifyAllBoxed(${orderId})" ${verifyBtnAttrs}>${verifyBtnText}</button>
         </div>
       </div>
     `;
@@ -531,6 +547,22 @@ async function showOrderItems(orderId) {
     // Add the modal to the DOM and display it
     document.body.insertAdjacentHTML("beforeend", modalHtml);
     document.getElementById("order-items-modal").style.display = "block";
+
+    // --- NEW LOGIC: Show/hide the Verify All Boxed button ---
+    if (orderStatus !== "Boxed" && orderStatus !== "Shipped") {
+      function updateVerifyButtonVisibility() {
+        const checkboxes = document.querySelectorAll(".item-boxed-checkbox");
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        const btn = document.getElementById("verify-boxed-btn");
+        if (btn) btn.style.display = allChecked ? "block" : "none";
+      }
+      document.querySelectorAll(".item-boxed-checkbox").forEach(cb => {
+        cb.addEventListener("change", updateVerifyButtonVisibility);
+      });
+      updateVerifyButtonVisibility();
+    }
+    // --- END NEW LOGIC ---
+
   } catch (error) {
     console.error("Error fetching order items or user information:", error.message);
     alert("Failed to fetch order details: " + error.message);
