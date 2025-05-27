@@ -287,6 +287,16 @@ footer a {
 .responsive-logo {
   max-width: 100%; /* Ensure the logo scales within the viewport */
   height: auto;
+  animation: spin360 5s linear infinite;
+}
+
+@keyframes spin360 {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .modal-products-grid {
