@@ -31,7 +31,7 @@ const app = express();
 app.use(cors({ origin: "http://localhost:5000", credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public"))); // Ensure this line exists and serves the 'public' folder
+app.use(express.static(__dirname)); // Serve static files from the root directory
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
