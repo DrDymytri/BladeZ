@@ -1,4 +1,12 @@
 require("dotenv").config();
+
+console.log("Loaded environment variables:", process.env); // Debug log to verify all variables
+
+if (!process.env.STRIPE_SECRET_KEY) {
+    console.error("STRIPE_SECRET_KEY is not defined. Check your .env file.");
+    throw new Error("STRIPE_SECRET_KEY is not defined in the .env file.");
+}
+
 const express = require("express");
 const cors = require("cors");
 const sql = require("mssql");
@@ -10,7 +18,9 @@ const multer = require("multer");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const nodemailer = require("nodemailer");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY); // Ensure STRIPE_SECRET_KEY is set in .env
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+const stripe = require("stripe")(stripeSecretKey);
 const jwt = require("jsonwebtoken");
 const paypal = require("@paypal/checkout-server-sdk");
 
@@ -28,7 +38,7 @@ const paypalClient = new paypal.core.PayPalHttpClient(
 const app = express();
 
 // Middleware
-app.use(cors({ origin: "http://localhost:5000", credentials: true }));
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static(__dirname)); // Serve static files from the root directory
@@ -1631,7 +1641,7 @@ Your order has been shipped! Here is your tracking number: ${trackingNumber}.
 
 To view your order details, please log in to the BladeZ website and navigate to the "My Orders" section.
 
-BladeZ Website: http://localhost:5000/landing.html
+BladeZ Website: ${process.env.FRONTEND_URL}/landing.html
 
 Thank you for shopping with BladeZ!
 
@@ -1641,7 +1651,7 @@ BladeZ Team`,
         <p>Dear Customer,</p>
         <p>Your order has been shipped! Here is your tracking number: <strong>${trackingNumber}</strong>.</p>
         <p>To view your order details, please log in to the BladeZ website and navigate to the "My Orders" section.</p>
-        <p><a href="http://localhost:5000/landing.html" style="color: blue; text-decoration: underline;">BladeZ Website</a></p>
+        <p><a href="${process.env.FRONTEND_URL}/landing.html" style="color: blue; text-decoration: underline;">BladeZ Website</a></p>
         <p>Thank you for shopping with BladeZ!</p>
         <p>Best regards,<br>BladeZ Team</p>
       `,
@@ -1656,4 +1666,4 @@ BladeZ Team`,
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server running on http://0.0.0.0:${PORT}`));

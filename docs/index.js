@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateCartCount();
 
   try {
-    const response = await fetch("http://localhost:5000/api/showcase-products");
+    const response = await fetch(`${backendUrl}/api/showcase-products`);
     if (!response.ok) throw new Error("Failed to fetch showcase products");
 
     const showcasedProducts = await response.json();
@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function populateCategoryFilter() {
   try {
-    const response = await fetch("http://localhost:5000/api/categories");
+    const response = await fetch(`${backendUrl}/api/categories`);
     if (!response.ok) throw new Error("Failed to fetch categories");
 
     const categories = await response.json();
@@ -112,7 +112,7 @@ async function populateCategoryFilter() {
 
 async function populateSubcategoryFilter(categoryId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/subcategories?categoryId=${categoryId}`);
+    const response = await fetch(`${backendUrl}/api/subcategories?categoryId=${categoryId}`);
     if (!response.ok) throw new Error("Failed to fetch subcategories");
 
     const subcategories = await response.json();
@@ -131,7 +131,7 @@ async function populateSubcategoryFilter(categoryId) {
 
 async function populateDescriptorFilter(subCategoryId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/descriptors?subCategoryId=${subCategoryId}`);
+    const response = await fetch(`${backendUrl}/api/descriptors?subCategoryId=${subCategoryId}`);
     if (!response.ok) throw new Error("Failed to fetch descriptors");
 
     const descriptors = await response.json();
@@ -178,7 +178,7 @@ async function loadProducts(page = 1) {
     queryParams.append("page", filters.page);
     queryParams.append("limit", filters.limit);
 
-    const response = await fetch(`http://localhost:5000/api/products?${queryParams.toString()}`);
+    const response = await fetch(`${backendUrl}/api/products?${queryParams.toString()}`);
     if (!response.ok) throw new Error("Failed to fetch products");
 
     const data = await response.json();
