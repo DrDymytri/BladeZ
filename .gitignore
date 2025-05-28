@@ -1,2 +1,4 @@
 node_modules/
 .env
+# Ignore all .MOV files in the uploads/videos folder
+uploads/videos/*.MOV
