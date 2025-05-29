@@ -1,0 +1,154 @@
+body {
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  background-color: #f9f9f9;
+  font-family: "MedievalSharp", serif;
+  background-image: url(./images/Old-Floral-Parchment-Texture.jpg);
+  margin: 0;
+  padding: 0;
+}
+
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive grid with minimum column width */
+  gap: 20px; /* Space between grid items */
+  padding: 20px;
+  justify-items: center; /* Center items horizontally */
+}
+
+.image-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 0 40px 5px rgb(30, 0, 0);
+  overflow: hidden;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%; /* Ensure consistent width */
+  max-width: 250px; /* Limit maximum width */
+}
+
+.image-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.image-card img {
+  width: 100%;
+  height: 200px; /* Fixed height for consistency */
+  object-fit: cover; /* Ensure the image fits nicely */
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.image-card p {
+  font-size: 1em;
+  color: #333;
+  margin: 10px 0;
+  padding: 0 10px;
+}
+
+.image-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.image-popup .popup-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 95%; /* Limit the popup content width */
+  max-height: 95%; /* Limit the popup content height */
+  overflow: hidden; /* Prevent content overflow */
+}
+
+.image-popup img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  max-width: 90vw; /* Ensure the image fits within the viewport width */
+  max-height: 90vh; /* Ensure the image fits within the viewport height */
+  width: auto; /* Maintain aspect ratio */
+  height: auto; /* Maintain aspect ratio */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Add a shadow for better visibility */
+}
+
+.image-popup .close-popup {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+  border-radius: 50%;
+}
+
+.image-popup p {
+  color: white;
+  margin-top: 10px;
+  font-size: 1.2em;
+}
+
+/* High-contrast mode styles */
+@media (forced-colors: active) {
+  .image-card {
+    border-color: Highlight;
+    background-color: Window;
+    color: WindowText;
+  }
+
+  .image-card img {
+    border-bottom-color: Highlight;
+  }
+
+  .image-popup {
+    background-color: WindowText;
+  }
+
+  .image-popup img {
+    border-color: Highlight;
+  }
+
+  .image-popup .close-popup {
+    background-color: Highlight;
+    color: Window;
+  }
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .images-grid {
+    grid-template-columns: 1fr; /* Single column on smaller screens */
+  }
+
+  .image-card img {
+    height: auto; /* Adjust height for smaller screens */
+  }
+}
+
+.aboutBody {
+  background-color: #f9f9f9;
+  font-family: "MedievalSharp", serif;
+  padding: 20px;
+}
+
+.ImageCollects {
+  text-align: center;
+  font-size: 2em;
+  margin-bottom: 20px;
+}

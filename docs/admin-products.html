@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Products - Point FX BladeZ</title>
+    <link rel="stylesheet" href="./admin-products.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+  </head>
+  <body>
+    <nav class="Tabs">
+      <a href="./admin.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
+      <a href="./index.html"><i class="fas fa-home"></i> Products</a>
+      <a href="./admin-orders.html"><i class="fas fa-box-open"></i> Orders</a>
+      <a href="./admin-events.html"><i class="fas fa-calendar"></i> Events</a>
+      <a href="./admin-media.html"><i class="fas fa-photo-video"></i> Media</a>
+      <a href="./manage-categories.html"><i class="fas fa-filter"></i> Filtering</a>
+    </nav>
+    <main>
+      <div class="centered-container">
+        <h1>Admin - Product Management</h1>
+        <form id="productForm">
+          <div class="search-pagination-container">
+            <input type="text" id="productSearch" placeholder="Search products..." />
+          </div>
+          <input type="hidden" id="productId" name="productId" />
+          <div class="form-row">
+            <input type="text" id="productName" name="productName" placeholder="Product Name" required />
+            <input type="number" id="productPrice" name="productPrice" placeholder="Price" required />
+          </div>
+          <div class="form-row">
+            <input type="number" id="productStock" name="productStock" placeholder="Stock Quantity" required />
+            <input type="text" id="productImageUrl" name="productImageUrl" placeholder="Image URL" />
+          </div>
+          <div class="form-row">
+            <input type="text" id="manufacturerProductNumber" name="manufacturerProductNumber" placeholder="Manufacturer Product Number" required />
+          </div>
+          <div class="form-row">
+            <select id="productCategory" name="productCategory" required>
+              <option value="">Select Category</option>
+            </select>
+            <select id="productSubCategory" name="productSubCategory">
+              <option value="">Select Subcategory</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <select id="productTag" name="productTag">
+              <option value="">Select Tag</option>
+            </select>
+            <label>
+              <input type="checkbox" id="productShowcase" name="productShowcase" />
+              Showcase
+            </label>
+          </div>
+          <div class="form-row">
+            <textarea id="productDescription" name="productDescription" placeholder="Description" required></textarea>
+          </div>
+          <div class="form-row">
+            <input type="number" id="restockThreshold" name="restockThreshold" placeholder="Restock Threshold" required />
+          </div>
+          <div class="form-buttons">
+            <button type="submit" id="addProductBtn">Add Product</button>
+            <button type="button" id="updateProductBtn" style="display: none;">Update Product</button>
+          </div>
+        </form>
+        <div class="sort-controls">
+          <button type="button" id="toggleShowcaseBtn">Show Only Showcased</button>
+          <button type="button" onclick="handleSortChange('name')">Sort by Name (Ascending)</button>
+          <button type="button" onclick="handleSortChange('showcase')">Sort by Showcased (Yes)</button>
+          <button type="button" id="lowStockBtn">View Low-Stock Products</button>
+        </div>
+        <div id="admin-products-container" class="product-cards-container">
+          <!-- Product cards will be dynamically populated here -->
+        </div>
+        <div id="paginationControls">
+          <!-- Pagination controls will be rendered here -->
+        </div>
+        <div class="low-stock-section">
+          <h2>Low-Stock Products</h2>
+          <p id="row-count" style="font-weight: bold;">Total Rows: 0</p>
+          <table id="low-stock-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th style="border: 1px solid #ddd; padding: 8px; cursor: pointer;" onclick="sortTable('id')">Product ID</th>
+                <th style="border: 1px solid #ddd; padding: 8px; cursor: pointer;" onclick="sortTable('name')">Name</th>
+                <th style="border: 1px solid #ddd; padding: 8px; cursor: pointer;" onclick="sortTable('stock_quantity')">Stock Quantity</th>
+                <th style="border: 1px solid #ddd; padding: 8px; cursor: pointer;" onclick="sortTable('restock_threshold')">Restock Threshold</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="low-stock-table-body">
+              <!-- Low-stock products will be dynamically populated here -->
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                  <button class="ViewProduct" onclick="filterByProductId(PLACEHOLDER_PRODUCT_ID)">View Product</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+    <footer>
+      <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
+    </footer>
+    <script src="./admin-products.js"></script>
+    <script>
+      const BACKEND_URL = "https://bladez-backend.onrender.com"; // Ensure consistent backend URL
+
+      async function updateStock(productId, stockChange) {
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/products/${productId}/stock`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stockChange }),
+          });
+          if (!response.ok) throw new Error("Failed to update stock");
+          alert("Stock updated successfully!");
+          loadProducts();
+        } catch (error) {
+          console.error("Error updating stock:", error);
+        }
+      }
+    </script>
+  </body>
+</html>

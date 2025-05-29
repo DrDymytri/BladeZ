@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Orders - Point FX BladeZ</title>
+    <link rel="stylesheet" href="./admin-events.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"
+    />
+    <style>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        font-size: 16px;
+        text-align: left;
+      }
+
+      table thead tr {
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+      }
+
+      table th,
+      table td {
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+      }
+
+      table tbody tr:nth-child(even) {
+        background-color: #f3f3f3;
+      }
+
+      table tbody tr:hover {
+        background-color: #f1f1f1;
+      }
+
+      .ClosedOrders {
+        width: auto;
+        font-family: "MedievalSharp", serif;
+        text-decoration: none;
+        padding: 5px;
+        margin-bottom: 5px;
+        margin-top: 5px;
+        border-top: 4px solid rgb(189, 209, 230);
+        border-bottom: 4px solid rgb(121, 141, 160);
+        border-right: 4px solid rgb(149, 172, 190);
+        border-left: 4px solid rgb(156, 175, 194);
+        box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466);
+        outline: 1px solid black;
+        background: linear-gradient(to right, #570505, #cc0000, #b30000, #cc0000, #570505); 
+        box-sizing: border-box;
+        font-family: serif;
+        font-size: 20px;
+        font-weight: bold;
+        color: aliceblue;
+        text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black, 0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+        box-shadow: 0 0 15px 1px aliceblue;
+        cursor: pointer;
+      }
+      .ClosedOrders:hover {
+        background-color: #a04545;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="Tabs">
+      <a href="./admin.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
+      <a href="./index.html"><i class="fas fa-home"></i> Products</a>
+      <a href="./admin-products.html"><i class="fas fa-box-open"></i> Product Management</a>
+      <a href="./admin-events.html"><i class="fas fa-calendar" aria-hidden="true"></i> Events</a>
+      <a href="./admin-media.html"><i class="fas fa-photo-video"></i> Media</a>
+      <a href="./manage-categories.html"><i class="fas fa-filter"></i> Filtering</a>
+    </nav>
+    <main>
+      <div style="overflow-x: auto; margin: 20px;">        
+        <h2>New Orders</h2>
+        <label for="status-filter" style="font-weight: bold; margin-right: 10px;">Filter by Status:</label>
+        <select id="status-filter" onchange="filterByStatus()">
+          <option value="All">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Processing">Processing</option>
+          <option value="Boxed">Boxed</option>
+          <option value="Shipped">Shipped</option>
+        </select>
+        <button class="ClosedOrders" onclick="location.href='./admin-orders-legacy.html'" style="margin-left: 20px;">View Closed Orders</button>
+        <table id="orders-table" class="display">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>User Name</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Tracking Number</th>
+              <th>Order Placed Date</th>
+              <th>Shipped Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Orders will be dynamically loaded here -->
+          </tbody>
+        </table>
+      </div>
+      <div id="order-items-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <span class="close-btn" onclick="closeModal()">&times;</span>
+          <h2>Order Details</h2>
+          <p><strong>First Name:</strong> <span id="user-first-name"></span></p>
+          <p><strong>Last Name:</strong> <span id="user-last-name"></span></p>
+          <p><strong>Email:</strong> <a id="user-email" href="#" style="text-decoration: underline; color: blue;"></a></p>
+          <p><strong>Phone:</strong> <span id="user-phone"></span></p>
+          <p><strong>Address:</strong> <span id="user-address"></span></p>
+          <h3>Purchased Items:</h3>
+          <div id="order-items-container">
+            <!-- Items will be dynamically loaded here -->
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer>
+      <!-- Footer content -->
+    </footer>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="./admin-orders.js"></script>
+  </body>
+</html>

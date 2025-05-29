@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Successful</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header>
+    <h1>Thank You for Your Purchase!</h1>
+  </header>
+  <main>
+    <p>Your payment was successful. Your order is being processed.</p>
+    <a href="./orders.html">View My Orders</a>
+  </main>
+  <script>
+    const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const stripeSessionId = new URLSearchParams(window.location.search).get("session_id");
+      if (!stripeSessionId) {
+        console.error("No Stripe session ID found in the URL.");
+        return;
+      }
+
+      try {
+        console.log("Attempting to confirm order. Session ID:", stripeSessionId);
+
+        const response = await fetch(`${BACKEND_URL}/api/confirm-order?session_id=${stripeSessionId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Error confirming order:", errorData.error);
+          throw new Error(errorData.error || "Failed to confirm order with the backend.");
+        }
+
+        const responseData = await response.json();
+        console.log("Order confirmed successfully:", responseData);
+        localStorage.removeItem("cart");
+      } catch (error) {
+        console.error("Error confirming order:", error.message);
+        alert(`There was an issue confirming your order: ${error.message}`);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Archived Orders - Point FX BladeZ</title>
+    <link rel="stylesheet" href="./admin-events.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"
+    />
+    <style>
+      .NewOrders {
+        width: auto;
+        font-family: "MedievalSharp", serif;
+        text-decoration: none;
+        padding: 5px;
+        margin-bottom: 5px;
+        margin-top: 5px;
+        border-top: 4px solid rgb(189, 209, 230);
+        border-bottom: 4px solid rgb(121, 141, 160);
+        border-right: 4px solid rgb(149, 172, 190);
+        border-left: 4px solid rgb(156, 175, 194);
+        box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466);
+        outline: 1px solid black;
+        background: linear-gradient(to right, #05573e, #00cc8f, #00b37d, #00cc8f, #05573e); 
+        box-sizing: border-box;
+        font-family: serif;
+        font-size: 20px;
+        font-weight: bold;
+        color: aliceblue;
+        text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black, 0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+        box-shadow: 0 0 15px 1px aliceblue;
+        cursor: pointer;
+      }
+      .NewOrders:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="Tabs">
+      <a href="./admin.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
+      <a href="./index.html"><i class="fas fa-home"></i> Products</a>
+      <a href="./admin-products.html"><i class="fas fa-box-open"></i> Product Management</a>
+      <a href="./admin-events.html"><i class="fas fa-calendar" aria-hidden="true"></i> Events</a>
+      <a href="./admin-media.html"><i class="fas fa-photo-video"></i> Media</a>
+      <a href="./manage-categories.html"><i class="fas fa-filter"></i> Filtering</a>
+    </nav>
+    <main>
+      <div style="overflow-x: auto; margin: 20px;">
+        <h2>Archived Orders</h2>
+        
+        <button class="NewOrders" onclick="location.href='admin-orders.html'";">View New Orders</button>
+        <table id="orders-table" class="display">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>User Name</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Tracking Number</th>
+              <th>Order Placed Date</th>
+              <th>Closed Date</th>
+              <th>Confirmation Number</th>
+              <th>Confirmation Date/Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Orders will be dynamically loaded here -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+    <footer>
+      <!-- Footer content -->
+    </footer>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="./admin-orders-legacy.js"></script>
+  </body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Media Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <style> 
+      main h1 {
+        text-align: center;
+      }
+      .Tabs {
+        background-color: rgb(83, 11, 11);
+        display: flex;
+        justify-content: space-evenly;
+        gap: 10px;
+        margin-top: 20px;
+        border-bottom: 5px solid black;
+        padding-bottom: 10px;
+        flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+        justify-content: center; /* Center tabs */
+      }
+
+      .Tabs a {
+        color: white;
+        text-decoration: none;
+        font-size: 18px;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+      }
+
+      .Tabs a:hover {
+        background-color: #0056b3;
+      }
+
+      #uploadForm {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 80vw;
+        margin: 0 auto;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        margin-bottom: 20px;
+      }
+
+      #uploadForm .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      #uploadForm input,
+      #uploadForm select{
+        flex: 1;
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      #uploadForm button {
+        width: auto;
+        font-family: "MedievalSharp", serif;width: auto;
+        text-decoration: none;
+        padding: 5px;
+        margin-bottom: 5px;
+        margin-top: 5px;
+        border-top: 4px solid rgb(189, 209, 230);
+        border-bottom: 4px solid rgb(121, 141, 160);
+        border-right: 4px solid rgb(149, 172, 190);
+        border-left: 4px solid rgb(156, 175, 194);
+        /* box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466); */
+        outline: 1px solid black;
+        background: linear-gradient(to right, #ff000088, #a10000, #8b0000, #a10000, #ff000088);
+        /* border-radius: 1px; */
+        box-sizing: border-box;
+        font-family: serif;
+        font-size: 20px;
+        font-weight: bold;
+        color: aliceblue;
+        text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black, 0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+        box-shadow: 0 0 15px 1px aliceblue;
+      }
+
+      #uploadForm button:hover {
+        background-color: #0056b3;
+      }
+
+      #mediaList {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+      }
+
+      .media-item {
+        border: 1px solid #ccc;
+        padding: 10px;
+        width: 300px; /* Set fixed width for the card */
+        text-align: center;
+      }
+
+      .media-item img, .media-item video, .media-item iframe {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain; /* Ensures the entire media fits within the card */
+      }
+
+      .media-item video, .media-item iframe {
+        max-height: 200px; /* Limit the height of video previews and iframes */
+      }
+
+      .media-item button{        
+        width: auto;
+        font-family: "MedievalSharp", serif;width: auto;
+        text-decoration: none;
+        padding: 5px;
+        margin-bottom: 5px;
+        margin-top: 5px;
+        border-top: 4px solid rgb(189, 209, 230);
+        border-bottom: 4px solid rgb(121, 141, 160);
+        border-right: 4px solid rgb(149, 172, 190);
+        border-left: 4px solid rgb(156, 175, 194);
+        /* box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466); */
+        outline: 1px solid black;
+        background: linear-gradient(to right, #ff000088, #a10000, #8b0000, #a10000, #ff000088);
+        /* border-radius: 1px; */
+        box-sizing: border-box;
+        font-family: serif;
+        font-size: 20px;
+        font-weight: bold;
+        color: aliceblue;
+        text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black, 0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+        box-shadow: 0 0 15px 1px aliceblue;
+      }
+
+      .youtube-embed {
+        position: relative;
+        padding-bottom: 56.25%; /* 16:9 aspect ratio */
+        height: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="Tabs">
+      <a href="./admin.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
+      <a href="./index.html"><i class="fas fa-home"></i> Products</a>
+      <a href="./admin-products.html"><i class="fas fa-box-open"></i> Product Management</a>
+      <a href="./admin-orders.html"><i class="fas fa-box-open"></i> Orders</a>
+      <a href="./admin-events.html"><i class="fas fa-calendar"></i> Events</a>
+      <a href="./manage-categories.html"><i class="fas fa-filter"></i> Filtering</a>
+    </nav>
+    <main>
+      <h1>Media Management</h1>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <div class="form-row">
+          <input type="file" id="mediaFile" name="mediaFile" accept="image/*,video/*" />
+          <input type="text" id="YouTubeURL" name="YouTubeURL" placeholder="YouTube URL" />
+        </div>
+        <div class="form-row">
+          <input type="text" id="MediaTitle" name="MediaTitle" placeholder="Title" required />
+          <select id="MediaType" name="MediaType" required>
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+            <option value="youtube">YouTube</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <input type="text" id="UploadedBy" name="UploadedBy" placeholder="Uploaded By" required />
+        </div>
+        <button type="submit">Upload</button>
+      </form>
+
+      <div id="mediaList" class="media-gallery">
+        <p id="mediaPlaceholder">Loading media...</p> <!-- Placeholder for loading or empty state -->
+        <!-- Media items will be dynamically loaded here -->
+      </div>
+    </main>
+    <footer>
+      <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
+    </footer>
+    <script src="./media.js"></script>
+  </body>
+</html>

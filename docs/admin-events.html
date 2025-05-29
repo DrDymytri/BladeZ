@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Events - Point FX BladeZ</title>
+    <link rel="stylesheet" href="./admin-events.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    
+  </head>
+  <body>
+      <nav class="Tabs">
+        <a href="./admin.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
+        <a href="./index.html"><i class="fas fa-home"></i> Products</a>
+        <a href="./admin-products.html"><i class="fas fa-box-open"></i> Product Management</a>
+        <a href="./admin-orders.html"><i class="fas fa-box-open"></i> Orders</a>
+        <a href="./admin-media.html"><i class="fas fa-photo-video"></i> Media</a>
+        <a href="./manage-categories.html"><i class="fas fa-filter"></i> Filtering</a>
+      </nav>
+    <main>      
+        <section class="form-section">
+          <h2>Add or Update Event</h2>
+          <form id="eventForm" class="horizontal-form">
+            <div class="form-row">
+              <label for="eventTitle">Title:</label>
+              <input type="text" id="eventTitle" required>
+            </div>
+            <div class="form-row">
+              <label for="eventDescription">Description:</label>
+              <textarea id="eventDescription" required></textarea>
+            </div>
+            <div class="form-row">
+              <label for="eventStartDate">Start Date:</label>
+              <input type="text" id="eventStartDate" required>
+              <label for="eventEndDate">End Date:</label>
+              <input type="text" id="eventEndDate" required>
+            </div>
+            <div class="form-row">
+              <label for="eventLocation">Location:</label>
+              <input type="text" id="eventLocation" required>
+              <label for="eventWebsite">Website:</label>
+              <input type="url" id="eventWebsite" placeholder="https://example.com" required>
+            </div>
+            <div class="form-buttons">
+              <button type="submit" id="addEventBtn">Add Event</button>
+              <button type="button" id="updateEventBtn" style="display: none;">Update Event</button>
+            </div>
+          </form>
+        </section>
+        <section class="events-section">
+          <h2>Events</h2>
+          <div id="eventsContainer" class="event-cards-container">
+            <!-- Event cards will be dynamically populated here -->
+          </div>
+        </section>
+      </main>
+      <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+      <script src="./admin-events.js"></script>
+  </body>
+</html>

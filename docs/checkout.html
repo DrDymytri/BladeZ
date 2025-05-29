@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout</title>
+    <link rel="stylesheet" href="./checkout.css" />
+  </head>
+  <body>
+    <main>
+      <h1 class="CheckoutTag">Checkout</h1>
+      <p class="Statement">If using a major credit card (for instance, Mastercard, Visa, Discover) please choose the Pay with Card (Stripe) button.</p>
+      <div id="payment-methods">
+        <button id="stripe-checkout-button">Pay with Card (Stripe)</button>
+        
+        <h2>Or Pay with PayPal</h2>
+        <div id="paypal-section">
+          <div id="paypal-button-container"></div> <!-- Ensure this exists -->
+        </div>
+      </div>
+      <p class="ReturnCart"><a href="./cart.html">Return to Cart</a></p>
+    </main>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="./checkout.js"></script>
+  </body>
+</html>

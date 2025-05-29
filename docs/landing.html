@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Landing - Point FX BladeZ</title>
+    <link rel="icon" href="./images/FNRhwx4X0AE8MHM.jpg" type="image/png" />
+    <link rel="stylesheet" href="./landing.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+  </head>
+  <body class="landing-page">
+    <main>
+      <div class="welcome-container">
+        <h2>Welcome to Point FX BladeZ</h2>
+        <p class="GeneralStatement">You have the King's Permission to,</p>
+        <a href="${process.env.BACKEND_URL}/index.html" class="welcome-button">"Enter the Realm".</a>
+      </div>
+    </main>
+    <script>
+      const FRONTEND_URL = "https://bladez-backend.onrender.com";
+      document.querySelectorAll("a").forEach((link) => {
+        if (link.href.startsWith("/")) {
+          link.href = FRONTEND_URL + link.getAttribute("href");
+        }
+      });
+    </script>
+  </body>
+</html>

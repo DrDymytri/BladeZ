@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Orders - Point FX BladeZ</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./admin.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+  </head>
+  <body>
+    <header style="display: flex; justify-content: space-between; align-items: center; width: 100vw;">
+      <div>
+        <img src="./images/Chinese warrior dragon in red and gold.PNG" alt="./images/default-image.jpg" class="header-image" />
+      </div>
+      <div>
+        <div class="logo-container">
+          <img src="./images/Logo only.gif.compressed.png" alt="Logo" class="responsive-logo" />
+        </div>
+        <h1 class="businessName">Point FX BladeZ</h1>
+        <p class="slogan">Premium BladeZ for the Modern Warrior</p>
+        <nav>
+          <ul class="responsive-nav">
+            <li><a href="./cart.html"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count">0</span>)</a></li>
+            <li><a href="./about.html"><i class="fas fa-info-circle"></i> About Us!</a></li>
+            <li><a href="./events.html"><i class="fas fa-calendar"></i> Events</a></li>
+            <li><a href="./index.html"><i class="fas fa-box-open"></i> Products</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div>
+        <img src="./images/Chinese warrior dragon in red and gold.PNG" alt="./images/default-image.jpg" class="header-image-mirrored" />
+      </div>
+    </header>
+
+    <main>
+      <div id="user-info" style="text-align: center; margin-bottom: 20px;"></div>
+      <table id="orders-table">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Total Amount</th>
+            <th>Status</th>
+            <th>Tracking Number</th>
+            <th>Date Processed</th> <!-- Column remains unchanged -->
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Orders will be loaded here -->
+        </tbody>
+      </table>
+    </main>
+    <script src="./orders.js"></script>
+    <script>
+      const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
+      async function fetchUserInfo() {
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/user-info`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          });
+          if (!response.ok) throw new Error("Failed to fetch user info");
+
+          const user = await response.json();
+          document.getElementById("user-info").innerHTML = `
+            <h2>Welcome, ${user.first_name} ${user.last_name}</h2>
+            <p>Email: ${user.email}</p>
+          `;
+        } catch (error) {
+          console.error("Error fetching user info:", error);
+          document.getElementById("user-info").innerHTML = `
+            <p style="color: red;">Failed to load user information. Please log in again.</p>
+          `;
+        }
+      }
+
+      fetchUserInfo();
+    </script>
+  </body>
+</html>

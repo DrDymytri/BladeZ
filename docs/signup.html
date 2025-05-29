@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up - Point FX BladeZ</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=MedievalSharp&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background-color: black;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .card {
+        background: linear-gradient(
+          to right, 
+          rgb(53, 2, 2), 
+          rgb(121, 18, 18), 
+          rgb(165, 4, 4), 
+          rgb(121, 18, 18), 
+          rgb(53, 2, 2));
+        border-radius: 10px;
+        border: 1px solid aliceblue;
+        padding: 20px;
+        width: 350px;
+        height: auto;
+      }
+      h2 {
+        font-family: "MedievalSharp", serif;
+        font-size: 28px;
+        color: black;        
+        text-shadow:  
+          -0.375px -0.75px rgb(222, 194, 35), 
+          -0.125px -0.25px aliceblue, 
+          -0.25px -0.5px rgb(22, 64, 100),
+          0.125px 0.25px rgb(222, 194, 35), 
+          0.25px 0.5px rgb(222, 194, 35), 
+          0.375px 0.75px aliceblue, 
+          0.5px 1px rgb(32, 79, 119), 
+          0.625px 1.25px rgb(222, 194, 35), 
+          0.75px 1.5px rgb(222, 194, 35);
+        text-align: center;
+        margin: 20px 0;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      input, textarea {
+        padding: 10px;
+        margin-bottom: 5px;
+        /* margin-top: 5px; */
+        border: 4px inset rgb(223, 223, 223);
+        box-shadow: inset 0 0 6px 1px rgba(0, 0, 0, 0.466);
+        outline: 1px solid black;
+        background-color: rgb(228, 189, 189);
+        border-radius: 5px;
+        box-sizing: border-box;
+      }
+      button {
+        width: auto;
+        font-family: "MedievalSharp", serif;
+        text-decoration: none;
+        padding: 5px;
+        margin-bottom: 5px;
+        margin-top: 5px;
+        border-top: 4px solid rgb(189, 209, 230);
+        border-bottom: 4px solid rgb(121, 141, 160);
+        border-right: 4px solid rgb(149, 172, 190);
+        border-left: 4px solid rgb(156, 175, 194);
+        box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466);
+        outline: 1px solid black;
+        background: linear-gradient(to right, #570505, #cc0000, #b30000, #cc0000, #570505); 
+        box-sizing: border-box;
+        font-family: serif;
+        font-size: 20px;
+        font-weight: bold;
+        color: aliceblue;
+        text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black, 0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
+        box-shadow: 0 0 15px 1px aliceblue;
+        cursor: pointer;
+      }
+      button:hover {
+        color: greenyellow; 
+        background: linear-gradient(to right, #1eff0088, #0da100, #178b00, #13a100, #1eff0088);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Create Your Account</h2>
+      <form id="signup-form" autocomplete="on">
+        <input type="text" id="first-name" placeholder="First Name" autocomplete="given-name" required />
+        <input type="text" id="last-name" placeholder="Last Name" autocomplete="family-name" required />
+        <input type="email" id="email" placeholder="Email" autocomplete="email" required />
+        <input type="password" id="password" placeholder="Password" autocomplete="new-password" required />
+        <input type="tel" id="phone" placeholder="Phone Number" autocomplete="tel" required />
+        <textarea id="address" placeholder="Address" autocomplete="street-address" required></textarea>
+        <button type="submit">Sign Up</button>
+      </form>
+    </div>
+    <script>
+      const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
+      document.getElementById("signup-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const firstName = document.getElementById("first-name").value;
+        const lastName = document.getElementById("last-name").value;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        const phone = document.getElementById("phone").value;
+        const address = document.getElementById("address").value;
+
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/signup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ firstName, lastName, email, password, phone, address }),
+          });
+
+          if (!response.ok) {
+            const errorDetails = await response.text();
+            console.error("Error details:", errorDetails);
+            throw new Error("Sign up failed");
+          }
+
+          alert("Account created successfully! Please log in.");
+          window.location.href = "login.html";
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Error: " + error.message);
+        }
+      });
+    </script>
+  </body>
+</html>
