@@ -1,5 +1,3 @@
-const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
-
 document.addEventListener("DOMContentLoaded", () => {
     const productForm = document.getElementById("productForm");
 

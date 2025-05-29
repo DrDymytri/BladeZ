@@ -1,4 +1,4 @@
-const BACKEND_URL = process.env.BACKEND_URL; // Ensure this is set correctly in your environment
+const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Replace process.env.BACKEND_URL with the actual URL
 
 document.addEventListener("DOMContentLoaded", async () => {
   await populateCategoryFilter();
