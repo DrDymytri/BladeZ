@@ -1,3 +1,5 @@
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", () => {
   const categories = [];
   const subcategories = [];
@@ -25,9 +27,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(`${BACKEND_URL}/api/categories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: categoryName }),
       });
 
@@ -40,8 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
         alert(`Failed to add category: ${errorText}`);
       }
     } catch (error) {
-      console.error('Error adding category:', error);
-      alert('An error occurred while adding the category.');
+      console.error("Error adding category:", error);
+      alert("An error occurred while adding the category.");
     }
   });
 
@@ -57,9 +59,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const response = await fetch('/api/subcategories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(`${BACKEND_URL}/api/subcategories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: subcategoryName, categoryId }),
       });
 
@@ -72,8 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
         alert(`Failed to add subcategory: ${errorText}`);
       }
     } catch (error) {
-      console.error('Error adding subcategory:', error);
-      alert('An error occurred while adding the subcategory.');
+      console.error("Error adding subcategory:", error);
+      alert("An error occurred while adding the subcategory.");
     }
   });
 
@@ -89,9 +91,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const response = await fetch('/api/descriptors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(`${BACKEND_URL}/api/descriptors`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: descriptorName, subCategoryId: subcategoryId }),
       });
 
@@ -104,15 +106,15 @@ document.addEventListener("DOMContentLoaded", () => {
         alert(`Failed to add descriptor: ${errorText}`);
       }
     } catch (error) {
-      console.error('Error adding descriptor:', error);
-      alert('An error occurred while adding the descriptor.');
+      console.error("Error adding descriptor:", error);
+      alert("An error occurred while adding the descriptor.");
     }
   });
 
   window.deleteCategory = async function (categoryId) {
     try {
       // Fetch associated subcategories
-      const response = await fetch(`/api/categories/${categoryId}/subcategories`);
+      const response = await fetch(`${BACKEND_URL}/api/categories/${categoryId}/subcategories`);
       const subcategories = await response.json();
 
       if (subcategories.length > 0) {
@@ -124,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Proceed with deletion
-      const deleteResponse = await fetch(`/api/categories/${categoryId}`, { method: 'DELETE' });
+      const deleteResponse = await fetch(`${BACKEND_URL}/api/categories/${categoryId}`, { method: 'DELETE' });
       if (deleteResponse.ok) {
         alert('Category deleted successfully.');
         fetchCategories(); // Refresh the categories table
@@ -142,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.deleteSubcategory = async function (subcategoryId) {
     try {
       // Fetch associated descriptors
-      const response = await fetch(`/api/subcategories/${subcategoryId}/descriptors`);
+      const response = await fetch(`${BACKEND_URL}/api/subcategories/${subcategoryId}/descriptors`);
       const descriptors = await response.json();
 
       if (descriptors.length > 0) {
@@ -154,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Proceed with deletion
-      const deleteResponse = await fetch(`/api/subcategories/${subcategoryId}`, { method: 'DELETE' });
+      const deleteResponse = await fetch(`${BACKEND_URL}/api/subcategories/${subcategoryId}`, { method: 'DELETE' });
       if (deleteResponse.ok) {
         alert('Subcategory deleted successfully.');
         fetchSubcategories(); // Refresh the subcategories table
@@ -177,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const response = await fetch(`/api/categories/${categoryId}`, {
+      const response = await fetch(`${BACKEND_URL}/api/categories/${categoryId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName }),
@@ -205,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Fetch categories to allow the user to select a new category
-    const categoriesResponse = await fetch('/api/categories');
+    const categoriesResponse = await fetch(`${BACKEND_URL}/api/categories`);
     const categories = await categoriesResponse.json();
 
     const categoryOptions = categories.map(category => `${category.id}: ${category.name}`).join('\n');
@@ -217,7 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-        const response = await fetch(`/api/subcategories/${subcategoryId}`, {
+        const response = await fetch(`${BACKEND_URL}/api/subcategories/${subcategoryId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: newName, categoryId: parseInt(newCategoryId, 10) }),
@@ -246,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Create a dropdown for selecting a new subcategory
-    const subcategoriesResponse = await fetch('/api/subcategories');
+    const subcategoriesResponse = await fetch(`${BACKEND_URL}/api/subcategories`);
     const subcategories = await subcategoriesResponse.json();
 
     const subcategoryOptions = subcategories.map(subcategory => `${subcategory.id}: ${subcategory.name}`).join('\n');
@@ -258,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-        const response = await fetch(`/api/descriptors/${descriptorId}`, {
+        const response = await fetch(`${BACKEND_URL}/api/descriptors/${descriptorId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: newName, subCategoryId: parseInt(newSubCategoryId, 10) }),
@@ -281,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.deleteDescriptor = async function (descriptorId) {
     if (confirm('Are you sure you want to delete this descriptor?')) {
       try {
-        const response = await fetch(`/api/descriptors/${descriptorId}`, { method: 'DELETE' });
+        const response = await fetch(`${BACKEND_URL}/api/descriptors/${descriptorId}`, { method: 'DELETE' });
 
         if (response.ok) {
           alert('Descriptor deleted successfully.');
@@ -298,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   async function fetchCategories() {
-    const response = await fetch('/api/categories');
+    const response = await fetch(`${BACKEND_URL}/api/categories`);
     const categories = await response.json();
 
     // Populate the categories table
@@ -329,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function fetchSubcategories() {
-    const response = await fetch('/api/subcategories');
+    const response = await fetch(`${BACKEND_URL}/api/subcategories`);
     const subcategories = await response.json();
 
     // Populate the subcategories table
@@ -361,7 +363,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function fetchDescriptors() {
-    const response = await fetch('/api/descriptors');
+    const response = await fetch(`${BACKEND_URL}/api/descriptors`);
     const descriptors = await response.json();
     const tableBody = document.getElementById('descriptors-table-body');
     tableBody.innerHTML = ''; // Clear existing rows

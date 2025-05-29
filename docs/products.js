@@ -1,3 +1,5 @@
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", () => {
     const productForm = document.getElementById("productForm");
 
@@ -63,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         try {
-            const response = await fetch("http://localhost:5000/api/products", {
+            const response = await fetch(`${BACKEND_URL}/api/products`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(newProduct), // Send product data to the server
@@ -103,7 +105,7 @@ async function loadCategories() {
             return;
         }
 
-        const response = await fetch('http://localhost:5000/api/categories');
+        const response = await fetch(`${BACKEND_URL}/api/categories`);
         if (!response.ok) throw new Error('Failed to fetch categories');
 
         const categories = await response.json();
@@ -121,7 +123,7 @@ async function loadCategories() {
 
 async function loadSubcategories(categoryId) {
     try {
-        const response = await fetch(`http://localhost:5000/api/subcategories?categoryId=${categoryId}`);
+        const response = await fetch(`${BACKEND_URL}/api/subcategories?categoryId=${categoryId}`);
         if (!response.ok) throw new Error('Failed to fetch subcategories');
 
         const subcategories = await response.json();
@@ -140,7 +142,7 @@ async function loadSubcategories(categoryId) {
 
 async function loadTags(subCategoryId) {
     try {
-        const response = await fetch(`http://localhost:5000/api/descriptors?subCategoryId=${subCategoryId}`);
+        const response = await fetch(`${BACKEND_URL}/api/descriptors?subCategoryId=${subCategoryId}`);
         if (!response.ok) throw new Error('Failed to fetch tags');
 
         const tags = await response.json();
@@ -154,6 +156,30 @@ async function loadTags(subCategoryId) {
         });
     } catch (error) {
         console.error('Error loading tags:', error);
+    }
+}
+
+async function loadShowcaseProducts(container) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/showcase-products`);
+        if (!response.ok) throw new Error("Failed to fetch showcase products");
+
+        const products = await response.json();
+        container.innerHTML = products
+            .map(
+                (product) => `
+                <div class="product-card">
+                  <img src="${product.image_url}" alt="${product.name}" />
+                  <h3>${product.name}</h3>
+                  <p>${product.description}</p>
+                  <p>Price: $${product.price.toFixed(2)}</p>
+                </div>
+            `
+            )
+            .join("");
+    } catch (error) {
+        console.error("Error loading showcased products:", error.message);
+        container.innerHTML = "<p>Failed to load showcased products. Please try again later.</p>";
     }
 }
 
@@ -268,27 +294,3 @@ loadProducts();
 
 // Update cart count on page load
 updateCartCount();
-
-async function loadShowcaseProducts(container) {
-  try {
-    const response = await fetch("/api/showcase-products");
-    if (!response.ok) throw new Error("Failed to fetch showcase products");
-
-    const products = await response.json();
-    container.innerHTML = products
-      .map(
-        (product) => `
-        <div class="product-card">
-          <img src="${product.image_url}" alt="${product.name}" />
-          <h3>${product.name}</h3>
-          <p>${product.description}</p>
-          <p>Price: $${product.price.toFixed(2)}</p>
-        </div>
-      `
-      )
-      .join("");
-  } catch (error) {
-    console.error("Error loading showcased products:", error.message);
-    container.innerHTML = "<p>Failed to load showcased products. Please try again later.</p>";
-  }
-}

@@ -1,5 +1,6 @@
+const API_BASE_URL = process.env.BACKEND_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", () => {
-  const API_BASE_URL = "http://localhost:5000"; // Configurable base URL
   const loginForm = document.getElementById("login-form");
 
   async function checkServerConnection() {

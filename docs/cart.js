@@ -1,3 +1,5 @@
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", async () => {
   const cartContainer = document.getElementById("cart-container");
   const cartSummaryTableBody = document.querySelector("#cart-summary-table tbody");
@@ -83,7 +85,7 @@ document.addEventListener("touchstart", () => {
 
 async function fetchProductDetails(productIds) {
   try {
-    const response = await fetch(`/api/cart-products?ids=${productIds.join(",")}`);
+    const response = await fetch(`${BACKEND_URL}/api/cart-products?ids=${productIds.join(",")}`);
     if (!response.ok) {
       if (response.status === 404) {
         console.warn("Some products were not found. Proceeding with available products.");
@@ -196,7 +198,7 @@ async function syncCartWithBackend(cartItems) {
   }
 
   try {
-    const response = await fetch("/api/cart/sync", {
+    const response = await fetch(`${BACKEND_URL}/api/cart/sync`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -368,7 +370,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       try {
         // Send cart items to the backend to create a Stripe Checkout session
-        const response = await fetch("/api/create-checkout-session", {
+        const response = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ cartItems }),

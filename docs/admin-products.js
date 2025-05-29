@@ -1,4 +1,6 @@
-let currentPage = 1;
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
+let currentPage = 1; // Initialize current page for pagination
 const productsPerPage = 60;
 let allProducts = [];
 let currentSort = { field: "name", order: "asc" }; // Default sort by name in ascending order
@@ -63,8 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             const url = productId
-                ? `http://localhost:5000/api/products/${productId}`
-                : "http://localhost:5000/api/products";
+                ? `${BACKEND_URL}/api/products/${productId}`
+                : `${BACKEND_URL}/api/products`;
             const method = productId ? "PUT" : "POST";
 
             const response = await fetch(url, {
@@ -109,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             try {
-                const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
+                const response = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(updatedProduct),
@@ -164,52 +166,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function loadCategories() {
     try {
-        const response = await fetch("http://localhost:5000/api/categories");
+        const response = await fetch(`${BACKEND_URL}/api/categories`);
         const categories = await response.json();
         populateDropdown(document.getElementById("productCategory"), categories, "id", "name"); // Use 'id' and 'name'
     } catch (error) {
+        console.error("Error loading categories:", error);
     }
 }
 
 async function loadSubcategories(categoryId) {
     try {
-        const response = await fetch(`http://localhost:5000/api/subcategories?categoryId=${categoryId}`);
+        const response = await fetch(`${BACKEND_URL}/api/subcategories?categoryId=${categoryId}`);
         const subcategories = await response.json();
         populateDropdown(document.getElementById("productSubCategory"), subcategories, "id", "name");
     } catch (error) {
+        console.error("Error loading subcategories:", error);
     }
 }
 
 async function loadTags(subCategoryId) {
     try {
-        const response = await fetch(`http://localhost:5000/api/descriptors?subCategoryId=${subCategoryId}`);
+        const response = await fetch(`${BACKEND_URL}/api/descriptors?subCategoryId=${subCategoryId}`);
         const tags = await response.json();
         populateDropdown(document.getElementById("productTag"), tags, "id", "name");
     } catch (error) {
+        console.error("Error loading tags:", error);
     }
-}
-
-function resetForm() {
-    document.getElementById("productForm").reset();
-    document.getElementById("productId").value = ""; // Clear the productId field
-    resetDropdown(document.getElementById("productSubCategory"), "Select a Subcategory");
-    resetDropdown(document.getElementById("productTag"), "Select a Tag");
-}
-
-function resetDropdown(selectElement, placeholder) {
-    selectElement.innerHTML = `<option value="">${placeholder}</option>`;
-}
-
-function populateDropdown(selectElement, items, valueKey, textKey) {
-    selectElement.innerHTML = `<option value="">Select</option>`;
-    items.forEach(item => {
-        selectElement.innerHTML += `<option value="${item[valueKey]}">${item[textKey]}</option>`;
-    });
 }
 
 async function loadProducts() {
     try {
-        const response = await fetch("http://localhost:5000/api/products");
+        const response = await fetch(`${BACKEND_URL}/api/products`);
         if (!response.ok) {
             throw new Error("Failed to fetch products");
         }
@@ -219,6 +206,7 @@ async function loadProducts() {
         allProducts = products; // Populate the global allProducts array
         renderProducts(products);
     } catch (error) {
+        console.error("Error loading products:", error);
     }
 }
 
@@ -290,7 +278,7 @@ function handleUpdateClick(event, productId) {
 
 async function editProduct(productId) {
     try {
-        const response = await fetch(`http://localhost:5000/api/products/${productId}`);
+        const response = await fetch(`${BACKEND_URL}/api/products/${productId}`);
         if (!response.ok) throw new Error("Failed to fetch product details");
 
         const product = await response.json();
@@ -340,7 +328,7 @@ async function deleteProduct(productId) {
     }
 
     try {
-        const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
+        const response = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
             method: "DELETE",
         });
 
@@ -383,7 +371,7 @@ function handleSortChange(field) {
 
 async function loadLowStockProducts() {
     try {
-        const response = await fetch("http://localhost:5000/api/low-stock-products", {
+        const response = await fetch(`${BACKEND_URL}/api/low-stock-products`, {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
 
@@ -485,7 +473,7 @@ function getColumnIndex(column) {
 
 async function updateStock(productId, stockChange) {
     try {
-        const response = await fetch(`/api/products/${productId}/stock`, {
+        const response = await fetch(`${BACKEND_URL}/api/products/${productId}/stock`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ stockChange }),
@@ -496,6 +484,7 @@ async function updateStock(productId, stockChange) {
         loadProducts(); // Reload the product list
         loadLowStockProducts(); // Refresh the low-stock table
     } catch (error) {
+        console.error("Error updating stock:", error);
     }
 }
 

@@ -1,3 +1,5 @@
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", () => {
   const videosContainer = document.getElementById("videos-container");
 
@@ -7,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Fetch videos from the server
-  fetch("http://localhost:5000/api/videos")
+  fetch(`${BACKEND_URL}/api/videos`)
     .then((response) => {
       if (!response.ok) {
         console.error(`Error: Received status ${response.status}`);

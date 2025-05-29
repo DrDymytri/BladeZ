@@ -1,3 +1,5 @@
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", async () => {
   await loadOrders(); // Load orders when the page is ready
 });
@@ -11,7 +13,7 @@ async function loadOrders() {
   }
 
   try {
-    const response = await fetch("http://localhost:5000/api/admin/orders");
+    const response = await fetch(`${BACKEND_URL}/api/admin/orders`);
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || "Failed to fetch orders");
@@ -96,7 +98,7 @@ async function filterByStatus() {
   const filterValue = document.getElementById("status-filter").value;
 
   try {
-    const response = await fetch(`http://localhost:5000/api/admin/orders?status=${filterValue}`);
+    const response = await fetch(`${BACKEND_URL}/api/admin/orders?status=${filterValue}`);
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || "Failed to fetch filtered orders");
@@ -189,7 +191,7 @@ async function updateTrackingNumber(orderId, trackingNumber) {
   }
 
   try {
-    const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/tracking`, {
+    const response = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/tracking`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -216,7 +218,7 @@ async function updateOrderStatus(orderId, newStatus) {
 
   if (newStatus === "Processing") {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/status`, {
+      const response = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -242,7 +244,7 @@ async function updateOrderStatus(orderId, newStatus) {
   if (newStatus === "Boxed") {
     // Fetch the order items to check if all are marked as "Boxed"
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/items`);
+      const response = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/items`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to fetch order items");
@@ -276,7 +278,7 @@ async function updateOrderStatus(orderId, newStatus) {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/status`, {
+      const response = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -347,7 +349,7 @@ async function updateOrderStatus(orderId, newStatus) {
         }
 
         try {
-          const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/status`, {
+          const response = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/status`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -391,7 +393,7 @@ async function updateOrderStatus(orderId, newStatus) {
 
 async function sendEmail(orderId, email, trackingNumber) {
   try {
-    const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/send-email`, {
+    const response = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/send-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -413,7 +415,7 @@ async function sendEmail(orderId, email, trackingNumber) {
 
 async function showOrderItems(orderId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/items`);
+    const response = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/items`);
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -428,7 +430,7 @@ async function showOrderItems(orderId) {
     }
 
     // Fetch the order details to get the status and tracking number
-    const orderResponse = await fetch(`http://localhost:5000/api/admin/orders`);
+    const orderResponse = await fetch(`${BACKEND_URL}/api/admin/orders`);
     if (!orderResponse.ok) {
       const errorData = await orderResponse.json();
       throw new Error(errorData.error || "Failed to fetch order details");
@@ -440,7 +442,7 @@ async function showOrderItems(orderId) {
     const trackingNumber = order?.tracking_number || "N/A";
 
     // Fetch the user information for the order
-    const userResponse = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/user`);
+    const userResponse = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/user`);
     if (!userResponse.ok) {
       const errorData = await userResponse.json();
       throw new Error(errorData.error || "Failed to fetch user information");
@@ -463,7 +465,7 @@ async function showOrderItems(orderId) {
         Purchased Items:\n
         ${purchasedItems}\n\n
         Instructions to find your order on the BladeZ website:\n
-        1. Go to the BladeZ website by clicking here: http://localhost:5000/landing.html\n
+        1. Go to the BladeZ website by clicking here: ${BACKEND_URL}/landing.html\n
         2. Enter the Realm.\n
         3. Close the showcased items unless you see something else you want to purchase.\n
         4. Go to Cart.\n
@@ -579,7 +581,7 @@ async function verifyAllBoxed(orderId) {
   }
 
   try {
-    const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/status`, {
+    const response = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/status`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

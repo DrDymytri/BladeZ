@@ -1,3 +1,5 @@
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -34,7 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     throw new Error("User information is missing or invalid.");
                 }
 
-                const response = await fetch("/api/create-checkout-session", {
+                const response = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -67,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const stripeSessionId = new URLSearchParams(window.location.search).get("session_id");
         if (stripeSessionId) {
             try {
-                const response = await fetch(`/api/confirm-order?session_id=${stripeSessionId}`, {
+                const response = await fetch(`${BACKEND_URL}/api/confirm-order?session_id=${stripeSessionId}`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -104,7 +106,7 @@ async function fetchUserInfo() {
     }
 
     try {
-        const response = await fetch("http://localhost:5000/api/user-info", {
+        const response = await fetch(`${BACKEND_URL}/api/user-info`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -201,7 +203,7 @@ function initializeCreditCardPayment(cart) {
 }
 
 async function createPaymentIntent(amount, cart) {
-    const response = await fetch("http://localhost:5000/api/create-payment-intent", {
+    const response = await fetch(`${BACKEND_URL}/api/create-payment-intent`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
         body: JSON.stringify({ amount, cart }), // Pass cart details to the backend
@@ -218,7 +220,7 @@ async function confirmPayment(stripe, cardElement, clientSecret) {
 }
 
 async function placeOrder(cartItems, total) {
-    const response = await fetch("http://localhost:5000/api/orders", {
+    const response = await fetch(`${BACKEND_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
         body: JSON.stringify({ items: cartItems, total }),
@@ -240,7 +242,7 @@ async function placeOrder(cartItems, total) {
 async function loadPayPalScript() {
     try {
         // Fetch the PayPal client ID from the backend
-        const response = await fetch("/api/paypal-client-id");
+        const response = await fetch(`${BACKEND_URL}/api/paypal-client-id`);
         if (!response.ok) throw new Error("Failed to fetch PayPal client ID");
         const { clientId } = await response.json();
 
@@ -285,7 +287,7 @@ function initializePayPalButtons(cart) {
         createOrder: async () => {
             try {
                 const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                const response = await fetch("/api/paypal/create-order", {
+                const response = await fetch(`${BACKEND_URL}/api/paypal/create-order`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
                     body: JSON.stringify({ items: cart, total }),
@@ -307,7 +309,7 @@ function initializePayPalButtons(cart) {
         },
         onApprove: async (data) => {
             try {
-                const response = await fetch("/api/paypal/capture-order", {
+                const response = await fetch(`${BACKEND_URL}/api/paypal/capture-order`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
                     body: JSON.stringify({ orderId: data.orderID }),

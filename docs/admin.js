@@ -1,3 +1,5 @@
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
 // Initialize Admin Portal
 function initAdminPortal() {
     loadAdminProducts();
@@ -68,7 +70,7 @@ async function loadCategories() {
             return;
         }
 
-        const response = await fetch('http://localhost:5000/api/categories');
+        const response = await fetch(`${BACKEND_URL}/api/categories`);
         if (!response.ok) throw new Error('Failed to fetch categories');
 
         const categories = await response.json();
@@ -83,7 +85,7 @@ async function loadCategories() {
 
 async function loadSubcategories(categoryId) {
     try {
-        const response = await fetch(`http://localhost:5000/api/subcategories?categoryId=${categoryId}`);
+        const response = await fetch(`${BACKEND_URL}/api/subcategories?categoryId=${categoryId}`);
         if (!response.ok) throw new Error('Failed to fetch subcategories');
 
         const subcategories = await response.json();
@@ -104,7 +106,7 @@ async function loadSubcategories(categoryId) {
 
 async function loadDescriptors(subCategoryId) {
     try {
-        const response = await fetch(`http://localhost:5000/api/descriptors?subCategoryId=${subCategoryId}`);
+        const response = await fetch(`${BACKEND_URL}/api/descriptors?subCategoryId=${subCategoryId}`);
         if (!response.ok) throw new Error('Failed to fetch descriptors');
 
         const descriptors = await response.json();
@@ -126,7 +128,7 @@ async function loadDescriptors(subCategoryId) {
 // Load Products
 async function loadAdminProducts() {
     try {
-        const response = await fetch('http://localhost:5000/api/products');
+        const response = await fetch(`${BACKEND_URL}/api/products`);
         if (!response.ok) throw new Error('Failed to fetch products');
 
         const products = await response.json();
@@ -159,7 +161,7 @@ async function loadAdminProducts() {
 // Load Events
 async function loadEvents() {
     try {
-        const response = await fetch('http://localhost:5000/api/events');
+        const response = await fetch(`${BACKEND_URL}/api/events`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const events = await response.json();
@@ -204,7 +206,7 @@ function attachEventListeners() {
 // Edit Product
 async function editProduct(productId) {
     try {
-        const response = await fetch(`http://localhost:5000/api/products/${productId}`);
+        const response = await fetch(`${BACKEND_URL}/api/products/${productId}`);
         if (!response.ok) throw new Error('Failed to fetch product details');
 
         const product = await response.json();
@@ -254,7 +256,7 @@ async function updateProduct() {
     const tag_id = parseInt(document.getElementById("productTag").value, 10);
 
     try {
-        const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
+        const response = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -293,7 +295,7 @@ async function addProduct() {
     const tag_id = parseInt(document.getElementById("productTag").value, 10);
 
     try {
-        const response = await fetch('http://localhost:5000/api/products', {
+        const response = await fetch(`${BACKEND_URL}/api/products`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -338,7 +340,7 @@ async function deleteProduct(productId) {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-        const response = await fetch(`http://localhost:5000/api/products/${productId}`, { method: 'DELETE' });
+        const response = await fetch(`${BACKEND_URL}/api/products/${productId}`, { method: 'DELETE' });
         if (!response.ok) throw new Error('Failed to delete product');
 
         console.log(`Product ${productId} deleted`);

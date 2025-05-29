@@ -1,5 +1,8 @@
 require("dotenv").config();
 
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5000";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
+
 console.log("Loaded environment variables:", process.env); // Debug log to verify all variables
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -38,7 +41,7 @@ const paypalClient = new paypal.core.PayPalHttpClient(
 const app = express();
 
 // Middleware
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.use(cors({ origin: FRONTEND_URL, credentials: true })); // Use dynamic FRONTEND_URL
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static(__dirname)); // Serve static files from the root directory
@@ -1641,7 +1644,7 @@ Your order has been shipped! Here is your tracking number: ${trackingNumber}.
 
 To view your order details, please log in to the BladeZ website and navigate to the "My Orders" section.
 
-BladeZ Website: ${process.env.FRONTEND_URL}/landing.html
+BladeZ Website: http://localhost:5000/landing.html
 
 Thank you for shopping with BladeZ!
 
@@ -1651,7 +1654,7 @@ BladeZ Team`,
         <p>Dear Customer,</p>
         <p>Your order has been shipped! Here is your tracking number: <strong>${trackingNumber}</strong>.</p>
         <p>To view your order details, please log in to the BladeZ website and navigate to the "My Orders" section.</p>
-        <p><a href="${process.env.FRONTEND_URL}/landing.html" style="color: blue; text-decoration: underline;">BladeZ Website</a></p>
+        <p><a href="http://localhost:5000/landing.html" style="color: blue; text-decoration: underline;">BladeZ Website</a></p>
         <p>Thank you for shopping with BladeZ!</p>
         <p>Best regards,<br>BladeZ Team</p>
       `,
@@ -1666,4 +1669,4 @@ BladeZ Team`,
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on http://0.0.0.0:${PORT}`));
+app.listen(PORT, () => console.log(`Server running on ${BACKEND_URL}:${PORT}`));

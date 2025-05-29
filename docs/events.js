@@ -1,8 +1,10 @@
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", () => {
   const eventsContainer = document.getElementById("events-container");
 
   // Fetch events from the server
-  fetch("http://localhost:5000/api/events")
+  fetch(`${BACKEND_URL}/api/events`)
     .then((response) => {
       if (!response.ok) {
         console.error(`Error: Received status ${response.status}`);
@@ -48,12 +50,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function loadEvents() {
   try {
-      const response = await fetch('http://localhost:5000/api/events');
-      if (!response.ok) throw new Error('Failed to fetch events');
+    const response = await fetch(`${BACKEND_URL}/api/events`);
+    if (!response.ok) throw new Error("Failed to fetch events");
 
-      const events = await response.json();
-      const eventsTableBody = document.querySelector('#admin-events-table tbody');
-      eventsTableBody.innerHTML = events.map(event => `
+    const events = await response.json();
+    const eventsTableBody = document.querySelector("#admin-events-table tbody");
+    eventsTableBody.innerHTML = events
+      .map(
+        (event) => `
           <tr>
               <td>${event.title}</td>
               <td>${new Date(event.event_start_date).toLocaleString()}</td>
@@ -65,11 +69,13 @@ async function loadEvents() {
                   <button class="delete-btn" data-id="${event.id}">Delete</button>
               </td>
           </tr>
-      `).join('');
+      `
+      )
+      .join("");
 
-      attachEventListeners();
+    attachEventListeners();
   } catch (error) {
-      console.error('Error loading events:', error);
+    console.error("Error loading events:", error);
   }
 }
 
@@ -95,15 +101,14 @@ function displayEvents(events) {
 }
 
 function attachEventListeners() {
-    document.querySelectorAll('.update-btn').forEach(button => {
-        button.addEventListener('click', (event) => {
-            const eventId = event.target.dataset.id;
-            editEvent(eventId);
-        });
+  document.querySelectorAll(".update-btn").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const eventId = event.target.dataset.id;
+      editEvent(eventId);
     });
-  }
+  });
+}
 
-  
 function displayErrorMessage(message) {
   const eventContainer = document.getElementById("eventsContainer");
   eventContainer.innerHTML = `<div class="error-message">${message}</div>`;

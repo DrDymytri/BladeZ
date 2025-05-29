@@ -1,3 +1,5 @@
+const BASE_URL = process.env.BASE_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", async () => {
   await loadArchivedOrders();
 });
@@ -10,7 +12,7 @@ async function loadArchivedOrders() {
   }
 
   try {
-    const response = await fetch("http://localhost:5000/api/admin/orders");
+    const response = await fetch(`${BASE_URL}/api/admin/orders`);
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || "Failed to fetch orders");
@@ -68,7 +70,7 @@ async function updateTrackingNumber(orderId, trackingNumber) {
   }
 
   try {
-    const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/tracking`, {
+    const response = await fetch(`${BASE_URL}/api/admin/orders/${orderId}/tracking`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -91,7 +93,7 @@ async function updateTrackingNumber(orderId, trackingNumber) {
 
 async function showOrderItems(orderId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/items`);
+    const response = await fetch(`${BASE_URL}/api/admin/orders/${orderId}/items`);
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -106,7 +108,7 @@ async function showOrderItems(orderId) {
     }
 
     // Fetch the order details to get the user's name and status
-    const orderResponse = await fetch(`http://localhost:5000/api/admin/orders`);
+    const orderResponse = await fetch(`${BASE_URL}/api/admin/orders`);
     if (!orderResponse.ok) {
       const errorData = await orderResponse.json();
       throw new Error(errorData.error || "Failed to fetch order details");

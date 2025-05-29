@@ -1,3 +1,5 @@
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", () => {
   async function loadMedia() {
     const mediaList = document.getElementById("mediaList");
@@ -8,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const response = await fetch("/api/media");
+      const response = await fetch(`${BACKEND_URL}/api/media`);
       if (!response.ok) throw new Error("Failed to fetch media");
 
       const media = await response.json();
@@ -84,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function submitMedia(formData) {
     try {
-      const response = await fetch("/api/media", {
+      const response = await fetch(`${BACKEND_URL}/api/media`, {
         method: "POST",
         body: formData,
       });
@@ -153,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!confirm('Are you sure you want to delete this media?')) return;
 
     try {
-      const response = await fetch(`/api/media/${mediaId}`, { method: 'DELETE' });
+      const response = await fetch(`${BACKEND_URL}/api/media/${mediaId}`, { method: 'DELETE' });
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to delete media: ${errorText}`);

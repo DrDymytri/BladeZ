@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment Successful</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header>
@@ -12,9 +12,11 @@
   </header>
   <main>
     <p>Your payment was successful. Your order is being processed.</p>
-    <a href="orders.html">View My Orders</a>
+    <a href="./orders.html">View My Orders</a>
   </main>
   <script>
+    const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
     document.addEventListener("DOMContentLoaded", async () => {
       const stripeSessionId = new URLSearchParams(window.location.search).get("session_id");
       if (!stripeSessionId) {
@@ -25,7 +27,7 @@
       try {
         console.log("Attempting to confirm order. Session ID:", stripeSessionId);
 
-        const response = await fetch(`http://localhost:5000/api/confirm-order?session_id=${stripeSessionId}`, {
+        const response = await fetch(`${BACKEND_URL}/api/confirm-order?session_id=${stripeSessionId}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

@@ -1,3 +1,5 @@
+const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+
 document.addEventListener("DOMContentLoaded", async () => {
   // Update cart count
   const cart = JSON.parse(localStorage.getItem("cart")) || [];
@@ -17,7 +19,7 @@ async function fetchOrders() {
   }
 
   try {
-    const response = await fetch("http://localhost:5000/api/orders", {
+    const response = await fetch(`${BACKEND_URL}/api/orders`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

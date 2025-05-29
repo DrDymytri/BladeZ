@@ -1,3 +1,5 @@
+const BACKEND_URL = process.env.BACKEND_URL;
+
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize Flatpickr for date and time selection
   flatpickr("#eventStartDate", {
@@ -38,8 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const url = eventId
-        ? `http://localhost:5000/api/events/${eventId}` // Corrected endpoint
-        : "http://localhost:5000/api/events"; // Corrected endpoint
+        ? `${BACKEND_URL}/api/events/${eventId}` // Corrected endpoint
+        : `${BACKEND_URL}/api/events`; // Corrected endpoint
       const method = eventId ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -72,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function loadEvents() {
   try {
-    const response = await fetch("http://localhost:5000/api/events");
+    const response = await fetch(`${BACKEND_URL}/api/events`);
     if (!response.ok) throw new Error("Failed to fetch events");
 
     const events = await response.json();
@@ -232,7 +234,7 @@ async function saveEvent(eventCard, eventId) {
   }
 
   try {
-    const response = await fetch(`http://localhost:5000/api/events/${eventId}`, {
+    const response = await fetch(`${BACKEND_URL}/api/events/${eventId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedEvent),
@@ -259,7 +261,7 @@ async function deleteEvent(eventId) {
   if (!confirm("Are you sure you want to delete this event?")) return;
 
   try {
-    const response = await fetch(`http://localhost:5000/api/events/${eventId}`, {
+    const response = await fetch(`${BACKEND_URL}/api/events/${eventId}`, {
       method: "DELETE",
     });
 
