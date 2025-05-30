@@ -28,7 +28,7 @@ const jwt = require("jsonwebtoken");
 const paypal = require("@paypal/checkout-server-sdk");
 
 const SECRET_KEY = process.env.JWT_SECRET;
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Initialize PayPal client
 const paypalClient = new paypal.core.PayPalHttpClient(
@@ -39,6 +39,9 @@ const paypalClient = new paypal.core.PayPalHttpClient(
 );
 
 const app = express();
+
+// Use the Render-provided external URL or fallback to localhost
+const BASE_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
 // Middleware
 const allowedOrigins = ["http://localhost:5000", "https://pointfxbladez.com"];
