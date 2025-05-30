@@ -1,8 +1,13 @@
 const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Use Render's public URL directly
 
 document.addEventListener("DOMContentLoaded", async () => {
-  await populateCategoryFilter();
-  loadProducts(1); // Load the first page of products on page load
+  try {
+    await populateCategoryFilter();
+    loadProducts(1); // Load the first page of products on page load
+    loadShowcaseProducts(); // Load showcase products
+  } catch (error) {
+    console.error("Error during initialization:", error.message);
+  }
 
   document.getElementById("apply-filters-btn").addEventListener("click", applyFilters);
   document.getElementById("clear-filters-btn").addEventListener("click", clearFilters);
@@ -42,55 +47,37 @@ document.addEventListener("DOMContentLoaded", async () => {
     const totalQuantity = cart.reduce((count, item) => count + item.quantity, 0); // Sum up quantities
     document.getElementById("cart-count").textContent = totalQuantity;
   }
+});
 
-  document.querySelectorAll(".add-to-cart-btn").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const productCard = event.target.closest(".product-card");
-      const product = {
-        id: productCard.dataset.id,
-        name: productCard.dataset.name,
-        price: parseFloat(productCard.dataset.price),
-      };
-
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
-      cart.push(product);
-      localStorage.setItem("cart", JSON.stringify(cart));
-      alert(`${product.name} added to cart!`);
-      updateCartCount();
-    });
-  });
-
-  // Ensure "Add to Cart" buttons trigger the notification
-  document.querySelectorAll(".add-to-cart").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const productCard = event.target.closest(".product-item");
-      const id = parseInt(productCard.dataset.id);
-      const name = productCard.querySelector("h3").textContent;
-      const price = parseFloat(productCard.querySelector("p strong").textContent.replace("$", ""));
-      addToCart(id, name, price);
-    });
-  });
-
-  // Update cart count on page load
-  updateCartCount();
+async function loadShowcaseProducts() {
+  const showcaseContainer = document.getElementById("showcase-container");
+  if (!showcaseContainer) {
+    console.error("Showcase container not found in the DOM. Exiting function.");
+    return;
+  }
 
   try {
     const response = await fetch(`${BACKEND_URL}/api/showcase-products`);
     if (!response.ok) throw new Error("Failed to fetch showcase products");
 
-    const showcasedProducts = await response.json();
-    if (showcasedProducts.length > 0) {
-      displayShowcaseModal(showcasedProducts);
-    }
+    const products = await response.json();
+    showcaseContainer.innerHTML = products
+      .map(
+        (product) => `
+        <div class="product-card">
+          <img src="${product.image_url || './default1.png'}" alt="${product.name}" />
+          <h3>${product.name}</h3>
+          <p>${product.description}</p>
+          <p>Price: $${product.price.toFixed(2)}</p>
+        </div>
+      `
+      )
+      .join("");
   } catch (error) {
     console.error("Error loading showcased products:", error.message);
+    showcaseContainer.innerHTML = "<p>Failed to load showcased products. Please try again later.</p>";
   }
-
-  // Example of adding a passive event listener
-  document.addEventListener("touchstart", (event) => {
-    console.log("Touchstart event triggered");
-  }, { passive: true });
-});
+}
 
 async function populateCategoryFilter() {
   try {
@@ -459,7 +446,7 @@ function renderProductItems(products) {
     .map(
       (product) => `
       <div class="product-item">
-        <img src="${product.image_url || './default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || 'default1.png'}')" />
+        <img src="${product.image_url || './default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || './default1.png'}')" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
         <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>

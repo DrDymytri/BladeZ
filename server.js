@@ -47,12 +47,14 @@ const app = express();
 const allowedOrigins = [process.env.FRONTEND_URL]; // Ensure FRONTEND_URL is allowed
 app.use(cors({
   origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin) || !origin) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error(`Blocked by CORS: ${origin}`); // Debug log
       callback(new Error("Not allowed by CORS"));
     }
-  }
+  },
+  credentials: true, // Allow cookies and credentials
 }));
 app.use(express.json());
 app.use(cookieParser());
@@ -474,7 +476,7 @@ app.delete("/api/categories/:id", async (req, res) => {
 });
 
 app.get("/api/products", async (req, res) => {
-    const { categoryId, subCategoryId, descriptorId, page = 1, limit = 30 } = req.query;
+    const { categoryId, subCategoryId, descriptorId, page = 1, limit = 20 } = req.query;
 
     try {
         console.log("Received request for /api/products with query:", req.query); // Debug log
@@ -504,51 +506,10 @@ app.get("/api/products", async (req, res) => {
 
         console.log("Constructed query:", query); // Debug log
 
-        // Fetch total count for pagination
-        let totalQuery = `
-            SELECT COUNT(*) AS total
-            FROM Products
-            WHERE 1=1
-        `;
-        if (categoryId) {
-            totalQuery += " AND category_id = @categoryId";
-        }
-        if (subCategoryId) {
-            totalQuery += " AND sub_category_id = @subCategoryId";
-        }
-        if (descriptorId) {
-            totalQuery += " AND tag_id = @descriptorId";
-        }
-
-        console.log("Constructed total query:", totalQuery); // Debug log
-
-        const totalResult = await request.query(totalQuery);
-        const total = totalResult.recordset[0]?.total || 0;
-
-        console.log("Total products:", total); // Debug log
-
-        // Ensure limit and offset are integers
-        const parsedLimit = parseInt(limit, 10);
-        const parsedOffset = (parseInt(page, 10) - 1) * parsedLimit;
-
-        if (isNaN(parsedLimit) || isNaN(parsedOffset)) {
-            console.error("Invalid pagination parameters:", { limit, page }); // Debug log
-            return res.status(400).json({ error: "Invalid pagination parameters." });
-        }
-
-        query += `
-            ORDER BY name ASC
-            OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;
-        `;
-        request.input("offset", sql.Int, parsedOffset);
-        request.input("limit", sql.Int, parsedLimit);
-
         const result = await request.query(query);
         console.log("Fetched products:", result.recordset); // Debug log
 
-        const totalPages = Math.ceil(total / parsedLimit);
-
-        res.json({ products: result.recordset, total, totalPages });
+        res.json({ products: result.recordset });
     } catch (error) {
         console.error("Error fetching products:", error.message); // Debug log
         res.status(500).json({ error: "Failed to fetch products." });
