@@ -100,6 +100,7 @@ let pool;
 
 async function getConnection() {
     try {
+        console.log("Attempting to connect to the database with config:", dbConfig); // Debug log
         if (!pool || !pool.connected) {
             pool = await sql.connect(dbConfig);
             console.log("✅ Database connection established."); // Keep this log for monitoring
@@ -107,6 +108,7 @@ async function getConnection() {
         return pool;
     } catch (error) {
         console.error("❌ Error establishing database connection:", error.message); // Keep this log for debugging
+        console.error("Stack trace:", error.stack); // Log stack trace for deeper analysis
         throw error;
     }
 }
