@@ -1,7 +1,7 @@
 require("dotenv").config();
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5000";
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
+const FRONTEND_URL = process.env.FRONTEND_URL;
+const BACKEND_URL = process.env.BACKEND_URL;
 
 console.log("Loaded environment variables:", process.env); // Debug log to verify all variables
 
@@ -41,7 +41,16 @@ const paypalClient = new paypal.core.PayPalHttpClient(
 const app = express();
 
 // Middleware
-app.use(cors({ origin: FRONTEND_URL, credentials: true })); // Use dynamic FRONTEND_URL
+const allowedOrigins = ["http://localhost:5000", "https://pointfxbladez.com"];
+app.use(cors({
+  origin: function (origin, callback) {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  }
+}));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static(__dirname)); // Serve static files from the root directory
@@ -1670,3 +1679,9 @@ BladeZ Team`,
 });
 
 app.listen(PORT, () => console.log(`Server running on ${BACKEND_URL}:${PORT}`));
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Error:", err.message);
+  res.status(500).json({ error: "Internal Server Error" });
+});
