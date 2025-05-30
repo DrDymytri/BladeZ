@@ -44,7 +44,7 @@ const paypalClient = new paypal.core.PayPalHttpClient(
 const app = express();
 
 // Middleware
-const allowedOrigins = ["http://localhost:5000", process.env.FRONTEND_URL];
+const allowedOrigins = [process.env.FRONTEND_URL]; // Ensure FRONTEND_URL is allowed
 app.use(cors({
   origin: function (origin, callback) {
     if (allowedOrigins.includes(origin) || !origin) {
@@ -477,7 +477,11 @@ app.get("/api/products", async (req, res) => {
     const { categoryId, subCategoryId, descriptorId, page = 1, limit = 30 } = req.query;
 
     try {
+        console.log("Received request for /api/products with query:", req.query); // Debug log
+
         const pool = await getConnection();
+        console.log("Database connection established."); // Debug log
+
         let query = `
             SELECT id, name, description, price, stock_quantity, image_url, is_showcase
             FROM Products
@@ -498,6 +502,8 @@ app.get("/api/products", async (req, res) => {
             request.input("descriptorId", sql.Int, parseInt(descriptorId, 10));
         }
 
+        console.log("Constructed query:", query); // Debug log
+
         // Fetch total count for pagination
         let totalQuery = `
             SELECT COUNT(*) AS total
@@ -514,14 +520,19 @@ app.get("/api/products", async (req, res) => {
             totalQuery += " AND tag_id = @descriptorId";
         }
 
+        console.log("Constructed total query:", totalQuery); // Debug log
+
         const totalResult = await request.query(totalQuery);
-        const total = totalResult.recordset[0].total;
+        const total = totalResult.recordset[0]?.total || 0;
+
+        console.log("Total products:", total); // Debug log
 
         // Ensure limit and offset are integers
         const parsedLimit = parseInt(limit, 10);
         const parsedOffset = (parseInt(page, 10) - 1) * parsedLimit;
 
         if (isNaN(parsedLimit) || isNaN(parsedOffset)) {
+            console.error("Invalid pagination parameters:", { limit, page }); // Debug log
             return res.status(400).json({ error: "Invalid pagination parameters." });
         }
 
@@ -533,12 +544,13 @@ app.get("/api/products", async (req, res) => {
         request.input("limit", sql.Int, parsedLimit);
 
         const result = await request.query(query);
+        console.log("Fetched products:", result.recordset); // Debug log
 
         const totalPages = Math.ceil(total / parsedLimit);
 
         res.json({ products: result.recordset, total, totalPages });
     } catch (error) {
-        console.error("Error fetching products:", error.message);
+        console.error("Error fetching products:", error.message); // Debug log
         res.status(500).json({ error: "Failed to fetch products." });
     }
 });

@@ -161,18 +161,14 @@ async function loadProducts(page = 1) {
     const descriptorFilter = document.getElementById("descriptor-filter");
     const productsPerPage = document.getElementById("products-per-page").value;
 
-    // Ensure page is an integer
-    page = parseInt(page, 10);
-
     const filters = {
       categoryId: categoryFilter?.value || null,
       subCategoryId: subCategoryFilter?.value || null,
       descriptorId: descriptorFilter?.value || null,
       page,
-      limit: parseInt(productsPerPage, 10), // Ensure limit is an integer
+      limit: parseInt(productsPerPage, 10),
     };
 
-    // Construct the query string dynamically
     const queryParams = new URLSearchParams();
     if (filters.categoryId) queryParams.append("categoryId", filters.categoryId);
     if (filters.subCategoryId) queryParams.append("subCategoryId", filters.subCategoryId);
@@ -180,14 +176,16 @@ async function loadProducts(page = 1) {
     queryParams.append("page", filters.page);
     queryParams.append("limit", filters.limit);
 
-    const response = await fetch(`${BACKEND_URL}/api/products?${queryParams.toString()}`);
-    if (!response.ok) throw new Error("Failed to fetch products");
+    const requestUrl = `${BACKEND_URL}/api/products?${queryParams.toString()}`;
+    console.log("Requesting products from:", requestUrl); // Debug log
+
+    const response = await fetch(requestUrl);
+    if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
 
     const data = await response.json();
+    console.log("Products fetched successfully:", data); // Debug log
 
     renderProducts(data.products);
-
-    // Render pagination controls using the totalPages value
     renderPaginationControls(filters.page, data.totalPages);
   } catch (error) {
     console.error("Error loading products:", error.message);
