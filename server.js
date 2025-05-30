@@ -47,7 +47,7 @@ const app = express();
 const allowedOrigins = [process.env.FRONTEND_URL]; // Ensure FRONTEND_URL is allowed
 app.use(cors({
   origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.error(`Blocked by CORS: ${origin}`); // Debug log

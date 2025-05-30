@@ -505,7 +505,7 @@ async function loadShowcaseProducts() {
   }
 
   try {
-    const response = await fetch("/api/showcase-products");
+    const response = await fetch(`${BACKEND_URL}/api/showcase-products`);
     if (!response.ok) throw new Error("Failed to fetch showcase products");
 
     const products = await response.json();
