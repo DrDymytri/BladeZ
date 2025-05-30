@@ -24,7 +24,14 @@ const paypal = require("@paypal/checkout-server-sdk");
 
 const SECRET_KEY = process.env.JWT_SECRET;
 const PORT = process.env.PORT || 5000;
-const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${PORT}`; // Ensure BACKEND_URL is properly loaded
+const BACKEND_URL = process.env.RENDER_EXTERNAL_URL; // Use Render's external URL
+
+if (!BACKEND_URL) {
+  console.error("RENDER_EXTERNAL_URL is not defined. Check your Render configuration.");
+  throw new Error("RENDER_EXTERNAL_URL is required but not defined.");
+}
+
+console.log(`Using BACKEND_URL: ${BACKEND_URL}`); // Log the URL for debugging
 
 // Initialize PayPal client
 const paypalClient = new paypal.core.PayPalHttpClient(
