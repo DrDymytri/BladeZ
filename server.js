@@ -1,15 +1,5 @@
 require("dotenv").config();
 
-const FRONTEND_URL = process.env.FRONTEND_URL;
-const BACKEND_URL = process.env.BACKEND_URL;
-
-console.log("Loaded environment variables:", process.env); // Debug log to verify all variables
-
-if (!process.env.STRIPE_SECRET_KEY) {
-    console.error("STRIPE_SECRET_KEY is not defined. Check your .env file.");
-    throw new Error("STRIPE_SECRET_KEY is not defined in the .env file.");
-}
-
 const express = require("express");
 const cors = require("cors");
 const sql = require("mssql");
@@ -23,12 +13,18 @@ const { v4: uuidv4 } = require("uuid");
 const nodemailer = require("nodemailer");
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
+if (!stripeSecretKey) {
+    console.error("STRIPE_SECRET_KEY is not defined. Check your .env file.");
+    throw new Error("STRIPE_SECRET_KEY is not defined in the .env file.");
+}
+
 const stripe = require("stripe")(stripeSecretKey);
 const jwt = require("jsonwebtoken");
 const paypal = require("@paypal/checkout-server-sdk");
 
 const SECRET_KEY = process.env.JWT_SECRET;
 const PORT = process.env.PORT || 5000;
+const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${PORT}`; // Ensure BACKEND_URL is properly loaded
 
 // Initialize PayPal client
 const paypalClient = new paypal.core.PayPalHttpClient(
@@ -40,11 +36,8 @@ const paypalClient = new paypal.core.PayPalHttpClient(
 
 const app = express();
 
-// Use the Render-provided external URL or fallback to localhost
-const BASE_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
-
 // Middleware
-const allowedOrigins = ["http://localhost:5000", "https://pointfxbladez.com"];
+const allowedOrigins = ["http://localhost:5000", process.env.FRONTEND_URL];
 app.use(cors({
   origin: function (origin, callback) {
     if (allowedOrigins.includes(origin) || !origin) {
@@ -56,7 +49,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(express.static(__dirname)); // Serve static files from the root directory
+app.use(express.static(path.join(__dirname, "public"))); // Serve static files
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -127,6 +120,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Routes
+app.get("/", (req, res) => {
+  res.send(`Server running on ${BACKEND_URL}`);
+});
+
 app.get("/api/categories", async (req, res) => {
     try {
         const pool = await getConnection();
@@ -1681,7 +1678,10 @@ BladeZ Team`,
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on ${BACKEND_URL}:${PORT}`));
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server running on ${BACKEND_URL}`);
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
