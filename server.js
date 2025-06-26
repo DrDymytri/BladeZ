@@ -46,15 +46,9 @@ const app = express();
 // Middleware
 const allowedOrigins = [process.env.FRONTEND_URL]; // Ensure FRONTEND_URL is allowed
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.error(`Blocked by CORS: ${origin}`); // Debug log
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true, // Allow cookies and credentials
+  origin: 'https://pointfxbladez.com', // your frontend domain
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // allow only what you need
+  credentials: true // if using cookies or auth headers
 }));
 app.use(express.json());
 app.use(cookieParser());
