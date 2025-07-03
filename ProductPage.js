@@ -1,12 +1,16 @@
 const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Ensure this matches the backend URL
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const spinner = document.getElementById("loading-spinner"); // Add spinner reference
   try {
+    spinner.style.display = "block"; // Show spinner
     await populateCategoryFilter();
     await loadProducts(1); // Load the first page of products on page load
     await loadShowcaseProducts(); // Ensure showcase products are loaded
   } catch (error) {
     console.error("Error during initialization:", error.message);
+  } finally {
+    spinner.style.display = "none"; // Hide spinner after loading
   }
 
   document.getElementById("apply-filters-btn").addEventListener("click", applyFilters);
@@ -48,6 +52,50 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("cart-count").textContent = totalQuantity;
   }
 });
+
+async function loadProducts(page = 1) {
+  const spinner = document.getElementById("loading-spinner"); // Add spinner reference
+  try {
+    spinner.style.display = "block"; // Show spinner
+    const categoryFilter = document.getElementById("category-filter");
+    const subCategoryFilter = document.getElementById("subcategory-filter");
+    const descriptorFilter = document.getElementById("descriptor-filter");
+    const productsPerPage = document.getElementById("products-per-page").value;
+
+    const filters = {
+      categoryId: categoryFilter?.value || null,
+      subCategoryId: subCategoryFilter?.value || null,
+      descriptorId: descriptorFilter?.value || null,
+      page,
+      limit: parseInt(productsPerPage, 10),
+    };
+
+    const queryParams = new URLSearchParams();
+    if (filters.categoryId) queryParams.append("categoryId", filters.categoryId);
+    if (filters.subCategoryId) queryParams.append("subCategoryId", filters.subCategoryId);
+    if (filters.descriptorId) queryParams.append("descriptorId", filters.descriptorId);
+    queryParams.append("page", filters.page);
+    queryParams.append("limit", filters.limit);
+
+    const requestUrl = `${BACKEND_URL}/api/products?${queryParams.toString()}`;
+    console.log("Requesting products from:", requestUrl);
+
+    const response = await fetch(requestUrl);
+    if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
+
+    const data = await response.json();
+    console.log("Products fetched successfully:", data);
+
+    renderProducts(data.products);
+    renderPaginationControls(filters.page, data.totalPages);
+  } catch (error) {
+    console.error("Error loading products:", error.message);
+    const productContainer = document.getElementById("product-container");
+    productContainer.innerHTML = `<p>Error loading products: ${error.message}</p>`;
+  } finally {
+    spinner.style.display = "none"; // Hide spinner after loading
+  }
+}
 
 async function loadShowcaseProducts() {
   const showcaseContainer = document.getElementById("showcase-container");
@@ -146,46 +194,6 @@ async function populateDescriptorFilter(subCategoryId) {
 
 function resetDropdown(selectElement, placeholder) {
   selectElement.innerHTML = `<option value="">${placeholder}</option>`;
-}
-
-async function loadProducts(page = 1) {
-  try {
-    const categoryFilter = document.getElementById("category-filter");
-    const subCategoryFilter = document.getElementById("subcategory-filter");
-    const descriptorFilter = document.getElementById("descriptor-filter");
-    const productsPerPage = document.getElementById("products-per-page").value;
-
-    const filters = {
-      categoryId: categoryFilter?.value || null,
-      subCategoryId: subCategoryFilter?.value || null,
-      descriptorId: descriptorFilter?.value || null,
-      page,
-      limit: parseInt(productsPerPage, 10),
-    };
-
-    const queryParams = new URLSearchParams();
-    if (filters.categoryId) queryParams.append("categoryId", filters.categoryId);
-    if (filters.subCategoryId) queryParams.append("subCategoryId", filters.subCategoryId);
-    if (filters.descriptorId) queryParams.append("descriptorId", filters.descriptorId);
-    queryParams.append("page", filters.page);
-    queryParams.append("limit", filters.limit);
-
-    const requestUrl = `${BACKEND_URL}/api/products?${queryParams.toString()}`;
-    console.log("Requesting products from:", requestUrl);
-
-    const response = await fetch(requestUrl);
-    if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
-
-    const data = await response.json();
-    console.log("Products fetched successfully:", data);
-
-    renderProducts(data.products);
-    renderPaginationControls(filters.page, data.totalPages);
-  } catch (error) {
-    console.error("Error loading products:", error.message);
-    const productContainer = document.getElementById("product-container");
-    productContainer.innerHTML = `<p>Error loading products: ${error.message}</p>`;
-  }
 }
 
 function renderPaginationControls(currentPage, totalPages) {
@@ -503,58 +511,6 @@ function renderProducts(products) {
       alert(`${productName} has been added to your cart.`); // Notify the user
     });
   });
-}
-
-async function loadShowcaseProducts() {
-  const showcaseContainer = document.getElementById("showcase-container");
-  if (!showcaseContainer) {
-    console.error("Showcase container not found in the DOM. Exiting function.");
-    return;
-  }
-
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/showcase-products`);
-    if (!response.ok) throw new Error(`Failed to fetch showcase products: ${response.statusText}`);
-
-    const products = await response.json();
-    if (products.length === 0) {
-      showcaseContainer.innerHTML = `<p>No showcase products available.</p>`;
-      return;
-    }
-
-    showcaseContainer.innerHTML = products
-      .map(
-        (product) => `
-        <div class="product-card">
-          <img src="${product.image_url || './default1.png'}" alt="${product.name}" />
-          <h3>${product.name}</h3>
-          <p>${product.description}</p>
-          <p>Price: $${product.price.toFixed(2)}</p>
-        </div>
-      `
-      )
-      .join("");
-  } catch (error) {
-    console.error("Error loading showcased products:", error.message);
-    showcaseContainer.innerHTML = `<p>Error loading showcased products: ${error.message}</p>`;
-  }
-}
-
-function renderShowcaseProducts(products) {
-  const showcaseContainer = document.getElementById("showcase-products-container");
-  
-  showcaseContainer.innerHTML = products
-    .map(
-      (product) => `
-            <div class="product-card">
-                <img src="${product.image_url || './default1.png'}" alt="${product.name}" />
-                <h3>${product.name}</h3>
-                <p>${product.description}</p>
-                <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
-            </div>
-        `
-    )
-    .join("");
 }
 
 document.querySelectorAll(".add-to-cart-btn").forEach((button) => {
