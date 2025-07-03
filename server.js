@@ -84,8 +84,8 @@ const dbConfig = {
     database: process.env.DB_NAME,
     port: Number(process.env.DB_PORT) || 1433,
     options: {
-        encrypt: process.env.DB_ENCRYPT === "true",
-        trustServerCertificate: true,
+        encrypt: true, // Azure SQL requires encryption
+        trustServerCertificate: false, // Set to false for secure connections
     },
 };
 
@@ -137,6 +137,9 @@ app.get("/api/categories", async (req, res) => {
             FROM Categories
             ORDER BY Name ASC
         `);
+        if (!result.recordset.length) {
+            return res.status(404).json({ error: "No categories found." });
+        }
         res.json(result.recordset);
     } catch (error) {
         console.error("Error fetching categories:", error.message);
@@ -475,11 +478,7 @@ app.get("/api/products", async (req, res) => {
     const { categoryId, subCategoryId, descriptorId, page = 1, limit = 20 } = req.query;
 
     try {
-        console.log("Received request for /api/products with query:", req.query); // Debug log
-
         const pool = await getConnection();
-        console.log("Database connection established."); // Debug log
-
         let query = `
             SELECT id, name, description, price, stock_quantity, image_url, is_showcase
             FROM Products
@@ -500,14 +499,18 @@ app.get("/api/products", async (req, res) => {
             request.input("descriptorId", sql.Int, parseInt(descriptorId, 10));
         }
 
-        console.log("Constructed query:", query); // Debug log
+        query += " ORDER BY name ASC OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY";
+        const offset = (page - 1) * limit;
+        request.input("offset", sql.Int, offset);
+        request.input("limit", sql.Int, limit);
 
         const result = await request.query(query);
-        console.log("Fetched products:", result.recordset); // Debug log
-
-        res.json({ products: result.recordset });
+        if (!result.recordset.length) {
+            return res.status(404).json({ error: "No products found." });
+        }
+        res.json({ products: result.recordset, totalPages: Math.ceil(result.recordset.length / limit) });
     } catch (error) {
-        console.error("Error fetching products:", error.message); // Debug log
+        console.error("Error fetching products:", error.message);
         res.status(500).json({ error: "Failed to fetch products." });
     }
 });
@@ -521,6 +524,9 @@ app.get("/api/showcase-products", async (req, res) => {
                 FROM Products 
                 WHERE is_showcase = 1
             `);
+        if (!result.recordset.length) {
+            return res.status(404).json({ error: "No showcase products found." });
+        }
         res.json(result.recordset);
     } catch (error) {
         console.error("Error fetching showcase products:", error.message);

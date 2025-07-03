@@ -1,4 +1,4 @@
-const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Use Render's public URL directly
+const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Ensure this matches the backend URL
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
@@ -58,7 +58,7 @@ async function loadShowcaseProducts() {
 
   try {
     const response = await fetch(`${BACKEND_URL}/api/showcase-products`);
-    if (!response.ok) throw new Error("Failed to fetch showcase products");
+    if (!response.ok) throw new Error(`Failed to fetch showcase products: ${response.statusText}`);
 
     const products = await response.json();
     showcaseContainer.innerHTML = products
@@ -75,14 +75,14 @@ async function loadShowcaseProducts() {
       .join("");
   } catch (error) {
     console.error("Error loading showcased products:", error.message);
-    showcaseContainer.innerHTML = "<p>Failed to load showcased products. Please try again later.</p>";
+    showcaseContainer.innerHTML = `<p>Error loading showcased products: ${error.message}</p>`;
   }
 }
 
 async function populateCategoryFilter() {
   try {
     const response = await fetch(`${BACKEND_URL}/api/categories`);
-    if (!response.ok) throw new Error("Failed to fetch categories");
+    if (!response.ok) throw new Error(`Failed to fetch categories: ${response.statusText}`);
 
     const categories = await response.json();
     const categoryFilter = document.getElementById("category-filter");
@@ -96,6 +96,8 @@ async function populateCategoryFilter() {
     });
   } catch (error) {
     console.error("Error fetching categories:", error.message);
+    const categoryFilter = document.getElementById("category-filter");
+    categoryFilter.innerHTML = `<option value="">Error loading categories</option>`;
   }
 }
 
@@ -164,19 +166,20 @@ async function loadProducts(page = 1) {
     queryParams.append("limit", filters.limit);
 
     const requestUrl = `${BACKEND_URL}/api/products?${queryParams.toString()}`;
-    console.log("Requesting products from:", requestUrl); // Debug log
+    console.log("Requesting products from:", requestUrl);
 
     const response = await fetch(requestUrl);
     if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
 
     const data = await response.json();
-    console.log("Products fetched successfully:", data); // Debug log
+    console.log("Products fetched successfully:", data);
 
     renderProducts(data.products);
     renderPaginationControls(filters.page, data.totalPages);
   } catch (error) {
     console.error("Error loading products:", error.message);
-    alert("Error loading products: " + error.message);
+    const productContainer = document.getElementById("product-container");
+    productContainer.innerHTML = `<p>Error loading products: ${error.message}</p>`;
   }
 }
 
@@ -506,7 +509,7 @@ async function loadShowcaseProducts() {
 
   try {
     const response = await fetch(`${BACKEND_URL}/api/showcase-products`);
-    if (!response.ok) throw new Error("Failed to fetch showcase products");
+    if (!response.ok) throw new Error(`Failed to fetch showcase products: ${response.statusText}`);
 
     const products = await response.json();
     showcaseContainer.innerHTML = products
@@ -523,7 +526,7 @@ async function loadShowcaseProducts() {
       .join("");
   } catch (error) {
     console.error("Error loading showcased products:", error.message);
-    showcaseContainer.innerHTML = "<p>Failed to load showcased products. Please try again later.</p>";
+    showcaseContainer.innerHTML = `<p>Error loading showcased products: ${error.message}</p>`;
   }
 }
 
