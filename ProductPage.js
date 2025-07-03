@@ -488,8 +488,8 @@ function renderProducts(products) {
   productContainer.innerHTML = products
     .map(
       (product) => `
-      <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || './default1.png'}">
-        <img src="${product.image_url || './default1.png'}" alt="${product.name}" class="product-image" onerror="this.src='./default1.png'" />
+      <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || './images/default1.png'}">
+        <img src="${product.image_url || './images/default1.png'}" alt="${product.name}" class="product-image" onerror="this.src='./images/default1.png'" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
         <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
@@ -505,10 +505,10 @@ function renderProducts(products) {
       const productId = parseInt(productCard.dataset.id, 10);
       const productName = productCard.dataset.name;
       const productPrice = parseFloat(productCard.dataset.price);
-      const productImage = productCard.dataset.image; // Retrieve the correct image URL
+      const productImage = productCard.dataset.image;
 
-      addToCart(productId, productName, productPrice, productImage); // Pass the image URL to addToCart
-      alert(`${productName} has been added to your cart.`); // Notify the user
+      addToCart(productId, productName, productPrice, productImage);
+      alert(`${productName} has been added to your cart.`);
     });
   });
 }
