@@ -94,15 +94,18 @@ let pool;
 
 async function getConnection() {
     try {
-        console.log("Attempting to connect to the database with config:", dbConfig); // Debug log
+        console.log("Attempting to connect to the database with config:", dbConfig);
         if (!pool || !pool.connected) {
             pool = await sql.connect(dbConfig);
-            console.log("✅ Database connection established."); // Keep this log for monitoring
+            console.log("✅ Database connection established.");
         }
         return pool;
     } catch (error) {
-        console.error("❌ Error establishing database connection:", error.message); // Keep this log for debugging
-        console.error("Stack trace:", error.stack); // Log stack trace for deeper analysis
+        console.error("❌ Error establishing database connection:", error.message);
+        console.error("Stack trace:", error.stack);
+        if (error.message.includes("Client with IP address")) {
+            console.error("⚠️ Ensure the IP address is allowed in Azure SQL Firewall settings.");
+        }
         throw error;
     }
 }

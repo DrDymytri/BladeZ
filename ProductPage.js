@@ -3,8 +3,8 @@ const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Ensure this matche
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await populateCategoryFilter();
-    loadProducts(1); // Load the first page of products on page load
-    loadShowcaseProducts(); // Load showcase products
+    await loadProducts(1); // Load the first page of products on page load
+    await loadShowcaseProducts(); // Ensure showcase products are loaded
   } catch (error) {
     console.error("Error during initialization:", error.message);
   }
@@ -61,6 +61,11 @@ async function loadShowcaseProducts() {
     if (!response.ok) throw new Error(`Failed to fetch showcase products: ${response.statusText}`);
 
     const products = await response.json();
+    if (products.length === 0) {
+      showcaseContainer.innerHTML = `<p>No showcase products available.</p>`;
+      return;
+    }
+
     showcaseContainer.innerHTML = products
       .map(
         (product) => `
@@ -476,7 +481,7 @@ function renderProducts(products) {
     .map(
       (product) => `
       <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || './default1.png'}">
-        <img src="${product.image_url || './default1.png'}" alt="${product.name}" class="product-image" onclick="openImageInPopup('${product.image_url || './default1.png'}')" />
+        <img src="${product.image_url || './default1.png'}" alt="${product.name}" class="product-image" onerror="this.src='./default1.png'" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
         <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
@@ -512,11 +517,16 @@ async function loadShowcaseProducts() {
     if (!response.ok) throw new Error(`Failed to fetch showcase products: ${response.statusText}`);
 
     const products = await response.json();
+    if (products.length === 0) {
+      showcaseContainer.innerHTML = `<p>No showcase products available.</p>`;
+      return;
+    }
+
     showcaseContainer.innerHTML = products
       .map(
         (product) => `
         <div class="product-card">
-          <img src="${product.image_url}" alt="${product.name}" />
+          <img src="${product.image_url || './default1.png'}" alt="${product.name}" />
           <h3>${product.name}</h3>
           <p>${product.description}</p>
           <p>Price: $${product.price.toFixed(2)}</p>

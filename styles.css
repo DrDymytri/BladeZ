@@ -1,7 +1,28 @@
 body {
   margin: 0; /* Remove default margin from the body */
   padding: 0; /* Remove default padding from the body */
-  background-image: url(./BackgroundParchment.jpg); /* Background image for the entire page */
+  background-image: url('./background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #f4f4f4; /* Fallback color */
+}
+
+/* Add fallback for missing background image */
+body::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-image: url('./default-background.jpg'); /* Fallback image */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  opacity: 0.5; /* Adjust opacity for fallback */
 }
 
 header {
