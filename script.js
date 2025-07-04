@@ -23,7 +23,9 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     .catch((err) => {
       console.error("Error fetching products:", err);
-      document.getElementById("product-container").innerText =
-        "Failed to load products.";
+      const container = document.getElementById("product-container");
+      if (container) {
+        container.innerText = "Failed to load products.";
+      }
     });
 });

@@ -3,60 +3,76 @@ const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Ensure this matche
 document.addEventListener("DOMContentLoaded", async () => {
   const spinner = document.getElementById("loading-spinner"); // Add spinner reference
   try {
-    spinner.style.display = "block"; // Show spinner
+    if (spinner) spinner.style.display = "block"; // Show spinner if exists
     await populateCategoryFilter();
     await loadProducts(1); // Load the first page of products on page load
     await loadShowcaseProducts(); // Ensure showcase products are loaded
   } catch (error) {
     console.error("Error during initialization:", error.message);
   } finally {
-    spinner.style.display = "none"; // Hide spinner after loading
+    if (spinner) spinner.style.display = "none"; // Hide spinner after loading
   }
 
-  document.getElementById("apply-filters-btn").addEventListener("click", applyFilters);
-  document.getElementById("clear-filters-btn").addEventListener("click", clearFilters);
+  const applyFiltersBtn = document.getElementById("apply-filters-btn");
+  if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener("click", applyFilters);
+  }
+  const clearFiltersBtn = document.getElementById("clear-filters-btn");
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener("click", clearFilters);
+  }
 
-  document.getElementById("category-filter").addEventListener("change", async (event) => {
-    const categoryId = event.target.value;
-    const subcategoryFilter = document.getElementById("subcategory-filter");
-    resetDropdown(subcategoryFilter, "All Subcategories");
-    if (categoryId) {
-      await populateSubcategoryFilter(categoryId);
-      subcategoryFilter.disabled = false;
-    } else {
-      subcategoryFilter.disabled = true;
-    }
-  });
+  const categoryFilter = document.getElementById("category-filter");
+  if (categoryFilter) {
+    categoryFilter.addEventListener("change", async (event) => {
+      const categoryId = event.target.value;
+      const subcategoryFilter = document.getElementById("subcategory-filter");
+      resetDropdown(subcategoryFilter, "All Subcategories");
+      if (categoryId) {
+        await populateSubcategoryFilter(categoryId);
+        subcategoryFilter.disabled = false;
+      } else {
+        subcategoryFilter.disabled = true;
+      }
+    });
+  }
 
-  document.getElementById("subcategory-filter").addEventListener("change", async (event) => {
-    const subCategoryId = event.target.value;
-    const descriptorFilter = document.getElementById("descriptor-filter");
-    resetDropdown(descriptorFilter, "All Descriptors");
-    if (subCategoryId) {
-      await populateDescriptorFilter(subCategoryId);
-      descriptorFilter.disabled = false;
-    } else {
-      descriptorFilter.disabled = true;
-    }
-  });
+  const subcategoryFilter = document.getElementById("subcategory-filter");
+  if (subcategoryFilter) {
+    subcategoryFilter.addEventListener("change", async (event) => {
+      const subCategoryId = event.target.value;
+      const descriptorFilter = document.getElementById("descriptor-filter");
+      resetDropdown(descriptorFilter, "All Descriptors");
+      if (subCategoryId) {
+        await populateDescriptorFilter(subCategoryId);
+        descriptorFilter.disabled = false;
+      } else {
+        descriptorFilter.disabled = true;
+      }
+    });
+  }
 
-  document.getElementById("products-per-page").addEventListener("change", () => {
-    loadProducts(1); // Reload products with the first page when the selection changes
-  });
+  const productsPerPage = document.getElementById("products-per-page");
+  if (productsPerPage) {
+    productsPerPage.addEventListener("change", () => {
+      loadProducts(1); // Reload products with the first page when the selection changes
+    });
+  }
 
   updateCartCount();
 
   function updateCartCount() {
     const cart = JSON.parse(localStorage.getItem("cart")) || [];
     const totalQuantity = cart.reduce((count, item) => count + item.quantity, 0); // Sum up quantities
-    document.getElementById("cart-count").textContent = totalQuantity;
+    const cartCountElem = document.getElementById("cart-count");
+    if (cartCountElem) cartCountElem.textContent = totalQuantity;
   }
 });
 
 async function loadProducts(page = 1) {
   const spinner = document.getElementById("loading-spinner"); // Add spinner reference
   try {
-    spinner.style.display = "block"; // Show spinner
+    if (spinner) spinner.style.display = "block"; // Show spinner if exists
     const categoryFilter = document.getElementById("category-filter");
     const subCategoryFilter = document.getElementById("subcategory-filter");
     const descriptorFilter = document.getElementById("descriptor-filter");
@@ -91,9 +107,11 @@ async function loadProducts(page = 1) {
   } catch (error) {
     console.error("Error loading products:", error.message);
     const productContainer = document.getElementById("product-container");
-    productContainer.innerHTML = `<p>Error loading products: ${error.message}</p>`;
+    if (productContainer) {
+      productContainer.innerHTML = `<p>Error loading products: ${error.message}</p>`;
+    }
   } finally {
-    spinner.style.display = "none"; // Hide spinner after loading
+    if (spinner) spinner.style.display = "none"; // Hide spinner after loading
   }
 }
 

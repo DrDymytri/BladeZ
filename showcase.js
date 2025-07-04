@@ -49,5 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
 function updateCartCount() {
   const cart = JSON.parse(localStorage.getItem("cart")) || [];
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
-  document.getElementById("cart-count").textContent = cartCount;
+  const cartCountElem = document.getElementById("cart-count");
+  if (cartCountElem) cartCountElem.textContent = cartCount;
 }

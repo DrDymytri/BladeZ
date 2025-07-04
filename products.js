@@ -174,6 +174,7 @@ async function loadShowcaseProducts() {
         <img src="${product.image}" alt="${product.name}" onerror="this.onerror=null; this.src='/images/Default1.png';" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
+        <p class="price"><strong>Price:</strong> <em>$${product.price.toFixed(2)}</em></p>
       </div>
     `).join('');
   } catch (error) {
