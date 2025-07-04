@@ -1,16 +1,12 @@
 const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Ensure this matches the backend URL
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const spinner = document.getElementById("loading-spinner"); // Add spinner reference
   try {
-    if (spinner) spinner.style.display = "block"; // Show spinner if exists
     await populateCategoryFilter();
     await loadProducts(1); // Load the first page of products on page load
     await loadShowcaseProducts(); // Ensure showcase products are loaded
   } catch (error) {
     console.error("Error during initialization:", error.message);
-  } finally {
-    if (spinner) spinner.style.display = "none"; // Hide spinner after loading
   }
 
   const applyFiltersBtn = document.getElementById("apply-filters-btn");
@@ -70,9 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function loadProducts(page = 1) {
-  const spinner = document.getElementById("loading-spinner"); // Add spinner reference
   try {
-    if (spinner) spinner.style.display = "block"; // Show spinner if exists
     const categoryFilter = document.getElementById("category-filter");
     const subCategoryFilter = document.getElementById("subcategory-filter");
     const descriptorFilter = document.getElementById("descriptor-filter");
@@ -110,8 +104,6 @@ async function loadProducts(page = 1) {
     if (productContainer) {
       productContainer.innerHTML = `<p>Error loading products: ${error.message}</p>`;
     }
-  } finally {
-    if (spinner) spinner.style.display = "none"; // Hide spinner after loading
   }
 }
 
