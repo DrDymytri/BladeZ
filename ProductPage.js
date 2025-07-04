@@ -136,6 +136,10 @@ async function loadShowcaseProducts() {
       `
       )
       .join("");
+
+    // Show the modal with showcased products on page load
+    displayShowcaseModal(products);
+
   } catch (error) {
     console.error("Error loading showcased products:", error.message);
     showcaseContainer.innerHTML = `<p>Error loading showcased products: ${error.message}</p>`;
