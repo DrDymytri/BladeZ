@@ -165,16 +165,23 @@ async function loadShowcaseProducts() {
       return;
     }
     const response = await fetch('/api/showcase-products');
+    if (!response.ok) {
+      throw new Error('Failed to fetch showcase products');
+    }
     const products = await response.json();
     showcaseContainer.innerHTML = products.map(product => `
       <div class="product-item">
-        <img src="${product.image}" alt="${product.name}" />
+        <img src="${product.image}" alt="${product.name}" onerror="this.onerror=null; this.src='/images/Default1.png';" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
       </div>
     `).join('');
   } catch (error) {
     console.error('Error loading showcased products:', error.message);
+    const showcaseContainer = document.getElementById('showcase-container');
+    if (showcaseContainer) {
+      showcaseContainer.innerHTML = '<p class="error-message">Failed to load showcase products. Please try again later.</p>';
+    }
   }
 }
 
