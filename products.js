@@ -284,7 +284,7 @@ function updateCartCount() {
 
 // Handle missing default image gracefully
 function getDefaultImageUrl() {
-    return './Images/default-image.jpg'; // Ensure this path matches the actual location of the image
+    return '/images/Default1.png'; // Ensure this path matches the actual location of the image
 }
 
 // Initial load

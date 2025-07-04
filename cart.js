@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       ...item,
       name: product?.name || item.name,
       price: product?.price || item.price,
-      image_url: product?.image_url || item.image_url || './images/default-image.jpg', // Prioritize product image, fallback to item image
+      image_url: product?.image_url || item.image_url || '/images/Default1.png', // Prioritize product image, fallback to item image
     };
   });
 

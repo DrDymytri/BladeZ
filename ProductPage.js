@@ -118,7 +118,7 @@ async function loadShowcaseProducts() {
       .map(
         (product) => `
         <div class="product-card">
-          <img src="${product.image_url || './default1.png'}" alt="${product.name}" />
+          <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" />
           <h3>${product.name}</h3>
           <p>${product.description}</p>
           <p>Price: $${product.price.toFixed(2)}</p>
@@ -251,7 +251,7 @@ function addToCart(productId, productName, productPrice, productImage) {
       id: productId,
       name: productName,
       price: productPrice,
-      image_url: productImage || './default1.png', // Updated path
+      image_url: productImage || '/images/Default1.png', // Updated path
       quantity: 1,
     });
   }
@@ -268,11 +268,11 @@ function renderProductItems(products) {
     .map(
       (product) => `
       <div class="product-item">
-        <img src="${product.image_url || './default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || 'default-image.jpg'}')" />
+        <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
         <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
-        <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || 'default-image.jpg'}">Add to Cart</button>
+        <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">Add to Cart</button>
       </div>
     `
     )
@@ -327,11 +327,11 @@ function displayShowcaseModal(products) {
       .map(
         (product) => `
         <div class="product-item">
-          <img src="${product.image_url || './default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || 'default1.png'}')" />
+          <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" />
           <h3>${product.name}</h3>
           <p>${product.description}</p>
           <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
-          <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || './default1.png'}">Add to Cart</button>
+          <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">Add to Cart</button>
         </div>
       `
       )
@@ -462,11 +462,11 @@ function renderProductItems(products) {
     .map(
       (product) => `
       <div class="product-item">
-        <img src="${product.image_url || './default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || './default1.png'}')" />
+        <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
         <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
-        <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || './default1.png'}">Add to Cart</button>
+        <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">Add to Cart</button>
       </div>
     `
     )
@@ -488,8 +488,8 @@ function renderProducts(products) {
   productContainer.innerHTML = products
     .map(
       (product) => `
-      <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || './images/default1.png'}">
-        <img src="${product.image_url || './images/default1.png'}" alt="${product.name}" class="product-image" onerror="this.src='./images/default1.png'" />
+      <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">
+        <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" class="product-image" onerror="this.src='/images/Default1.png'" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
         <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>

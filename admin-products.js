@@ -237,7 +237,7 @@ function renderProducts(products) {
     const container = document.getElementById("admin-products-container");
     container.innerHTML = productsToDisplay.map(product => `
         <div class="product-card">
-            <img src="${product.image_url || './images/default-image.jpg'}" alt="${product.name}" class="product-image" />
+            <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" class="product-image" />
             <h3>${product.name}</h3>
             <p>${product.description}</p>
             <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>

@@ -1,7 +1,7 @@
 body {
   margin: 0; /* Remove default margin from the body */
   padding: 0; /* Remove default padding from the body */
-  background-image: url('./images/background.jpg');
+  background-image: url('/images/BackgroundParchment.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -14,7 +14,7 @@ body::after {
   display: block;
   width: 100%;
   height: 100%;
-  background-image: url('./default-background.jpg'); /* Fallback image */
+  background-image: url('/images/BackgroundParchment.jpg'); /* Fallback image */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -95,7 +95,7 @@ header nav ul li a:hover {
   max-height: 275px; /* Limit the height of the header image */
   object-fit: cover; /* Cover the area without stretching */
   transform: scaleX(-1); /* Flip the image horizontally */
-  background-image: url('./images/HeaderRedGoldDragon.PNG');
+  background-image: url('/images/HeaderRedGoldDragon.PNG');
 }
 
 .header-image-mirrored {
@@ -103,7 +103,7 @@ header nav ul li a:hover {
   height: auto; /* Maintain aspect ratio */
   max-height: 275px; /* Limit the height of the header image */
   object-fit: cover;
-  background-image: url('./images/HeaderRedGoldDragon.PNG');
+  background-image: url('/images/HeaderRedGoldDragon.PNG');
 }
 
 main {
@@ -311,7 +311,7 @@ footer a {
   max-width: 100%; /* Ensure the logo scales within the viewport */
   height: auto;
   animation: spin360 5s linear infinite;
-  background-image: url('./images/HeaderLogo.png');
+  background-image: url('/Images/HeaderLogo.png');
 }
 
 @keyframes spin360 {
