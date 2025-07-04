@@ -527,5 +527,15 @@ document.querySelectorAll(".add-to-cart-btn").forEach((button) => {
   });
 });
 
-// Call the function to load showcase products
-loadShowcaseProducts();
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const productContainer = document.getElementById('product-container');
+    if (!productContainer) {
+      console.error('Product container not found.');
+      return;
+    }
+    await loadShowcaseProducts();
+  } catch (error) {
+    console.error('Error during initialization:', error.message);
+  }
+});

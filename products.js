@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    loadShowcaseProducts(showcaseContainer);
+    loadShowcaseProducts();
 });
 
 async function loadCategories() {
@@ -157,28 +157,25 @@ async function loadTags(subCategoryId) {
     }
 }
 
-async function loadShowcaseProducts(container) {
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/showcase-products`);
-        if (!response.ok) throw new Error("Failed to fetch showcase products");
-
-        const products = await response.json();
-        container.innerHTML = products
-            .map(
-                (product) => `
-                <div class="product-card">
-                  <img src="${product.image_url}" alt="${product.name}" />
-                  <h3>${product.name}</h3>
-                  <p>${product.description}</p>
-                  <p>Price: $${product.price.toFixed(2)}</p>
-                </div>
-            `
-            )
-            .join("");
-    } catch (error) {
-        console.error("Error loading showcased products:", error.message);
-        container.innerHTML = "<p>Failed to load showcased products. Please try again later.</p>";
+async function loadShowcaseProducts() {
+  try {
+    const showcaseContainer = document.getElementById('showcase-container');
+    if (!showcaseContainer) {
+      console.error('Showcase container not found.');
+      return;
     }
+    const response = await fetch('/api/showcase-products');
+    const products = await response.json();
+    showcaseContainer.innerHTML = products.map(product => `
+      <div class="product-item">
+        <img src="${product.image}" alt="${product.name}" />
+        <h3>${product.name}</h3>
+        <p>${product.description}</p>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Error loading showcased products:', error.message);
+  }
 }
 
 function resetDropdown(selectElement, placeholder) {

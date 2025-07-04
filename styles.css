@@ -1,7 +1,7 @@
 body {
   margin: 0; /* Remove default margin from the body */
   padding: 0; /* Remove default padding from the body */
-  background-image: url('/images/BackgroundParchment.jpg');
+  background-image: url('/images/BackgroundParchment.jpg'); /* Correct casing for the image path */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -311,7 +311,7 @@ footer a {
   max-width: 100%; /* Ensure the logo scales within the viewport */
   height: auto;
   animation: spin360 5s linear infinite;
-  background-image: url('/Images/HeaderLogo.png');
+  background-image: url('/images/HeaderLogo.png'); /* Correct casing for the image path */
 }
 
 @keyframes spin360 {
