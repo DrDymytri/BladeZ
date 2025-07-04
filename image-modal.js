@@ -82,24 +82,3 @@ function showImageModal(imageSrc) {
     modalImage.src = imageSrc;
     imageModal.style.display = "flex";
 }
-    `;
-    document.body.appendChild(imageModal);
-
-    const closeBtn = imageModal.querySelector(".close");
-    closeBtn.addEventListener("click", () => {
-      imageModal.style.display = "none";
-      document.getElementById("modal-image").src = "";
-    });
-
-    window.addEventListener("click", (event) => {
-      if (event.target === imageModal) {
-        imageModal.style.display = "none";
-        document.getElementById("modal-image").src = "";
-      }
-    });
-  }
-
-  const modalImage = document.getElementById("modal-image");
-  modalImage.src = imageSrc;
-  imageModal.style.display = "flex";
-}
