@@ -1,7 +1,8 @@
 body {
   margin: 0; /* Remove default margin from the body */
   padding: 0; /* Remove default padding from the body */
-  background-image: url('images/BackgroundParchment.jpg'); /* Remove leading slash */
+  /* Try multiple path formats for the background image */
+  background-image: url('images/BackgroundParchment.jpg'), url('./images/BackgroundParchment.jpg'), url('../images/BackgroundParchment.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

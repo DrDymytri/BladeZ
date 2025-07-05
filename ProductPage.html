@@ -17,6 +17,16 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
     />
+    <style>
+      /* Backup inline background styles in case external CSS fails */
+      body {
+        background-image: url('images/BackgroundParchment.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: #f4f4f4;
+      }
+    </style>
   </head>
   <body>
     <header style="display: flex; justify-content: space-between; align-items: center; width: 100vw;">
@@ -25,7 +35,7 @@
       </div>
       <div>
         <div class="logo-container">
-          <img src="images/HeaderLogo.png" alt="Logo" class="responsive-logo" onerror="this.onerror=null; this.src='images/Default1.png';" />
+          <img src="https://USERNAME.github.io/BladeZ/images/HeaderLogo.png" alt="Logo" class="responsive-logo" onerror="this.onerror=null; this.src='images/Default1.png';" />
         </div>
         <h1 class="businessName">Point FX BladeZ</h1>
         <p class="slogan">Premium BladeZ for the Modern Warrior</p>
@@ -89,6 +99,41 @@
     <script src="image-modal.js"></script>
     <script>
       const backendUrl = "https://bladez-backend.onrender.com"; // Use Render's public URL directly
+    </script>
+    <script>
+      // Debug image loading issues
+      document.addEventListener('DOMContentLoaded', () => {
+        console.log('Current page URL:', window.location.href);
+        
+        // Check all images
+        document.querySelectorAll('img').forEach(img => {
+          console.log('Image src:', img.src, 'Complete:', img.complete);
+          
+          // Add error handler to log failures
+          img.onerror = function() {
+            console.error('Failed to load image:', this.src);
+          };
+        });
+        
+        // Check background image
+        const bodyStyles = getComputedStyle(document.body);
+        const bgImage = bodyStyles.backgroundImage;
+        console.log('Body background image:', bgImage);
+        
+        // Create a test image to check if background image exists
+        const testImg = new Image();
+        testImg.onload = () => console.log('Background image exists and loaded successfully');
+        testImg.onerror = () => {
+          console.error('Background image failed to load');
+          // Set a fallback background color
+          document.body.style.backgroundColor = '#681414';
+        };
+        
+        // Extract URL from background-image CSS property
+        const bgUrl = bgImage.replace(/^url\(['"](.+)['"]\)$/, '$1');
+        console.log('Attempting to load background from:', bgUrl);
+        testImg.src = bgUrl;
+      });
     </script>
   </body>
 </html>
