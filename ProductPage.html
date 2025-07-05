@@ -20,11 +20,8 @@
     <style>
       /* Backup inline background styles in case external CSS fails */
       body {
-        background-image: url('images/BackgroundParchment.jpg');
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-color: #f4f4f4;
+        background-color: #f4f4f4; /* Default background color */
+        background-image: url('./images/BackgroundParchment.jpg'); /* Try relative path */
       }
     </style>
   </head>
@@ -125,8 +122,27 @@
         testImg.onload = () => console.log('Background image exists and loaded successfully');
         testImg.onerror = () => {
           console.error('Background image failed to load');
-          // Set a fallback background color
-          document.body.style.backgroundColor = '#681414';
+          // Use a more neutral fallback color
+          document.body.style.backgroundColor = '#f4f4f4';
+          
+          // Try loading the image from different paths as a fallback
+          const alternativePaths = [
+            './images/BackgroundParchment.jpg',
+            '../images/BackgroundParchment.jpg',
+            '/images/BackgroundParchment.jpg',
+            'images/BackgroundParchment.jpg',
+            'images/backgroundparchment.jpg' // Try lowercase
+          ];
+          
+          // Try each path
+          alternativePaths.forEach(path => {
+            const altImg = new Image();
+            altImg.onload = () => {
+              console.log('Found background image at:', path);
+              document.body.style.backgroundImage = `url('${path}')`;
+            };
+            altImg.src = path;
+          });
         };
         
         // Extract URL from background-image CSS property
