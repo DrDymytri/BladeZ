@@ -6,9 +6,6 @@
 // Backend URL (Render)
 const BACKEND_URL = 'https://bladez-backend.onrender.com';
 
-// Image base path (GitHub Pages)
-const IMAGE_BASE_PATH = './images';
-
 // API helper for consistent backend calls
 const apiService = {
   // Base GET request with error handling
@@ -50,6 +47,9 @@ window.BACKEND_URL = BACKEND_URL;
 window.apiService = apiService;
 
 // For CommonJS environments (Node.js backend)
+if (typeof module !== 'undefined') {
+  module.exports = { BACKEND_URL };
+}
 if (typeof module !== 'undefined') {
   module.exports = { BACKEND_URL, IMAGE_BASE_PATH };
 }
