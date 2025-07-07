@@ -96,7 +96,7 @@ header nav ul li a:hover {
   max-height: 275px; /* Limit the height of the header image */
   object-fit: cover; /* Cover the area without stretching */
   transform: scaleX(-1); /* Flip the image horizontally */
-  background-image: url('images/HeaderRedGoldDragon.png'); /* Fix path and extension */
+  background-image: url('images/HeaderRedGoldDragon.png'); /* Use relative path */
 }
 
 .header-image-mirrored {
@@ -104,7 +104,7 @@ header nav ul li a:hover {
   height: auto; /* Maintain aspect ratio */
   max-height: 275px; /* Limit the height of the header image */
   object-fit: cover;
-  background-image: url('images/HeaderRedGoldDragon.png'); /* Fix path and extension */
+  background-image: url('images/HeaderRedGoldDragon.png'); /* Use relative path */
 }
 
 main {
