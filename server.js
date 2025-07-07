@@ -480,6 +480,7 @@ app.delete("/api/categories/:id", async (req, res) => {
 // Events endpoint
 app.get("/api/events", async (req, res) => {
     try {
+        console.log("Fetching events from Azure SQL Database...");
         const pool = await getConnection();
         const result = await pool.request().query(`
             SELECT 
@@ -493,6 +494,7 @@ app.get("/api/events", async (req, res) => {
             FROM Events
             ORDER BY event_start_date ASC
         `);
+        console.log("Events fetched successfully:", result.recordset);
         res.json(result.recordset);
     } catch (error) {
         console.error("Error fetching events:", error.message);
