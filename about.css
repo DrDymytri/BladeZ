@@ -1,5 +1,5 @@
 .aboutBody {
-  background-image: url('images/BackgroundParchment.jpg');
+  background-image: url('./images/BackgroundParchment.jpg');
   overflow-x: hidden; /* Prevent horizontal scrolling */
   background-color: #f4f4f4;
   font-family: "MedievalSharp", serif;
