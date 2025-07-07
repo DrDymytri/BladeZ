@@ -2,7 +2,7 @@ body {
   margin: 0; /* Remove default margin from the body */
   padding: 0; /* Remove default padding from the body */
   /* Fix background image path */
-  background-image: url('./images/HeaderRedGoldDragon.png'); /* Use relative path */
+  background-image: url('https://bladezstorage.blob.core.windows.net/bladez-op-images/HeaderRedGoldDragon.png'); /* Use Azure Blob Storage URL */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -15,7 +15,7 @@ body::after {
   display: block;
   width: 100%;
   height: 100%;
-  background-image: url('images/BackgroundParchment.jpg'); /* Fix path */
+  background-image: url('https://bladezstorage.blob.core.windows.net/bladez-op-images/BackgroundParchment.jpg'); /* Fix path */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -96,7 +96,7 @@ header nav ul li a:hover {
   max-height: 275px; /* Limit the height of the header image */
   object-fit: cover; /* Cover the area without stretching */
   transform: scaleX(-1); /* Flip the image horizontally */
-  background-image: url('./images/HeaderRedGoldDragon.png'); /* Use relative path */
+  background-image: url('https://bladezstorage.blob.core.windows.net/bladez-op-images/HeaderRedGoldDragon.png'); /* Use Azure Blob Storage URL */
 }
 
 .header-image-mirrored {
@@ -104,7 +104,7 @@ header nav ul li a:hover {
   height: auto; /* Maintain aspect ratio */
   max-height: 275px; /* Limit the height of the header image */
   object-fit: cover;
-  background-image: url('./images/HeaderRedGoldDragon.png'); /* Use relative path */
+  background-image: url('https://bladezstorage.blob.core.windows.net/bladez-op-images/HeaderRedGoldDragon.png'); /* Use Azure Blob Storage URL */
 }
 
 main {
