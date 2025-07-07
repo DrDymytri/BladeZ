@@ -2,7 +2,7 @@ body {
   overflow-x: hidden; /* Prevent horizontal scrolling */
   background-color: #f9f9f9;
   font-family: "MedievalSharp", serif;
-  background-image: url('images/BackgroundParchment.jpg');
+  background-image: url('https://bladezstorage.blob.core.windows.net/bladez-op-images/BackgroundParchment.jpg'); /* Corrected URL */
   margin: 0;
   padding: 0;
 }

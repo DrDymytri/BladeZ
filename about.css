@@ -1,5 +1,5 @@
 .aboutBody {
-  background-image: url('./images/BackgroundParchment.jpg');
+  background-image: url('https://bladezstorage.blob.core.windows.net/bladez-op-images/BackgroundParchment.jpg');
   overflow-x: hidden; /* Prevent horizontal scrolling */
   background-color: #f4f4f4;
   font-family: "MedievalSharp", serif;
@@ -21,7 +21,7 @@
   font-family: "MedievalSharp", serif;
   justify-content: center;
   text-align: left;
-  font-size: 36px;
+  font-size: 24px;
   color: black;
   width: auto;
   max-width: 1200px;
@@ -33,7 +33,7 @@
   word-wrap: break-word; /* Break long words */
   overflow-wrap: break-word;
   margin: 10px 0;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .heroDesc p::first-letter {

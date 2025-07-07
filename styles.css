@@ -310,7 +310,7 @@ footer a {
   max-width: 100%; /* Ensure the logo scales within the viewport */
   height: auto;
   animation: spin360 5s linear infinite;
-  background-image: url('images/HeaderLogo.png'); /* Fix path */
+  background-image: url('https://bladezstorage.blob.core.windows.net/bladez-op-images/HeaderLogo.png'); /* Corrected URL */
 }
 
 @keyframes spin360 {
