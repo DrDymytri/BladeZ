@@ -502,6 +502,29 @@ app.get("/api/events", async (req, res) => {
     }
 });
 
+// Videos endpoint
+app.get("/api/videos", async (req, res) => {
+    try {
+        console.log("Fetching videos from Azure SQL Database...");
+        const pool = await getConnection();
+        const result = await pool.request().query(`
+            SELECT 
+                id, 
+                title, 
+                description, 
+                video_url AS videoUrl, 
+                thumbnail_url AS thumbnailUrl 
+            FROM Videos
+            ORDER BY id ASC
+        `);
+        console.log("Videos fetched successfully:", result.recordset);
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching videos:", error.message);
+        res.status(500).json({ error: "Failed to fetch videos." });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
