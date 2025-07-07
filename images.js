@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Fetch images from the server
-  fetch("http://localhost:5000/api/images")
+  fetch(`${BACKEND_URL}/api/images`)
     .then((response) => {
       if (!response.ok) {
         console.error(`Error: Received status ${response.status}`);

@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Welcome - Point FX BladeZ</title>
     <link rel="icon" href="/images/BrowserIcon2.png" type="image/png" />
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="/styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,36 +16,29 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
     />
-    <style>
-      /* Backup inline background styles in case external CSS fails */
-      body {
-        background-color: #f4f4f4; /* Default background color */
-        background-image: url('./images/BackgroundParchment.jpg'); /* Try relative path */
-      }
-    </style>
   </head>
   <body>
     <header style="display: flex; justify-content: space-between; align-items: center; width: 100vw;">
       <div>
-        <img src="images/HeaderRedGoldDragon.png" alt="Header Dragon" class="header-image" onerror="this.onerror=null; this.src='images/Default1.png';" />
+        <img src="/images/HeaderRedGoldDragon.png" alt="Header Dragon" class="header-image" onerror="this.onerror=null; this.src='/images/Default1.png';" />
       </div>
       <div>
         <div class="logo-container">
-          <img src="https://USERNAME.github.io/BladeZ/images/HeaderLogo.png" alt="Logo" class="responsive-logo" onerror="this.onerror=null; this.src='images/Default1.png';" />
+          <img src="/images/HeaderLogo.png" alt="Logo" class="responsive-logo" onerror="this.onerror=null; this.src='/images/Default1.png';" />
         </div>
         <h1 class="businessName">Point FX BladeZ</h1>
         <p class="slogan">Premium BladeZ for the Modern Warrior</p>
         <nav>
           <ul class="responsive-nav">
-            <li><a href="cart.html"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count">0</span>)</a></li>
-            <li><a href="about.html"><i class="fas fa-info-circle"></i> About Us!</a></li>
-            <li><a href="events.html"><i class="fas fa-calendar"></i> Events</a></li>
-            <li><a href="orders.html"><i class="fas fa-box-open"></i> My Orders</a></li>
+            <li><a href="https://pointfxbladez.com/cart.html"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count">0</span>)</a></li>
+            <li><a href="https://pointfxbladez.com/about.html"><i class="fas fa-info-circle"></i> About Us!</a></li>
+            <li><a href="https://pointfxbladez.com/events.html"><i class="fas fa-calendar"></i> Events</a></li>
+            <li><a href="https://pointfxbladez.com/orders.html"><i class="fas fa-box-open"></i> My Orders</a></li>
           </ul>
         </nav>
       </div>
       <div>
-        <img src="images/HeaderRedGoldDragon.png" alt="Header Dragon Mirrored" class="header-image-mirrored" onerror="this.onerror=null; this.src='images/Default1.png';" />
+        <img src="/images/HeaderRedGoldDragon.png" alt="Header Dragon Mirrored" class="header-image-mirrored" onerror="this.onerror=null; this.src='/images/Default1.png';" />
       </div>
     </header>
 
@@ -90,66 +82,12 @@
       <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
       <p>Created By: <a href="https://www.mdoasolutions.com" target="_blank">MDOA Solutions</a></p>
     </footer>
-    
-    <script src="ProductPage.js"></script>
-    <script src="products.js"></script>
-    <script src="image-modal.js"></script>
+
+    <script src="https://pointfxbladez.com/ProductPage.js"></script>
+    <script src="https://pointfxbladez.com/products.js"></script>
+    <script src="https://pointfxbladez.com/image-modal.js"></script>
     <script>
       const backendUrl = "https://bladez-backend.onrender.com"; // Use Render's public URL directly
-    </script>
-    <script>
-      // Debug image loading issues
-      document.addEventListener('DOMContentLoaded', () => {
-        console.log('Current page URL:', window.location.href);
-        
-        // Check all images
-        document.querySelectorAll('img').forEach(img => {
-          console.log('Image src:', img.src, 'Complete:', img.complete);
-          
-          // Add error handler to log failures
-          img.onerror = function() {
-            console.error('Failed to load image:', this.src);
-          };
-        });
-        
-        // Check background image
-        const bodyStyles = getComputedStyle(document.body);
-        const bgImage = bodyStyles.backgroundImage;
-        console.log('Body background image:', bgImage);
-        
-        // Create a test image to check if background image exists
-        const testImg = new Image();
-        testImg.onload = () => console.log('Background image exists and loaded successfully');
-        testImg.onerror = () => {
-          console.error('Background image failed to load');
-          // Use a more neutral fallback color
-          document.body.style.backgroundColor = '#f4f4f4';
-          
-          // Try loading the image from different paths as a fallback
-          const alternativePaths = [
-            './images/BackgroundParchment.jpg',
-            '../images/BackgroundParchment.jpg',
-            '/images/BackgroundParchment.jpg',
-            'images/BackgroundParchment.jpg',
-            'images/backgroundparchment.jpg' // Try lowercase
-          ];
-          
-          // Try each path
-          alternativePaths.forEach(path => {
-            const altImg = new Image();
-            altImg.onload = () => {
-              console.log('Found background image at:', path);
-              document.body.style.backgroundImage = `url('${path}')`;
-            };
-            altImg.src = path;
-          });
-        };
-        
-        // Extract URL from background-image CSS property
-        const bgUrl = bgImage.replace(/^url\(['"](.+)['"]\)$/, '$1');
-        console.log('Attempting to load background from:', bgUrl);
-        testImg.src = bgUrl;
-      });
     </script>
   </body>
 </html>

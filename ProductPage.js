@@ -1,5 +1,3 @@
-const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Ensure this matches the backend URL
-
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await populateCategoryFilter();
@@ -87,13 +85,8 @@ async function loadProducts(page = 1) {
     queryParams.append("page", filters.page);
     queryParams.append("limit", filters.limit);
 
-    const requestUrl = `${BACKEND_URL}/api/products?${queryParams.toString()}`;
-    console.log("Requesting products from:", requestUrl);
-
-    const response = await fetch(requestUrl);
-    if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
-
-    const data = await response.json();
+    // Replace direct fetch with apiService
+    const data = await apiService.get(`/api/products?${queryParams.toString()}`);
     console.log("Products fetched successfully:", data);
 
     renderProducts(data.products);
@@ -115,10 +108,7 @@ async function loadShowcaseProducts() {
   }
 
   try {
-    const response = await fetch(`${BACKEND_URL}/api/showcase-products`);
-    if (!response.ok) throw new Error(`Failed to fetch showcase products: ${response.statusText}`);
-
-    const products = await response.json();
+    const products = await apiService.get('/api/showcase-products');
     if (products.length === 0) {
       showcaseContainer.innerHTML = `<p>No showcase products available.</p>`;
       return;
@@ -148,10 +138,7 @@ async function loadShowcaseProducts() {
 
 async function populateCategoryFilter() {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/categories`);
-    if (!response.ok) throw new Error(`Failed to fetch categories: ${response.statusText}`);
-
-    const categories = await response.json();
+    const categories = await apiService.get('/api/categories');
     const categoryFilter = document.getElementById("category-filter");
     resetDropdown(categoryFilter, "All Categories");
 
@@ -170,10 +157,7 @@ async function populateCategoryFilter() {
 
 async function populateSubcategoryFilter(categoryId) {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/subcategories?categoryId=${categoryId}`);
-    if (!response.ok) throw new Error("Failed to fetch subcategories");
-
-    const subcategories = await response.json();
+    const subcategories = await apiService.get(`/api/subcategories?categoryId=${categoryId}`);
     const subcategoryFilter = document.getElementById("subcategory-filter");
 
     subcategories.forEach((subcategory) => {
@@ -189,10 +173,7 @@ async function populateSubcategoryFilter(categoryId) {
 
 async function populateDescriptorFilter(subCategoryId) {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/descriptors?subCategoryId=${subCategoryId}`);
-    if (!response.ok) throw new Error("Failed to fetch descriptors");
-
-    const descriptors = await response.json();
+    const descriptors = await apiService.get(`/api/descriptors?subCategoryId=${subCategoryId}`);
     const descriptorFilter = document.getElementById("descriptor-filter");
 
     descriptors.forEach((descriptor) => {

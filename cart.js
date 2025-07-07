@@ -1,201 +1,213 @@
-const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+// Cart management for BladeZ: works with GitHub Pages (frontend), Render (backend), Azure SQL (database)
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const cartContainer = document.getElementById("cart-container");
-  const cartSummaryTableBody = document.querySelector("#cart-summary-table tbody");
-  const cartTotalElement = document.getElementById("cart-total");
+document.addEventListener('DOMContentLoaded', () => {
+    displayCart();
+    updateCartCount();
 
-  // Retrieve cart items from localStorage
-  const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+    const clearCartBtn = document.getElementById('clear-cart');
+    if (clearCartBtn) clearCartBtn.addEventListener('click', clearCart);
 
-  if (cartItems.length === 0) {
-    cartContainer.innerHTML = "<p>Your cart is empty.</p>";
-    cartSummaryTableBody.innerHTML = "";
-    cartTotalElement.textContent = "0.00";
-    return;
-  }
-
-  // Fetch product details from the server
-  const productDetails = await fetchProductDetails(cartItems.map((item) => item.id));
-  if (!productDetails) {
-    cartContainer.innerHTML = "<p>Failed to load cart items. Please try again later.</p>";
-    cartSummaryTableBody.innerHTML = ""; // Clear the summary table
-    cartTotalElement.textContent = "0.00"; // Reset the total
-    return;
-  }
-
-  // Merge product details with cart items
-  const updatedCartItems = cartItems.map((item) => {
-    const product = productDetails?.find((p) => p.id === item.id);
-    if (!product) {
-      console.warn(`Product with ID ${item.id} not found. Using fallback data.`);
-    }
-    return {
-      ...item,
-      name: product?.name || item.name,
-      price: product?.price || item.price,
-      image_url: product?.image_url || item.image_url || '/images/Default1.png', // Prioritize product image, fallback to item image
-    };
-  });
-
-  // Render cart items
-  renderCartItems(updatedCartItems);
-
-  // Calculate and display the total
-  const total = updatedCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  cartTotalElement.textContent = total.toFixed(2);
-
-  // Add event listener for the "Clear Cart" button
-  const clearCartButton = document.getElementById("clear-cart-btn");
-  if (clearCartButton) {
-    clearCartButton.addEventListener("click", () => {
-      clearCart();
-      alert("Cart cleared!");
-    });
-  } else {
-    console.warn("Clear Cart button not found in the DOM.");
-  }
-
-  // Fix: Ensure the checkout button navigates without overwriting the cart in localStorage
-  const checkoutButton = document.getElementById("checkout-button");
-  if (checkoutButton) {
-    checkoutButton.addEventListener("click", () => {
-      // Only set the intended destination without modifying the cart
-      localStorage.setItem("intendedDestination", "checkout.html");
-      window.location.href = "checkout.html"; // Navigate to checkout page
-    });
-  } else {
-    console.warn("Checkout button not found in the DOM.");
-  }
-
-  // Add event listener for the "My Orders" button
-  const myOrdersButton = document.querySelector('a[href="orders.html"]');
-  if (myOrdersButton) {
-    myOrdersButton.addEventListener("click", (event) => {
-      event.preventDefault(); // Prevent default navigation
-      localStorage.setItem("intendedDestination", "orders.html"); // Set intended destination
-      window.location.href = "login.html"; // Navigate to login page
-    });
-  }
+    const checkoutBtn = document.getElementById('checkout-btn');
+    if (checkoutBtn) checkoutBtn.addEventListener('click', proceedToCheckout);
 });
 
-document.addEventListener("touchstart", () => {
-  console.log("Touchstart event triggered."); // Replace with actual logic if needed
-});
+// --- Cart Core Logic ---
 
-async function fetchProductDetails(productIds) {
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/cart-products?ids=${productIds.join(",")}`);
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.warn("Some products were not found. Proceeding with available products.");
-        return []; // Return an empty array to allow the cart to proceed
-      }
-      throw new Error("Failed to fetch product details");
+function getCart() {
+    return JSON.parse(localStorage.getItem('cart')) || [];
+}
+
+function saveCart(cart) {
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartCount();
+    syncCartWithBackend(cart);
+}
+
+function addToCart(productId, productName, productPrice, productImage) {
+    let cart = getCart();
+    const existing = cart.find(item => item.id === productId);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        cart.push({
+            id: productId,
+            name: productName,
+            price: productPrice,
+            image_url: productImage || 'images/Default1.png',
+            quantity: 1
+        });
     }
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching product details:", error.message);
-    return null;
-  }
+    saveCart(cart);
+    showNotification(`${productName} added to cart`);
+    displayCart();
 }
 
-function renderCartItems(cartItems) {
-  const cartContainer = document.getElementById("cart-container");
-  const cartSummaryTableBody = document.querySelector("#cart-summary-table tbody");
+function updateItemQuantity(productId, change) {
+    let cart = getCart();
+    const item = cart.find(i => i.id === parseInt(productId));
+    if (!item) return;
+    item.quantity += change;
+    if (item.quantity <= 0) {
+        cart = cart.filter(i => i.id !== item.id);
+    }
+    saveCart(cart);
+    displayCart();
+}
 
-  // Render product cards
-  cartContainer.innerHTML = cartItems
-    .map(
-      (item, index) => `
-      <div class="cart-item-card" data-id="${index}">
-        <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" />
-        <div class="cart-item-details">
-          <h3>${item.name}</h3>
-          <p><strong class="price-label">Price:</strong> <span class="price">$${item.price.toFixed(2)}</span></p>
-          <p>Quantity: ${item.quantity}</p>
+function removeFromCart(productId) {
+    let cart = getCart();
+    cart = cart.filter(item => item.id !== parseInt(productId));
+    saveCart(cart);
+    showNotification('Item removed from cart');
+    displayCart();
+}
+
+function clearCart() {
+    if (confirm('Are you sure you want to clear your cart?')) {
+        localStorage.removeItem('cart');
+        updateCartCount();
+        syncCartWithBackend([]);
+        displayCart();
+        showNotification('Cart cleared');
+    }
+}
+
+function proceedToCheckout() {
+    const cart = getCart();
+    if (cart.length === 0) {
+        alert('Your cart is empty');
+        return;
+    }
+    window.location.href = 'checkout.html';
+}
+
+// --- UI Rendering ---
+
+function displayCart() {
+    const cartContainer = document.getElementById('cart-items');
+    if (!cartContainer) return;
+    const cart = getCart();
+
+    if (cart.length === 0) {
+        cartContainer.innerHTML = '<p>Your cart is empty</p>';
+        updateCartTotal(0);
+        hideElement('checkout-btn');
+        hideElement('clear-cart');
+        return;
+    }
+
+    showElement('checkout-btn');
+    showElement('clear-cart');
+
+    cartContainer.innerHTML = cart.map(item => `
+        <div class="cart-item-card" data-id="${item.id}">
+            <img src="${item.image_url || 'images/Default1.png'}" alt="${item.name}" class="cart-item-image" onerror="this.onerror=null; this.src='images/Default1.png';">
+            <div class="cart-item-details">
+                <h3>${item.name}</h3>
+                <p>Price: $${item.price.toFixed(2)}</p>
+                <div class="quantity-control">
+                    <button class="decrease-quantity" data-id="${item.id}">-</button>
+                    <span class="item-quantity">${item.quantity}</span>
+                    <button class="increase-quantity" data-id="${item.id}">+</button>
+                </div>
+                <p>Total: $${(item.price * item.quantity).toFixed(2)}</p>
+            </div>
+            <button class="remove-item-btn" data-id="${item.id}">Remove</button>
         </div>
-        <div class="cart-item-actions">
-          <button class="decrease-quantity-btn" data-id="${index}">-</button>
-          <button class="increase-quantity-btn" data-id="${index}">+</button>
-          <button class="remove-item-btn" data-id="${index}">Remove</button>
-        </div>
-      </div>
-    `
-    )
-    .join("");
+    `).join('');
 
-  // Render cart summary table rows
-  cartSummaryTableBody.innerHTML = cartItems
-    .map(
-      (item) => `
-      <tr>
-        <td>${item.name}</td>
-        <td>$${item.price.toFixed(2)}</td>
-        <td>${item.quantity}</td>
-        <td>$${(item.price * item.quantity).toFixed(2)}</td>
-      </tr>
-    `
-    )
-    .join("");
+    updateCartTotal(cart.reduce((sum, item) => sum + item.price * item.quantity, 0));
 
-  attachEventListeners(cartItems); // Ensure buttons are functional
+    // Attach event listeners
+    cartContainer.querySelectorAll('.decrease-quantity').forEach(btn => {
+        btn.addEventListener('click', e => updateItemQuantity(e.target.dataset.id, -1));
+    });
+    cartContainer.querySelectorAll('.increase-quantity').forEach(btn => {
+        btn.addEventListener('click', e => updateItemQuantity(e.target.dataset.id, 1));
+    });
+    cartContainer.querySelectorAll('.remove-item-btn').forEach(btn => {
+        btn.addEventListener('click', e => removeFromCart(e.target.dataset.id));
+    });
 }
 
-function attachEventListeners(cartItems) {
-  // Remove existing event listeners by cloning the buttons
-  const removeButtons = document.querySelectorAll(".remove-item-btn");
-  const decreaseButtons = document.querySelectorAll(".decrease-quantity-btn");
-  const increaseButtons = document.querySelectorAll(".increase-quantity-btn");
-
-  removeButtons.forEach((button) => {
-    const clonedButton = button.cloneNode(true);
-    button.parentNode.replaceChild(clonedButton, button);
-  });
-
-  decreaseButtons.forEach((button) => {
-    const clonedButton = button.cloneNode(true);
-    button.parentNode.replaceChild(clonedButton, button);
-  });
-
-  increaseButtons.forEach((button) => {
-    const clonedButton = button.cloneNode(true);
-    button.parentNode.replaceChild(clonedButton, button);
-  });
-
-  // Add new event listeners
-  document.querySelectorAll(".remove-item-btn").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const cartId = event.target.dataset.id;
-      removeItemFromCart(cartId, cartItems);
-    });
-  });
-
-  document.querySelectorAll(".decrease-quantity-btn").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const cartId = event.target.dataset.id;
-      decreaseItemQuantity(cartId, cartItems);
-    });
-  });
-
-  document.querySelectorAll(".increase-quantity-btn").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const cartId = event.target.dataset.id;
-      increaseItemQuantity(cartId, cartItems);
-    });
-  });
+function updateCartTotal(total) {
+    const totalElement = document.getElementById('cart-total');
+    if (totalElement) totalElement.textContent = `$${total.toFixed(2)}`;
 }
+
+function updateCartCount() {
+    const cart = getCart();
+    const totalQuantity = cart.reduce((count, item) => count + item.quantity, 0);
+    const cartCountElem = document.getElementById('cart-count');
+    if (cartCountElem) cartCountElem.textContent = totalQuantity;
+}
+
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'cart-notification';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+function hideElement(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+}
+
+function showElement(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+}
+
+// --- Backend Sync ---
 
 async function syncCartWithBackend(cartItems) {
-  const sessionId = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("session_id="))
-    ?.split("=")[1];
+    try {
+        if (window.apiService) {
+            await apiService.post('/api/cart/sync', { items: cartItems });
+        }
+    } catch (error) {
+        console.error("Error syncing cart with backend:", error.message);
+    }
+}
 
-  if (!sessionId) {
-    console.warn("No session ID available. Skipping cart sync.");
-    return;
+// --- Expose for global use (e.g., from product page) ---
+window.addToCart = addToCart;
+window.removeFromCart = removeFromCart;
+window.clearCart = clearCart;
+    document.body.appendChild(notification);
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+
+function hideElement(id) {
+    const element = document.getElementById(id);
+    if (element) element.style.display = 'none';
+}
+
+function showElement(id) {
+    const element = document.getElementById(id);
+    if (element) element.style.display = 'block';
+}
+
+// Fix the syncCartWithBackend function
+async function syncCartWithBackend(cartItems) {
+  try {
+    // Use apiService from config.js instead of direct fetch with BACKEND_URL
+    await apiService.post('/api/cart/sync', { items: cartItems });
+  } catch (error) {
+    console.error("Error syncing cart with backend:", error.message);
+    // Continue with local cart functionality even if sync fails
   }
+}
+
+// Make functions available globally
+window.addToCart = addToCart;
+window.removeFromCart = removeFromCart;
+window.clearCart = clearCart;
 
   try {
     const response = await fetch(`${BACKEND_URL}/api/cart/sync`, {
@@ -213,7 +225,7 @@ async function syncCartWithBackend(cartItems) {
   } catch (error) {
     console.error("Error syncing cart with backend:", error.message);
   }
-}
+
 
 function removeItemFromCart(cartId, cartItems) {
   // Remove the item from the cart
@@ -395,4 +407,3 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.warn("Checkout button not found in the DOM.");
   }
 });
-
