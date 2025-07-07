@@ -2,7 +2,7 @@ body {
   overflow-x: hidden; /* Prevent horizontal scrolling */
   background-color: #f9f9f9;
   font-family: "MedievalSharp", serif;
-  background-image: url(/images/BackgroundParchment.jpg);
+  background-image: url('images/BackgroundParchment.jpg');
   margin: 0;
   padding: 0;
 }

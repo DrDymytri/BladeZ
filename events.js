@@ -1,51 +1,37 @@
-const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
-
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const eventsContainer = document.getElementById("events-container");
-
-  // Fetch events from the server
-  fetch(`${BACKEND_URL}/api/events`)
-    .then((response) => {
-      if (!response.ok) {
-        console.error(`Error: Received status ${response.status}`);
-        throw new Error("Failed to fetch events");
-      }
-      return response.json();
-    })
-    .then((events) => {
-      if (!events || events.length === 0) {
-        console.warn("No events found in the response.");
-        eventsContainer.innerHTML = "<p>No events available at the moment.</p>";
-        return;
-      }
-
-      eventsContainer.innerHTML = events
-        .map(
-          (event) => `
-          <div class="event">
-            <h3>${event.title}</h3>
-            <p>${event.description}</p>
-            <p><strong>Start Date:</strong> ${new Date(event.startDate).toLocaleString()}</p>
-            <p><strong>End Date:</strong> ${new Date(event.endDate).toLocaleString()}</p>
-            <p><strong>Location:</strong> 
-              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank">
-                ${event.location}
-              </a>
-            </p>
-            ${
-              event.event_website
-                ? `<p><a href="${event.event_website}" target="_blank">Event Website</a></p>`
-                : ""
-            }
-          </div>
-        `
-        )
-        .join("");
-    })
-    .catch((error) => {
-      console.error("Error fetching events:", error);
-      eventsContainer.innerHTML = "<p>Failed to load events. Please try again later.</p>";
-    });
+  try {
+    const events = await apiService.get("/api/events");
+    if (!events || events.length === 0) {
+      eventsContainer.innerHTML = "<p>No events available at the moment.</p>";
+      return;
+    }
+    eventsContainer.innerHTML = events
+      .map(
+        (event) => `
+        <div class="event-card">
+          <h3>${event.title}</h3>
+          <p>${event.description}</p>
+          <p><strong>Start:</strong> ${new Date(event.startDate).toLocaleString()}</p>
+          <p><strong>End:</strong> ${new Date(event.endDate).toLocaleString()}</p>
+          <p><strong>Location:</strong> 
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}" target="_blank">
+              ${event.location}
+            </a>
+          </p>
+          ${
+            event.event_website
+              ? `<p><a href="${event.event_website}" target="_blank">Event Website</a></p>`
+              : ""
+          }
+        </div>
+      `
+      )
+      .join("");
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    eventsContainer.innerHTML = "<p>Failed to load events. Please try again later.</p>";
+  }
 });
 
 async function loadEvents() {
