@@ -1,5 +1,5 @@
 .landing-page {
-  background-image: url('./images/LandingWarriors2.webp'); /* Correct casing for the image path */
+  background-image: url('https://bladezstorage.blob.core.windows.net/bladez-op-images/LandingWarriors2.webp'); /* Correct casing for the image path */
   background-size: cover; /* Ensure the background covers the entire viewport */
   background-position: center; /* Center the image */
   background-repeat: no-repeat; /* Prevent the image from repeating */
