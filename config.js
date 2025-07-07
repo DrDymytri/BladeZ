@@ -4,7 +4,7 @@
  */
 
 // Backend URL (Render)
-const BACKEND_URL = 'https://bladez-backend.onrender.com';
+const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Ensure this matches your backend URL
 
 // API helper for consistent backend calls
 const apiService = {

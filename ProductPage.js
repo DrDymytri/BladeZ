@@ -3,6 +3,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     await populateCategoryFilter();
     await loadProducts(1); // Load the first page of products on page load
     await loadShowcaseProducts(); // Ensure showcase products are loaded
+
+    // Automatically display showcase modal on initial page load
+    const showcaseProducts = await apiService.get('/api/showcase-products');
+    if (showcaseProducts && showcaseProducts.length > 0) {
+      displayShowcaseModal(showcaseProducts);
+    }
   } catch (error) {
     console.error("Error during initialization:", error.message);
   }
@@ -63,8 +69,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-async function loadProducts(page = 1) {
+async function loadProducts(page = 1, limit = 20) {
   try {
+    const response = await apiService.get(`/api/products?page=${page}&limit=${limit}`);
+    if (!response.products || response.products.length === 0) {
+      console.error("No products found.");
+      return;
+    }
+
     const categoryFilter = document.getElementById("category-filter");
     const subCategoryFilter = document.getElementById("subcategory-filter");
     const descriptorFilter = document.getElementById("descriptor-filter");
@@ -85,7 +97,6 @@ async function loadProducts(page = 1) {
     queryParams.append("page", filters.page);
     queryParams.append("limit", filters.limit);
 
-    // Replace direct fetch with apiService
     const data = await apiService.get(`/api/products?${queryParams.toString()}`);
     console.log("Products fetched successfully:", data);
 
@@ -126,10 +137,6 @@ async function loadShowcaseProducts() {
       `
       )
       .join("");
-
-    // Show the modal with showcased products on page load
-    displayShowcaseModal(products);
-
   } catch (error) {
     console.error("Error loading showcased products:", error.message);
     showcaseContainer.innerHTML = `<p>Error loading showcased products: ${error.message}</p>`;

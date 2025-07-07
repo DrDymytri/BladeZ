@@ -158,18 +158,19 @@ async function loadTags(subCategoryId) {
 }
 
 async function loadShowcaseProducts() {
-  try {
-    const showcaseContainer = document.getElementById('showcase-container');
-    if (!showcaseContainer) {
-      console.error('Showcase container not found.');
-      return;
-    }
-    const response = await fetch(`${BACKEND_URL}/api/showcase-products`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch showcase products');
-    }
-    const products = await response.json();
-    showcaseContainer.innerHTML = products.map(product => `
+    try {
+        const response = await apiService.get('/api/showcase-products');
+        if (!response || response.length === 0) {
+            console.error("No showcase products found.");
+            return;
+        }
+        const showcaseContainer = document.getElementById('showcase-container');
+        if (!showcaseContainer) {
+            console.error('Showcase container not found.');
+            return;
+        }
+        const products = response;
+        showcaseContainer.innerHTML = products.map(product => `
       <div class="product-item">
         <img src="${product.image}" alt="${product.name}" onerror="this.onerror=null; this.src='/images/Default1.png';" />
         <h3>${product.name}</h3>
@@ -177,13 +178,13 @@ async function loadShowcaseProducts() {
         <p class="price"><strong>Price:</strong> <em>$${product.price.toFixed(2)}</em></p>
       </div>
     `).join('');
-  } catch (error) {
-    console.error('Error loading showcased products:', error.message);
-    const showcaseContainer = document.getElementById('showcase-container');
-    if (showcaseContainer) {
-      showcaseContainer.innerHTML = '<p class="error-message">Failed to load showcase products. Please try again later.</p>';
+    } catch (error) {
+        console.error("Error loading showcased products:", error.message);
+        const showcaseContainer = document.getElementById('showcase-container');
+        if (showcaseContainer) {
+            showcaseContainer.innerHTML = '<p class="error-message">Failed to load showcase products. Please try again later.</p>';
+        }
     }
-  }
 }
 
 function resetDropdown(selectElement, placeholder) {

@@ -525,6 +525,46 @@ app.get("/api/videos", async (req, res) => {
     }
 });
 
+app.get("/api/products", async (req, res) => {
+    const { page = 1, limit = 20 } = req.query;
+    try {
+        const pool = await getConnection();
+        const offset = (page - 1) * limit;
+        const result = await pool.request()
+            .input("limit", sql.Int, limit)
+            .input("offset", sql.Int, offset)
+            .query(`
+                SELECT id, name, description, price, stock_quantity, image_url, is_showcase
+                FROM Products
+                ORDER BY id ASC
+                OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
+            `);
+        const totalResult = await pool.request().query("SELECT COUNT(*) AS total FROM Products");
+        const total = totalResult.recordset[0].total;
+
+        res.json({ products: result.recordset, totalPages: Math.ceil(total / limit) });
+    } catch (error) {
+        console.error("Error fetching products:", error.message);
+        res.status(500).json({ error: "Failed to fetch products." });
+    }
+});
+
+app.get("/api/showcase-products", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request().query(`
+            SELECT id, name, description, price, image_url
+            FROM Products
+            WHERE is_showcase = 1
+            ORDER BY id ASC
+        `);
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching showcase products:", error.message);
+        res.status(500).json({ error: "Failed to fetch showcase products." });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
