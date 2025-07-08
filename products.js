@@ -158,7 +158,7 @@ async function loadTags(subCategoryId) {
 }
 
 async function loadShowcaseProducts() {
-  const showcaseContainer = document.getElementById("showcase-container");
+  const showcaseContainer = document.getElementById("showcase-products-grid");
   if (!showcaseContainer) {
     console.error("Showcase container not found in the DOM. Exiting function.");
     return;
@@ -302,18 +302,18 @@ loadProducts();
 updateCartCount();
 
 async function loadProducts(page = 1) {
-  const productsPerPage = parseInt(document.getElementById("products-per-page").value, 10) || 20;
-  const categoryId = document.getElementById("category-filter").value;
-  const subCategoryId = document.getElementById("subcategory-filter").value;
-  const descriptorId = document.getElementById("descriptor-filter").value;
+  const productsPerPage = parseInt(document.getElementById("products-per-page")?.value, 10) || 20;
+  const categoryId = document.getElementById("category-filter")?.value || null;
+  const subCategoryId = document.getElementById("subcategory-filter")?.value || null;
+  const descriptorId = document.getElementById("descriptor-filter")?.value || null;
 
   try {
     const queryParams = new URLSearchParams({
       page,
       limit: productsPerPage,
-      categoryId: categoryId || undefined,
-      subCategoryId: subCategoryId || undefined,
-      descriptorId: descriptorId || undefined,
+      ...(categoryId && { categoryId }),
+      ...(subCategoryId && { subCategoryId }),
+      ...(descriptorId && { descriptorId }),
     });
 
     const response = await apiService.get(`/api/products?${queryParams.toString()}`);
