@@ -1,7 +1,6 @@
-
 body {
   margin: 0;
-  background-image: url("/images/BrowserIcon.jpg");
+  background-image: url("https://bladezstorage.blob.core.windows.net/bladez-op-images/BackgroundParchment.jpg");
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
@@ -17,7 +16,7 @@ body {
   border-radius: 10px;
   padding: 20px;
   width: 300px;
-  height: 250px;
+  height: auto; /* Adjust height for dynamic content */
   margin-bottom: 20px;
 }
 h2 {
@@ -45,7 +44,6 @@ form {
 input {
   padding: 10px;
   margin-bottom: 5px;
-  /* margin-top: 5px; */
   border: 4px inset rgb(223, 223, 223);
   box-shadow: inset 0 0 6px 1px rgba(0, 0, 0, 0.466);
   outline: 1px solid black;
@@ -91,4 +89,11 @@ a {
   color: blue;
   text-decoration: none;
   font-weight: bold;
+}
+
+#login-error {
+  font-size: 14px;
+  color: red;
+  text-align: center;
+  margin-top: 10px;
 }

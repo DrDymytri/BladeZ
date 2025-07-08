@@ -43,6 +43,21 @@
     </header>
 
     <main>
+      <div id="login-dialog" class="modal" style="display: none;">
+        <div class="modal-content">
+          <span class="close" onclick="closeLoginDialog()">&times;</span>
+          <h2>Login</h2>
+          <form id="login-form">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required />
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required />
+            <button type="submit">Login</button>
+          </form>
+          <p id="login-error" style="color: red; display: none;">Invalid email or password.</p>
+        </div>
+      </div>
+
       <div id="user-info" style="text-align: center; margin-bottom: 20px;"></div>
       <table id="orders-table">
         <thead>
@@ -59,62 +74,12 @@
         </tbody>
       </table>
     </main>
+
+    <footer>
+      <!-- ...existing code... -->
+    </footer>
+
     <script src="config.js"></script>
     <script src="orders.js"></script>
-    <script>
-      async function fetchUserInfo() {
-        try {
-          const response = await apiService.get("/api/user-info", {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          });
-          if (!response.ok) throw new Error("Failed to fetch user info");
-
-          const user = await response.json();
-          document.getElementById("user-info").innerHTML = `
-            <h2>Welcome, ${user.first_name} ${user.last_name}</h2>
-            <p>Email: ${user.email}</p>
-          `;
-        } catch (error) {
-          console.error("Error fetching user info:", error);
-          document.getElementById("user-info").innerHTML = `
-            <p style="color: red;">Failed to load user information. Please log in again.</p>
-          `;
-        }
-      }
-
-      async function fetchOrders() {
-        const ordersTableBody = document.querySelector("#orders-table tbody");
-        try {
-          const response = await apiService.get("/api/orders/history", {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-          });
-          if (!response || response.length === 0) {
-            ordersTableBody.innerHTML = "<tr><td colspan='5'>No orders found.</td></tr>";
-            return;
-          }
-          ordersTableBody.innerHTML = response
-            .map(
-              (order) => `
-              <tr>
-                <td>${order.id}</td>
-                <td>$${order.total.toFixed(2)}</td>
-                <td>${order.status}</td>
-                <td>${order.tracking_number || "N/A"}</td>
-                <td>${new Date(order.date_processed).toLocaleDateString()}</td>
-              </tr>
-            `
-            )
-            .join("");
-        } catch (error) {
-          console.error("Error fetching orders:", error);
-          ordersTableBody.innerHTML = "<tr><td colspan='5'>Failed to load orders. Please try again later.</td></tr>";
-        }
-      }
-
-      fetchUserInfo();
-      fetchOrders();
-    </script>
   </body>
 </html>

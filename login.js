@@ -2,6 +2,7 @@ const API_BASE_URL = process.env.BACKEND_URL; // Use environment variable only
 
 document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
+  const loginError = document.getElementById("login-error");
 
   async function checkServerConnection() {
     try {
@@ -29,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!(await checkServerConnection())) return;
 
     try {
+      loginError.style.display = "none"; // Hide error message
       const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -48,12 +50,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const intendedDestination = localStorage.getItem("intendedDestination");
       if (intendedDestination) {
         localStorage.removeItem("intendedDestination"); // Clear the intended destination
-        window.location.href = intendedDestination === "cart.html" ? "cart.html" : intendedDestination; // Redirect to cart.html if it was the intended destination
+        window.location.href = intendedDestination;
       } else {
         window.location.href = "index.html"; // Default to index.html
       }
     } catch (error) {
-      alert(error.message);
+      loginError.textContent = error.message;
+      loginError.style.display = "block"; // Show error message
     }
   });
 });
