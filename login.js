@@ -59,4 +59,9 @@ document.addEventListener("DOMContentLoaded", () => {
       loginError.style.display = "block"; // Show error message
     }
   });
+
+  // Close login dialog functionality
+  document.querySelector(".close").addEventListener("click", () => {
+    document.getElementById("login-dialog").style.display = "none";
+  });
 });

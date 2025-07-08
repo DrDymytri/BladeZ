@@ -72,26 +72,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function loadProducts(page = 1) {
   try {
-    const categoryFilter = document.getElementById("category-filter");
-    const subCategoryFilter = document.getElementById("subcategory-filter");
-    const descriptorFilter = document.getElementById("descriptor-filter");
     const productsPerPage = document.getElementById("products-per-page").value;
-
     const filters = {
-      categoryId: categoryFilter?.value || null,
-      subCategoryId: subCategoryFilter?.value || null,
-      descriptorId: descriptorFilter?.value || null,
       page,
       limit: parseInt(productsPerPage, 10),
     };
 
-    const queryParams = new URLSearchParams();
-    if (filters.categoryId) queryParams.append("categoryId", filters.categoryId);
-    if (filters.subCategoryId) queryParams.append("subCategoryId", filters.subCategoryId);
-    if (filters.descriptorId) queryParams.append("descriptorId", filters.descriptorId);
-    queryParams.append("page", filters.page);
-    queryParams.append("limit", filters.limit);
-
+    const queryParams = new URLSearchParams(filters);
     const response = await apiService.get(`/api/products?${queryParams.toString()}`);
     if (!response.products || response.products.length === 0) {
       console.error("No products found.");
@@ -145,8 +132,8 @@ async function loadShowcaseProducts() {
 
 async function populateCategoryFilter() {
   try {
-    const categories = await apiService.get('/api/categories');
     const categoryFilter = document.getElementById("category-filter");
+    const categories = await apiService.get('/api/categories');
     resetDropdown(categoryFilter, "All Categories");
 
     categories.forEach((category) => {
@@ -549,7 +536,7 @@ function renderProducts(products) {
     .map(
       (product) => `
       <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">
-        <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" class="product-image" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" onerror="this.onerror=null;this.src='/images/Default1.png';" />
+        <img src="${product.image_url || 'https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png'}" alt="${product.name}" class="product-image" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" onerror="this.onerror=null;this.src='/images/Default1.png';" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
         <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
