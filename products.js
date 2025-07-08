@@ -178,14 +178,14 @@ async function loadShowcaseProducts() {
           <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" onerror="this.onerror=null;this.src='/images/Default1.png';" />
           <h3>${product.name}</h3>
           <p>${product.description}</p>
-          <p>Price: $${product.price.toFixed(2)}</p>
+          <p class="price"><span class="price-label">Price:</span> $${product.price.toFixed(2)}</p>
         </div>
       `
       )
       .join("");
   } catch (error) {
-    console.error("Error loading showcased products:", error.message);
-    showcaseContainer.innerHTML = "<p>Error loading showcased products. Please try again later.</p>";
+    console.error("Error loading showcase products:", error.message);
+    showcaseContainer.innerHTML = "<p>Error loading showcase products. Please try again later.</p>";
   }
 }
 
@@ -300,3 +300,136 @@ loadProducts();
 
 // Update cart count on page load
 updateCartCount();
+
+async function loadProducts(page = 1) {
+  const productsPerPage = parseInt(document.getElementById("products-per-page").value, 10) || 20;
+  const categoryId = document.getElementById("category-filter").value;
+  const subCategoryId = document.getElementById("subcategory-filter").value;
+  const descriptorId = document.getElementById("descriptor-filter").value;
+
+  try {
+    const queryParams = new URLSearchParams({
+      page,
+      limit: productsPerPage,
+      categoryId: categoryId || undefined,
+      subCategoryId: subCategoryId || undefined,
+      descriptorId: descriptorId || undefined,
+    });
+
+    const response = await apiService.get(`/api/products?${queryParams.toString()}`);
+    if (!response.products || response.products.length === 0) {
+      displayErrorMessage("No products found.");
+      renderPaginationControls(page, 0);
+      return;
+    }
+
+    displayProducts(response.products);
+    renderPaginationControls(page, response.totalPages);
+  } catch (error) {
+    console.error("Error loading products:", error.message);
+    displayErrorMessage("Failed to load products. Please try again later.");
+  }
+}
+
+function resetFilters() {
+  document.getElementById("category-filter").value = "";
+  document.getElementById("subcategory-filter").value = "";
+  document.getElementById("descriptor-filter").value = "";
+  document.getElementById("subcategory-filter").disabled = true;
+  document.getElementById("descriptor-filter").disabled = true;
+}
+
+async function loadCategories() {
+  try {
+    const categorySelect = document.getElementById("category-filter");
+    const response = await apiService.get("/api/categories");
+    resetDropdown(categorySelect, "All Categories");
+    response.forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category.id;
+      option.textContent = category.name;
+      categorySelect.appendChild(option);
+    });
+
+    categorySelect.addEventListener("change", async () => {
+      const categoryId = categorySelect.value;
+      const subcategorySelect = document.getElementById("subcategory-filter");
+      const descriptorSelect = document.getElementById("descriptor-filter");
+
+      resetDropdown(subcategorySelect, "All Subcategories");
+      resetDropdown(descriptorSelect, "All Descriptors");
+      subcategorySelect.disabled = true;
+      descriptorSelect.disabled = true;
+
+      if (categoryId) {
+        await loadSubcategories(categoryId);
+        subcategorySelect.disabled = false;
+      }
+    });
+  } catch (error) {
+    console.error("Error loading categories:", error.message);
+  }
+}
+
+async function loadSubcategories(categoryId) {
+  try {
+    const subcategorySelect = document.getElementById("subcategory-filter");
+    const response = await apiService.get(`/api/subcategories?categoryId=${categoryId}`);
+    resetDropdown(subcategorySelect, "All Subcategories");
+    response.forEach((subcategory) => {
+      const option = document.createElement("option");
+      option.value = subcategory.id;
+      option.textContent = subcategory.name;
+      subcategorySelect.appendChild(option);
+    });
+
+    subcategorySelect.addEventListener("change", async () => {
+      const subCategoryId = subcategorySelect.value;
+      const descriptorSelect = document.getElementById("descriptor-filter");
+
+      resetDropdown(descriptorSelect, "All Descriptors");
+      descriptorSelect.disabled = true;
+
+      if (subCategoryId) {
+        await loadDescriptors(subCategoryId);
+        descriptorSelect.disabled = false;
+      }
+    });
+  } catch (error) {
+    console.error("Error loading subcategories:", error.message);
+  }
+}
+
+async function loadDescriptors(subCategoryId) {
+  try {
+    const descriptorSelect = document.getElementById("descriptor-filter");
+    const response = await apiService.get(`/api/descriptors?subCategoryId=${subCategoryId}`);
+    resetDropdown(descriptorSelect, "All Descriptors");
+    response.forEach((descriptor) => {
+      const option = document.createElement("option");
+      option.value = descriptor.id;
+      option.textContent = descriptor.name;
+      descriptorSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error loading descriptors:", error.message);
+  }
+}
+
+function renderPaginationControls(currentPage, totalPages) {
+  const paginationContainer = document.getElementById("pagination-container");
+  if (!paginationContainer) return;
+
+  paginationContainer.innerHTML = ""; // Clear existing pagination
+
+  if (totalPages <= 1) return; // No pagination needed for a single page
+
+  for (let i = 1; i <= totalPages; i++) {
+    const button = document.createElement("button");
+    button.textContent = i;
+    button.className = "pagination-button";
+    if (i === currentPage) button.classList.add("active");
+    button.addEventListener("click", () => loadProducts(i));
+    paginationContainer.appendChild(button);
+  }
+}

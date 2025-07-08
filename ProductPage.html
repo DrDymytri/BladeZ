@@ -73,6 +73,17 @@
       <div id="pagination-container">
         <!-- Pagination controls will be rendered here -->
       </div>
+      <!-- Showcase modal -->
+      <div id="showcase-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <span class="close" id="close-showcase-modal">&times;</span>
+          <h1 class="businessName">Showcase Products</h1>
+          <p class="subTitle">Explore our premium products flagged for showcase!</p>
+          <div id="showcase-products-grid" class="modal-products-grid">
+            <!-- Showcase products will be dynamically rendered here -->
+          </div>
+        </div>
+      </div>
     </main>
 
     <footer>
@@ -87,6 +98,43 @@
     <script src="image-modal.js"></script>
     <script>
       const backendUrl = "https://bladez-backend.onrender.com"; // Use Render's public URL directly
+      document.addEventListener("DOMContentLoaded", () => {
+        loadProducts(1); // Load the first page of products
+        document.getElementById("products-per-page").addEventListener("change", () => {
+          loadProducts(1); // Reload products when the per-page value changes
+        });
+
+        document.getElementById("apply-filters-btn").addEventListener("click", () => {
+          loadProducts(1); // Apply filters and reload products
+        });
+
+        document.getElementById("clear-filters-btn").addEventListener("click", () => {
+          resetFilters();
+          loadProducts(1); // Clear filters and reload products
+        });
+      });
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const showcaseModalBtn = document.getElementById("showcase-modal-btn");
+        const showcaseModal = document.getElementById("showcase-modal");
+        const closeShowcaseModal = document.getElementById("close-showcase-modal");
+
+        showcaseModalBtn.addEventListener("click", () => {
+          loadShowcaseProducts();
+          showcaseModal.style.display = "flex";
+        });
+
+        closeShowcaseModal.addEventListener("click", () => {
+          showcaseModal.style.display = "none";
+        });
+
+        showcaseModal.addEventListener("click", (event) => {
+          if (event.target === showcaseModal) {
+            showcaseModal.style.display = "none";
+          }
+        });
+      });
     </script>
   </body>
 </html>
