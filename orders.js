@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const ordersTableBody = document.querySelector("#orders-table tbody");
   try {
-    const response = await apiService.get("/api/orders/history", {
+    const response = await apiService.get("/api/orders", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     if (!response || response.length === 0) {

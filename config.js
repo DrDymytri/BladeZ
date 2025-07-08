@@ -11,8 +11,9 @@ const apiService = {
   // Base GET request with error handling
   async get(endpoint, options = {}) {
     try {
-      console.log(`Making GET request to: ${BACKEND_URL}${endpoint}`);
-      const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
+      const url = `${BACKEND_URL}${endpoint}`;
+      console.log(`Making GET request to: ${url}`);
+      const response = await fetch(url, options);
       if (!response.ok) throw new Error(`API error: ${response.status}`);
       return await response.json();
     } catch (error) {
