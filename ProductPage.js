@@ -3,23 +3,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     await populateCategoryFilter();
     await loadProducts(1); // Load the first page of products on page load
     await loadShowcaseProducts(); // Ensure showcase products are loaded
-
-    // Automatically display showcase modal on initial page load
-    const showcaseProducts = await apiService.get('/api/showcase-products');
-    if (showcaseProducts && showcaseProducts.length > 0) {
-      displayShowcaseModal(showcaseProducts);
-    }
   } catch (error) {
     console.error("Error during initialization:", error.message);
   }
 
   const applyFiltersBtn = document.getElementById("apply-filters-btn");
   if (applyFiltersBtn) {
-    applyFiltersBtn.addEventListener("click", applyFilters);
+    applyFiltersBtn.addEventListener("click", () => {
+      loadProducts(1); // Reload products with filters applied
+    });
   }
+
   const clearFiltersBtn = document.getElementById("clear-filters-btn");
   if (clearFiltersBtn) {
-    clearFiltersBtn.addEventListener("click", clearFilters);
+    clearFiltersBtn.addEventListener("click", () => {
+      resetFilters();
+      loadProducts(1); // Reload products without filters
+    });
   }
 
   const categoryFilter = document.getElementById("category-filter");
@@ -61,22 +61,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   updateCartCount();
 
-  function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const totalQuantity = cart.reduce((count, item) => count + item.quantity, 0); // Sum up quantities
-    const cartCountElem = document.getElementById("cart-count");
-    if (cartCountElem) cartCountElem.textContent = totalQuantity;
+  function resetFilters() {
+    resetDropdown(document.getElementById("category-filter"), "All Categories");
+    resetDropdown(document.getElementById("subcategory-filter"), "All Subcategories");
+    resetDropdown(document.getElementById("descriptor-filter"), "All Descriptors");
+    document.getElementById("subcategory-filter").disabled = true;
+    document.getElementById("descriptor-filter").disabled = true;
   }
 });
 
-async function loadProducts(page = 1, limit = 20) {
+async function loadProducts(page = 1) {
   try {
-    const response = await apiService.get(`/api/products?page=${page}&limit=${limit}`);
-    if (!response.products || response.products.length === 0) {
-      console.error("No products found.");
-      return;
-    }
-
     const categoryFilter = document.getElementById("category-filter");
     const subCategoryFilter = document.getElementById("subcategory-filter");
     const descriptorFilter = document.getElementById("descriptor-filter");
@@ -97,11 +92,16 @@ async function loadProducts(page = 1, limit = 20) {
     queryParams.append("page", filters.page);
     queryParams.append("limit", filters.limit);
 
-    const data = await apiService.get(`/api/products?${queryParams.toString()}`);
-    console.log("Products fetched successfully:", data);
+    const response = await apiService.get(`/api/products?${queryParams.toString()}`);
+    if (!response.products || response.products.length === 0) {
+      console.error("No products found.");
+      renderProducts([]);
+      renderPaginationControls(filters.page, 0);
+      return;
+    }
 
-    renderProducts(data.products);
-    renderPaginationControls(filters.page, data.totalPages);
+    renderProducts(response.products);
+    renderPaginationControls(filters.page, response.totalPages);
   } catch (error) {
     console.error("Error loading products:", error.message);
     const productContainer = document.getElementById("product-container");
@@ -445,7 +445,7 @@ function openImageInPopup(imageUrl) {
   popup.innerHTML = `
     <div class="popup-content">
       <span class="close-popup">&times;</span>
-      <img src="${imageUrl}" alt="Image" />
+      <img src="${imageUrl}" alt="Product Image" />
     </div>
   `;
 
@@ -457,24 +457,82 @@ function openImageInPopup(imageUrl) {
   document.body.appendChild(popup);
 }
 
-// Example usage in dynamically rendered product items
-function renderProductItems(products) {
-  const productContainer = document.getElementById("product-container");
-  productContainer.innerHTML = products
-    .map(
-      (product) => `
-      <div class="product-item">
-        <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" onerror="this.onerror=null;this.src='/images/Default1.png';" />
-        <h3>${product.name}</h3>
-        <p>${product.description}</p>
-        <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
-        <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">Add to Cart</button>
-      </div>
-    `
-    )
-    .join("");
+// Update showcase modal to include image click functionality
+function displayShowcaseModal(products) {
+  const productsPerPage = 4;
+  let currentPage = 1;
+
+  const modal = document.createElement("div");
+  modal.classList.add("modal");
+
+  const renderShowcasePage = (page) => {
+    const startIndex = (page - 1) * productsPerPage;
+    const endIndex = startIndex + productsPerPage;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+
+    const productHTML = paginatedProducts
+      .map(
+        (product) => `
+        <div class="product-item">
+          <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" onerror="this.onerror=null;this.src='/images/Default1.png';" />
+          <h3>${product.name}</h3>
+          <p>${product.description}</p>
+          <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
+          <button class="add-to-cart-btn" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">Add to Cart</button>
+        </div>
+      `
+      )
+      .join("");
+
+    modal.querySelector(".showcase-products-grid").innerHTML = productHTML;
+
+    // Add event listeners to "Add to Cart" buttons
+    modal.querySelectorAll(".add-to-cart-btn").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        const productId = parseInt(event.target.dataset.id, 10);
+        const productName = event.target.dataset.name;
+        const productPrice = parseFloat(event.target.dataset.price);
+        const productImage = event.target.dataset.image;
+
+        addToCart(productId, productName, productPrice, productImage);
+        alert(`${productName} has been added to your cart.`); // Notify the user
+      });
+    });
+
+    renderPaginationControls(page, Math.ceil(products.length / productsPerPage));
+  };
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h1 class="businessName">Showcased Products</h1>
+      <p class="subTitle">
+        Explore our featured products below!<br>
+        Click on the image to view a larger version.<br>
+        Click the "X" Button in Top-Right-Hand Corner to Exit The Showroom.
+      </p>
+      <div class="showcase-products-grid"></div>
+      <div class="pagination-container"></div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const closeButton = modal.querySelector(".close");
+  closeButton.addEventListener("click", () => {
+    modal.remove();
+  });
+
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      modal.remove();
+    }
+  });
+
+  renderShowcasePage(currentPage);
 }
 
+// Update product rendering to include image click functionality
 function renderProducts(products) {
   const productContainer = document.getElementById("product-container");
   if (!productContainer) {
@@ -491,7 +549,7 @@ function renderProducts(products) {
     .map(
       (product) => `
       <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">
-        <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" class="product-image" onerror="this.onerror=null;this.src='/images/Default1.png';" />
+        <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" class="product-image" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" onerror="this.onerror=null;this.src='/images/Default1.png';" />
         <h3>${product.name}</h3>
         <p>${product.description}</p>
         <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>

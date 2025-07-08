@@ -20,11 +20,11 @@
   <body>
     <header style="display: flex; justify-content: space-between; align-items: center; width: 100vw;">
       <div>
-        <img src="https://bladezstorage.blob.core.windows.net/bladez-op-images/headerredgolddragon.png" alt="Header Dragon" class="header-image" />
+        <img src="https://bladezstorage.blob.core.windows.net/bladez-op-images/HeaderRedGoldDragon.png" alt="Header Dragon" class="header-image" onerror="this.onerror=null; this.src='https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png';" />
       </div>
       <div>
         <div class="logo-container">
-          <img src="https://bladezstorage.blob.core.windows.net/bladez-op-images/HeaderLogo.png" alt="Logo" class="responsive-logo" />
+          <img src="https://bladezstorage.blob.core.windows.net/bladez-op-images/HeaderLogo.png" alt="Logo" class="responsive-logo" onerror="this.onerror=null; this.src='https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png';" />
         </div>
         <h1 class="businessName">Point FX BladeZ</h1>
         <p class="slogan">Premium BladeZ for the Modern Warrior</p>
@@ -38,7 +38,7 @@
         </nav>
       </div>
       <div>
-        <img src="https://bladezstorage.blob.core.windows.net/bladez-op-images/headerredgolddragon.png" alt="Header Dragon Mirrored" class="header-image-mirrored" />
+        <img src="https://bladezstorage.blob.core.windows.net/bladez-op-images/HeaderRedGoldDragon.png" alt="Header Dragon Mirrored" class="header-image-mirrored" onerror="this.onerror=null; this.src='https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png';" />
       </div>
     </header>
 
@@ -51,14 +51,15 @@
             <th>Total Amount</th>
             <th>Status</th>
             <th>Tracking Number</th>
-            <th>Date Processed</th> <!-- Column remains unchanged -->
+            <th>Date Processed</th>
           </tr>
         </thead>
         <tbody>
-          <!-- Orders will be loaded here -->
+          <!-- Orders will be dynamically loaded here -->
         </tbody>
       </table>
     </main>
+    <script src="config.js"></script>
     <script src="orders.js"></script>
     <script>
       const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
@@ -85,7 +86,37 @@
         }
       }
 
+      async function fetchOrders() {
+        const ordersTableBody = document.querySelector("#orders-table tbody");
+        try {
+          const response = await apiService.get("/api/orders/history", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          });
+          if (!response || response.length === 0) {
+            ordersTableBody.innerHTML = "<tr><td colspan='5'>No orders found.</td></tr>";
+            return;
+          }
+          ordersTableBody.innerHTML = response
+            .map(
+              (order) => `
+              <tr>
+                <td>${order.id}</td>
+                <td>$${order.total.toFixed(2)}</td>
+                <td>${order.status}</td>
+                <td>${order.tracking_number || "N/A"}</td>
+                <td>${new Date(order.date_processed).toLocaleDateString()}</td>
+              </tr>
+            `
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error fetching orders:", error);
+          ordersTableBody.innerHTML = "<tr><td colspan='5'>Failed to load orders. Please try again later.</td></tr>";
+        }
+      }
+
       fetchUserInfo();
+      fetchOrders();
     </script>
   </body>
 </html>

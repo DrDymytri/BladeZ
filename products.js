@@ -158,33 +158,35 @@ async function loadTags(subCategoryId) {
 }
 
 async function loadShowcaseProducts() {
-    try {
-        const response = await apiService.get('/api/showcase-products');
-        if (!response || response.length === 0) {
-            console.error("No showcase products found.");
-            return;
-        }
-        const showcaseContainer = document.getElementById('showcase-container');
-        if (!showcaseContainer) {
-            console.error('Showcase container not found.');
-            return;
-        }
-        const products = response;
-        showcaseContainer.innerHTML = products.map(product => `
-      <div class="product-item">
-        <img src="${product.image}" alt="${product.name}" onerror="this.onerror=null; this.src='/images/Default1.png';" />
-        <h3>${product.name}</h3>
-        <p>${product.description}</p>
-        <p class="price"><strong>Price:</strong> <em>$${product.price.toFixed(2)}</em></p>
-      </div>
-    `).join('');
-    } catch (error) {
-        console.error("Error loading showcased products:", error.message);
-        const showcaseContainer = document.getElementById('showcase-container');
-        if (showcaseContainer) {
-            showcaseContainer.innerHTML = '<p class="error-message">Failed to load showcase products. Please try again later.</p>';
-        }
+  const showcaseContainer = document.getElementById("showcase-container");
+  if (!showcaseContainer) {
+    console.error("Showcase container not found in the DOM. Exiting function.");
+    return;
+  }
+
+  try {
+    const products = await apiService.get('/api/showcase-products');
+    if (!products || products.length === 0) {
+      showcaseContainer.innerHTML = "<p>No showcase products available.</p>";
+      return;
     }
+
+    showcaseContainer.innerHTML = products
+      .map(
+        (product) => `
+        <div class="product-card">
+          <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" onerror="this.onerror=null;this.src='/images/Default1.png';" />
+          <h3>${product.name}</h3>
+          <p>${product.description}</p>
+          <p>Price: $${product.price.toFixed(2)}</p>
+        </div>
+      `
+      )
+      .join("");
+  } catch (error) {
+    console.error("Error loading showcased products:", error.message);
+    showcaseContainer.innerHTML = "<p>Error loading showcased products. Please try again later.</p>";
+  }
 }
 
 function resetDropdown(selectElement, placeholder) {
