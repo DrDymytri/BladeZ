@@ -66,6 +66,7 @@
           <option value="30">30</option>
           <option value="50">50</option>
         </select>
+        <button type="button" id="showcase-modal-btn">View Showcase Products</button>
       </div>
       <div id="product-container">
         <!-- Dynamically rendered products will be inserted here -->
@@ -99,19 +100,27 @@
     <script>
       const backendUrl = "https://bladez-backend.onrender.com"; // Use Render's public URL directly
       document.addEventListener("DOMContentLoaded", () => {
-        loadProducts(1); // Load the first page of products
+        // Initialize filtering first
+        if (typeof initializeFilters === 'function') {
+          initializeFilters();
+        }
+        
+        // Load products
+        if (typeof loadProducts === 'function') {
+          loadProducts(1);
+        }
 
         const productsPerPageSelect = document.getElementById("products-per-page");
         if (productsPerPageSelect) {
           productsPerPageSelect.addEventListener("change", () => {
-            loadProducts(1); // Reload products when the per-page value changes
+            loadProducts(1);
           });
         }
 
         const applyFiltersBtn = document.getElementById("apply-filters-btn");
         if (applyFiltersBtn) {
           applyFiltersBtn.addEventListener("click", () => {
-            loadProducts(1); // Apply filters and reload products
+            loadProducts(1);
           });
         }
 
@@ -119,7 +128,7 @@
         if (clearFiltersBtn) {
           clearFiltersBtn.addEventListener("click", () => {
             resetFilters();
-            loadProducts(1); // Clear filters and reload products
+            loadProducts(1);
           });
         }
 

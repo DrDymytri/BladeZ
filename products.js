@@ -302,19 +302,24 @@ loadProducts();
 updateCartCount();
 
 async function loadProducts(page = 1) {
-  const productsPerPage = parseInt(document.getElementById("products-per-page")?.value, 10) || 20;
-  const categoryId = document.getElementById("category-filter")?.value || null;
-  const subCategoryId = document.getElementById("subcategory-filter")?.value || null;
-  const descriptorId = document.getElementById("descriptor-filter")?.value || null;
+  const productsPerPageElement = document.getElementById("products-per-page");
+  const categoryElement = document.getElementById("category-filter");
+  const subCategoryElement = document.getElementById("subcategory-filter");
+  const descriptorElement = document.getElementById("descriptor-filter");
+
+  const productsPerPage = productsPerPageElement ? parseInt(productsPerPageElement.value, 10) : 20;
+  const categoryId = categoryElement?.value || "";
+  const subCategoryId = subCategoryElement?.value || "";
+  const descriptorId = descriptorElement?.value || "";
 
   try {
-    const queryParams = new URLSearchParams({
-      page,
-      limit: productsPerPage,
-      ...(categoryId && { categoryId }),
-      ...(subCategoryId && { subCategoryId }),
-      ...(descriptorId && { descriptorId }),
-    });
+    const queryParams = new URLSearchParams();
+    queryParams.set("page", page);
+    queryParams.set("limit", productsPerPage);
+    
+    if (categoryId) queryParams.set("categoryId", categoryId);
+    if (subCategoryId) queryParams.set("subCategoryId", subCategoryId);
+    if (descriptorId) queryParams.set("descriptorId", descriptorId);
 
     const response = await apiService.get(`/api/products?${queryParams.toString()}`);
     if (!response.products || response.products.length === 0) {
@@ -332,18 +337,41 @@ async function loadProducts(page = 1) {
 }
 
 function resetFilters() {
-  document.getElementById("category-filter").value = "";
-  document.getElementById("subcategory-filter").value = "";
-  document.getElementById("descriptor-filter").value = "";
-  document.getElementById("subcategory-filter").disabled = true;
-  document.getElementById("descriptor-filter").disabled = true;
+  const categoryFilter = document.getElementById("category-filter");
+  const subcategoryFilter = document.getElementById("subcategory-filter");
+  const descriptorFilter = document.getElementById("descriptor-filter");
+  
+  if (categoryFilter) categoryFilter.value = "";
+  if (subcategoryFilter) {
+    subcategoryFilter.value = "";
+    subcategoryFilter.disabled = true;
+  }
+  if (descriptorFilter) {
+    descriptorFilter.value = "";
+    descriptorFilter.disabled = true;
+  }
 }
 
-async function loadCategories() {
+// Initialize filtering system when DOM loads
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize filtering system
+  initializeFilters();
+  
+  // Load initial products
+  loadProducts(1);
+  
+  // Update cart count
+  updateCartCount();
+});
+
+async function initializeFilters() {
   try {
     const categorySelect = document.getElementById("category-filter");
+    if (!categorySelect) return;
+
     const response = await apiService.get("/api/categories");
     resetDropdown(categorySelect, "All Categories");
+    
     response.forEach((category) => {
       const option = document.createElement("option");
       option.value = category.id;
@@ -362,20 +390,21 @@ async function loadCategories() {
       descriptorSelect.disabled = true;
 
       if (categoryId) {
-        await loadSubcategories(categoryId);
+        await loadFilterSubcategories(categoryId);
         subcategorySelect.disabled = false;
       }
     });
   } catch (error) {
-    console.error("Error loading categories:", error.message);
+    console.error("Error initializing filters:", error.message);
   }
 }
 
-async function loadSubcategories(categoryId) {
+async function loadFilterSubcategories(categoryId) {
   try {
     const subcategorySelect = document.getElementById("subcategory-filter");
     const response = await apiService.get(`/api/subcategories?categoryId=${categoryId}`);
     resetDropdown(subcategorySelect, "All Subcategories");
+    
     response.forEach((subcategory) => {
       const option = document.createElement("option");
       option.value = subcategory.id;
@@ -391,7 +420,7 @@ async function loadSubcategories(categoryId) {
       descriptorSelect.disabled = true;
 
       if (subCategoryId) {
-        await loadDescriptors(subCategoryId);
+        await loadFilterDescriptors(subCategoryId);
         descriptorSelect.disabled = false;
       }
     });
@@ -400,11 +429,12 @@ async function loadSubcategories(categoryId) {
   }
 }
 
-async function loadDescriptors(subCategoryId) {
+async function loadFilterDescriptors(subCategoryId) {
   try {
     const descriptorSelect = document.getElementById("descriptor-filter");
     const response = await apiService.get(`/api/descriptors?subCategoryId=${subCategoryId}`);
     resetDropdown(descriptorSelect, "All Descriptors");
+    
     response.forEach((descriptor) => {
       const option = document.createElement("option");
       option.value = descriptor.id;
