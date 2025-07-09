@@ -42,33 +42,35 @@
       </div>
     </header>
 
-    <!-- Add this container right after the header, before <main> -->
-    <div style="display: flex; justify-content: flex-start; align-items: center; width: 100%; margin-top: 10px; margin-left: 10px;">
-      <label for="products-per-page" style="font-family: 'MedievalSharp', serif; font-size: 1.1em; margin-right: 8px;">Products per page:</label>
-      <select id="products-per-page" style="font-size: 1em;">
-        <option value="10">10</option>
-        <option value="20" selected>20</option>
-        <option value="30">30</option>
-        <option value="50">50</option>
-      </select>
+    <!-- Unified flex container for products per page and filter form -->
+    <div class="products-toolbar" style="display: flex; justify-content: flex-start; align-items: center; width: 100%; margin-top: 10px; margin-left: 10px;">
+      <div class="products-per-page-container" style="margin-right: 20px;">
+        <label for="products-per-page" style="font-family: 'MedievalSharp', serif; font-size: 1.1em; margin-right: 8px;">Products per page:</label>
+        <select id="products-per-page" style="font-size: 1em;">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="30">30</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+      <form id="filter-form" style="display: flex; gap: 10px;">
+        <select id="category-filter">
+          <option value="">All Categories</option>
+        </select>
+        <select id="subcategory-filter" disabled>
+          <option value="">All Subcategories</option>
+        </select>
+        <select id="descriptor-filter" disabled>
+          <option value="">All Descriptors</option>
+        </select>
+        <button type="button" id="apply-filters-btn">Apply Filters</button>
+        <button type="button" id="clear-filters-btn">Clear Filters</button>
+      </form>
     </div>
 
     <main>
       <div id="user-info" style="text-align: center; margin-bottom: 20px;"></div>
       <div class="centered-container">
-        <form id="filter-form">
-          <select id="category-filter">
-            <option value="">All Categories</option>
-          </select>
-          <select id="subcategory-filter" disabled>
-            <option value="">All Subcategories</option>
-          </select>
-          <select id="descriptor-filter" disabled>
-            <option value="">All Descriptors</option>
-          </select>
-          <button type="button" id="apply-filters-btn">Apply Filters</button>
-          <button type="button" id="clear-filters-btn">Clear Filters</button>
-        </form>
         <h2 class="productNote">Product Availability - New Products Uploaded Daily</h2>
         <button type="button" id="showcase-modal-btn">View Showcase Products</button>
       </div>
