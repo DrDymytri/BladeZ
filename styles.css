@@ -1256,6 +1256,7 @@ body main nav li p {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  margin-top: 30px;
 }
 
 /* Responsive: stack vertically on small screens */
