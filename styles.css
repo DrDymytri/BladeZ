@@ -1207,3 +1207,23 @@ body main nav li p {
   margin-top: 10px; /* Add spacing above */
   text-align: right; /* Align to the right */
 }
+
+.products-per-page-container {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  margin-left: 10px;
+  gap: 8px;
+}
+
+.products-per-page-container label {
+  font-family: "MedievalSharp", serif;
+  font-size: 1.1em;
+}
+
+.products-per-page-container select {
+  font-size: 1em;
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
