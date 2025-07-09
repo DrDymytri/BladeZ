@@ -473,6 +473,98 @@ nav ul li a:hover {
   color: #ffcc00;
 }
 
+/* --- Toolbar Layout Fix --- */
+.products-toolbar {
+  display: flex;
+  align-items: flex-start; /* Align items to the top */
+  gap: 24px;
+  margin-top: 20px;
+  margin-left: 20px;
+  flex-wrap: wrap;
+  width: auto;
+  position: static;
+  justify-content: flex-start;
+}
+
+.products-per-page-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.products-per-page-container label {
+  font-family: "MedievalSharp", serif;
+  font-size: 1.1em;
+  margin-top: 6px; /* Align label with select */
+}
+
+.products-per-page-container select {
+  font-size: 1em;
+  padding: 8px 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  height: 44px;
+  box-sizing: border-box;
+  background: #fff;
+  margin: 0;
+}
+
+#filter-form {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  position: static;
+  transform: none;
+  background: none;
+}
+
+#filter-form select {
+  font-size: 1em;
+  padding: 8px 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  height: 44px;
+  box-sizing: border-box;
+  background: #fff;
+  font-family: "MedievalSharp", serif;
+  color: black;
+  cursor: pointer;
+  text-align: center;
+  max-width: 200px;
+  margin: 0;
+}
+
+#filter-form button {
+  height: 44px;
+  padding: 0 18px;
+  font-size: 1em;
+  border-radius: 5px;
+  border: 1px solid black;
+  font-family: "MedievalSharp", serif;
+  font-weight: bold;
+  box-sizing: border-box;
+  background: rgba(75, 41, 3, 0.329);
+  color: rgb(24, 0, 0);
+  text-shadow: 0.125px 0.25px rgb(222, 194, 35), 0.25px 0.5px rgb(222, 194, 35);
+  cursor: pointer;
+  transition: color 0.3s ease;
+  margin: 0;
+}
+
+#filter-form button:hover {
+  color: aliceblue;
+  text-decoration: underline;
+}
+
+/* Remove margin-top from #filter-form that was causing vertical offset */
+#filter-form {
+  margin-top: 0 !important;
+}
+
 /* Mobile-specific styles */
 @media (max-width: 768px) {
   nav {
@@ -485,107 +577,7 @@ nav ul li a:hover {
     flex-direction: column;
     gap: 10px;
   }
-}
 
-.modal {
-  display: flex; /* Use flexbox for centering */
-  justify-content: center; /* Center horizontally */
-  align-items: center; /* Center vertically */
-  position: fixed; /* Fixed positioning relative to viewport */
-  inset: 0; /* Set top, right, bottom, and left to 0 for full viewport coverage */
-  background-color: rgba(0, 0, 0, 0.7); /* Slightly darker background for better contrast */
-  z-index: 1000; /* Ensure the modal is above other elements */
-  overflow: hidden; /* Prevent unwanted scrolling */
-  padding: 20px; /* Add padding for better spacing */
-}
-
-.modal-content {
-  background-color: #681414; /* Bright background for content */
-  border-radius: 12px; /* Add rounded corners */
-  padding: 30px; /* Add more padding for better spacing */
-  width: 90%; /* Responsive width */
-  max-width: 1400px; /* Limit max width on large screens */
-  max-height: 95vh; /* Prevent modal from exceeding viewport height */
-  overflow-y: auto; /* Enable scrolling if content overflows */
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Add a stronger shadow for depth */
-  display: flex;
-  flex-direction: column; /* Stack content vertically */
-  align-items: center; /* Center content horizontally */
-  position: relative; /* Enable positioning for the close button */
-}
-
-.modal .close {
-  position: absolute;
-  top: 15px; /* Adjust positioning for better spacing */
-  right: 20px; /* Adjust positioning for better spacing */
-  font-size: 24px;
-  font-weight: bold;
-  color: #333; /* Darker color for better visibility */
-  cursor: pointer;
-  background: #f5f5f5; /* Light background for the close button */
-  padding: 5px 10px;
-  border-radius: 50%; /* Circular close button */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
-  transition: background-color 0.3s ease, color 0.3s ease; /* Smooth hover effect */
-}
-
-.modal .close:hover {
-  background-color: #ff4d4d; /* Red background on hover */
-  color: white; /* White text on hover */
-}
-
-.modal-content h1.businessName {
-  font-family: "MedievalSharp", serif;
-  font-size: 48px; /* Adjust font size for better readability */
-  margin-bottom: 20px; /* Add spacing below the title */
-  text-align: center;
-  text-shadow: 
-    -0.125px -0.25px rgb(222, 35, 35), 
-    -0.25px -0.5px rgb(222, 35, 35),
-    0.125px 0.25px rgb(222, 194, 35), 
-    0.25px 0.5px rgb(222, 194, 35), 
-    0.375px 0.75px black, 
-    0.5px 1px black, 
-    0.625px 1.25px rgb(222, 194, 35), 
-    0.75px 1.5px rgb(222, 194, 35);  
-}
-
-.modal-content p.subTitle {
-  font-size: 18px; /* Adjust font size for better readability */
-  margin-bottom: 20px; /* Add spacing below the subtitle */
-  text-align: center;
-  color: aliceblue; /* Softer color for text */
-}
-
-#showcase-modal-btn {
-  display: inline-block;
-  font-family: "MedievalSharp", serif;
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: aliceblue;
-  background: linear-gradient(to right, #440404cc, #a10000, #8b0000, #a10000, #440404cc);
-  border: 4px solid #222;
-  border-radius: 15px;
-  box-shadow: 0 0 25px 5px #202020da, 0 0 10px 2px #fff inset;
-  padding: 16px 36px;
-  margin: 20px 0 30px 0;
-  letter-spacing: 1px;
-  text-shadow: 1px 2px 2px #000, 0 0 10px #ffd700;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
-  outline: none;
-}
-
-#showcase-modal-btn:hover, #showcase-modal-btn:focus {
-  background: linear-gradient(to right, #ffd700, #ff0000, #a10000, #ff0000, #ffd700);
-  color: #222;
-  box-shadow: 0 0 40px 10px #ffd700, 0 0 20px 5px #a10000 inset;
-  transform: scale(1.05);
-  text-shadow: 1px 2px 2px #fff, 0 0 10px #a10000;
-}
-
-/* Mobile-specific styles */
-@media (max-width: 768px) {
   .header-image,
   .header-image-mirrored {
     display: none; /* Hide the images */
@@ -1234,11 +1226,12 @@ body main nav li p {
   display: flex;
   align-items: flex-start;
   gap: 24px;
-  margin-top: 10px;
-  margin-left: 10px;
+  margin-top: 20px;
+  margin-left: 20px;
   flex-wrap: wrap;
-  width: 100%;
-  position: relative;
+  width: auto;
+  position: static;
+  justify-content: flex-start;
 }
 
 .products-per-page-container {
@@ -1246,50 +1239,56 @@ body main nav li p {
   align-items: flex-start;
   gap: 8px;
   margin: 0;
+  padding: 0;
 }
 
 .products-per-page-container label {
   font-family: "MedievalSharp", serif;
   font-size: 1.1em;
+  margin-top: 6px; /* Align label with select */
 }
 
 .products-per-page-container select {
   font-size: 1em;
-  padding: 8px 8px;
+  padding: 8px 16px;
   border-radius: 5px;
   border: 1px solid #ccc;
-  height: 40px;
+  height: 44px;
   box-sizing: border-box;
+  background: #fff;
+  margin: 0;
 }
 
 #filter-form {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 12px;
   margin: 0;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  padding: 0;
+  position: static;
+  transform: none;
+  background: none;
 }
 
 #filter-form select {
   font-size: 1em;
-  padding: 8px 8px;
+  padding: 8px 16px;
   border-radius: 5px;
   border: 1px solid #ccc;
-  height: 40px;
+  height: 44px;
   box-sizing: border-box;
-  background: rgb(255, 255, 255);
+  background: #fff;
   font-family: "MedievalSharp", serif;
   color: black;
   cursor: pointer;
   text-align: center;
   max-width: 200px;
+  margin: 0;
 }
 
 #filter-form button {
-  height: 40px;
-  padding: 0 16px;
+  height: 44px;
+  padding: 0 18px;
   font-size: 1em;
   border-radius: 5px;
   border: 1px solid black;
@@ -1301,11 +1300,17 @@ body main nav li p {
   text-shadow: 0.125px 0.25px rgb(222, 194, 35), 0.25px 0.5px rgb(222, 194, 35);
   cursor: pointer;
   transition: color 0.3s ease;
+  margin: 0;
 }
 
 #filter-form button:hover {
   color: aliceblue;
   text-decoration: underline;
+}
+
+/* Remove margin-top from #filter-form that was causing vertical offset */
+#filter-form {
+  margin-top: 0 !important;
 }
 
 /* Responsive: stack vertically on small screens */
@@ -1314,12 +1319,7 @@ body main nav li p {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
-  }
-  #filter-form {
-    position: static;
-    transform: none;
-    justify-content: center;
-    margin: 0 auto;
+    margin-left: 0;
   }
   .products-per-page-container,
   #filter-form {
