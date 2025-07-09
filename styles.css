@@ -176,7 +176,31 @@ main section h2 {
   background: linear-gradient(to right, rgba(255, 0, 0, 0.533), rgb(161, 0, 0), rgb(139, 0, 0), rgb(161, 0, 0), rgba(255, 0, 0, 0.533));
 }
 
-.product-item .add-to-cart:hover {
+.product-item .add-to-cart,
+.product-item .showcase-add-to-cart-btn {
+  width: auto;
+  margin-bottom: 5px;
+  margin-top: 0;
+  box-sizing: border-box;
+  font-family: serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: aliceblue;
+  text-shadow: black 0.125px 0.25px, black 0.25px 0.5px, black 0.375px 0.75px, black 0.5px 1px, black 0.625px 1.25px, black 0.75px 1.5px;
+  box-shadow: aliceblue 0px 0px 15px 1px;
+  padding: 5px;
+  border-top: 4px solid rgb(189, 209, 230);
+  border-bottom: 4px solid rgb(121, 141, 160);
+  border-right: 4px solid rgb(149, 172, 190);
+  border-left: 4px solid rgb(156, 175, 194);
+  outline: black solid 1px;
+  background: linear-gradient(to right, rgba(255, 0, 0, 0.533), rgb(161, 0, 0), rgb(139, 0, 0), rgb(161, 0, 0), rgba(255, 0, 0, 0.533));
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.product-item .add-to-cart:hover,
+.product-item .showcase-add-to-cart-btn:hover {
   background-color: #0056b3;
 }
 

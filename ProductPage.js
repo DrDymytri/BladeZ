@@ -99,34 +99,53 @@ async function loadProducts(page = 1) {
 }
 
 async function loadShowcaseProducts() {
-  const showcaseContainer = document.getElementById("showcase-container");
-  if (!showcaseContainer) {
-    console.error("Showcase container not found in the DOM. Exiting function.");
+  const showcaseGrid = document.getElementById("showcase-products-grid");
+  if (!showcaseGrid) {
+    console.error("Showcase products grid not found in the DOM.");
     return;
   }
 
   try {
     const products = await apiService.get('/api/showcase-products');
-    if (products.length === 0) {
-      showcaseContainer.innerHTML = `<p>No showcase products available.</p>`;
+    if (!products.length) {
+      showcaseGrid.innerHTML = `<p>No showcase products available.</p>`;
       return;
     }
 
-    showcaseContainer.innerHTML = products
+    showcaseGrid.innerHTML = products
       .map(
         (product) => `
-        <div class="product-card">
-          <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" onerror="this.onerror=null;this.src='/images/Default1.png';" />
+        <div class="product-item">
+          <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" onerror="this.onerror=null;this.src='/images/Default1.png';" />
           <h3>${product.name}</h3>
           <p>${product.description}</p>
-          <p>Price: $${product.price.toFixed(2)}</p>
+          <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
+          <button class="add-to-cart showcase-add-to-cart-btn"
+            data-id="${product.id}"
+            data-name="${product.name}"
+            data-price="${product.price}"
+            data-image="${product.image_url || '/images/Default1.png'}"
+          >Add to Cart</button>
         </div>
       `
       )
       .join("");
+
+// Attach event listeners to the showcase modal's add-to-cart buttons
+showcaseGrid.querySelectorAll(".showcase-add-to-cart-btn").forEach((button) => {
+  button.addEventListener("click", (event) => {
+    const btn = event.target;
+    const productId = parseInt(btn.dataset.id, 10);
+    const productName = btn.dataset.name;
+    const productPrice = parseFloat(btn.dataset.price);
+    const productImage = btn.dataset.image;
+    addToCart(productId, productName, productPrice, productImage);
+    alert(`${productName} has been added to your cart.`);
+  });
+});
   } catch (error) {
     console.error("Error loading showcased products:", error.message);
-    showcaseContainer.innerHTML = `<p>Error loading showcased products: ${error.message}</p>`;
+    showcaseGrid.innerHTML = `<p>Error loading showcased products: ${error.message}</p>`;
   }
 }
 
