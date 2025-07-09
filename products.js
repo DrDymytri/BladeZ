@@ -204,7 +204,7 @@ function displayProducts(products) {
       .map(
         (p) => `
       <div class="product-item">
-        <img src="${p.image_url}" alt="${p.name}" class="product-image" onclick="openImageInPopup('${p.image_url}')" onerror="this.onerror=null;this.src='${getDefaultImageUrl()}'" />
+        <img src="${p.image_url || 'https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png'}" alt="${p.name}" class="product-image" onclick="openImageInPopup('${p.image_url || '/images/Default1.png'}')" onerror="this.onerror=null;this.src='${getDefaultImageUrl()}'" />
         <h3>${p.name}</h3>
         <p>${p.description}</p>
         <p class="price"><strong>Price:</strong> <em>$${p.price.toFixed(2)}</em></p>
@@ -216,50 +216,24 @@ function displayProducts(products) {
   }
 }
 
-// Function to open the image in a new popup window
-function openImageInPopup(imageUrl) {
-  const popupWidth = 800; // Set the desired width of the popup window
-  const popupHeight = 600; // Set the desired height of the popup window
-  const left = (screen.width - popupWidth) / 2; // Center horizontally
-  const top = (screen.height - popupHeight) / 2; // Center vertically
+function renderPaginationControls(currentPage, totalPages) {
+  const paginationContainer = document.getElementById("pagination-container");
+  if (!paginationContainer) {
+    console.error("Pagination container not found");
+    return;
+  }
 
-  // Open a new window with the image
-  const popup = window.open(
-    "",
-    "_blank",
-    "fullscreen=yes,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no",
-    `width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes`
-  );
+  paginationContainer.innerHTML = ""; // Clear existing pagination
 
-  if (popup) {
-    // Set the content of the popup window
-    popup.document.write(`
-      <html>
-        <head>
-          <title>Product Image</title>
-          <style>
-            body {
-              margin: 0;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              background-color: rgba(0, 0, 0, 0.9);
-            }
-            img {
-              max-width: 90vw;
-              max-height: 90vh;
-              border: 3px solid white;
-              border-radius: 5px;
-            }
-          </style>
-        </head>
-        <body>
-          <img src="${imageUrl}" alt="Product Image">
-        </body>
-      </html>
-    `);
-  } else {
-    alert("Popup blocked! Please allow popups for this site.");
+  if (totalPages <= 1) return; // No pagination needed for a single page
+
+  for (let i = 1; i <= totalPages; i++) {
+    const button = document.createElement("button");
+    button.textContent = i;
+    button.className = "pagination-button";
+    if (i === currentPage) button.classList.add("active");
+    button.addEventListener("click", () => loadProducts(i));
+    paginationContainer.appendChild(button);
   }
 }
 
@@ -443,6 +417,27 @@ async function loadFilterDescriptors(subCategoryId) {
     });
   } catch (error) {
     console.error("Error loading descriptors:", error.message);
+  }
+}
+
+function renderPaginationControls(currentPage, totalPages) {
+  const paginationContainer = document.getElementById("pagination-container");
+  if (!paginationContainer) {
+    console.error("Pagination container not found");
+    return;
+  }
+
+  paginationContainer.innerHTML = ""; // Clear existing pagination
+
+  if (totalPages <= 1) return; // No pagination needed for a single page
+
+  for (let i = 1; i <= totalPages; i++) {
+    const button = document.createElement("button");
+    button.textContent = i;
+    button.className = "pagination-button";
+    if (i === currentPage) button.classList.add("active");
+    button.addEventListener("click", () => loadProducts(i));
+    paginationContainer.appendChild(button);
   }
 }
 

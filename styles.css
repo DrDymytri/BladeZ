@@ -261,6 +261,14 @@ main section h2 {
   gap: 10px;
 }
 
+#pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+  gap: 10px;
+  padding: 20px;
+}
+
 .pagination-button {
   padding: 10px 15px;
   font-size: 16px;
