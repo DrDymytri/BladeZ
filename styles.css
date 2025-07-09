@@ -139,7 +139,7 @@ main section h2 {
   background-color: #fff;
   border: 3px solid black;
   border-radius: 8px;
-  box-shadow: 0 0 20px 5px rgb(0, 0, 0);
+  box-shadow: 0 0 20px 5px rgba(0, 0, 0, 1) !important; /* Force black shadow with !important */
   padding: 2px;
   text-align: center;
   transition: transform 0.2s ease-in-out;
@@ -194,6 +194,7 @@ main section h2 {
 
 .product-item:hover {
   transform: translateY(-5px);
+  box-shadow: 0 0 25px 8px rgba(0, 0, 0, 1) !important; /* Ensure hover shadow is also black */
 }
 
 /* Fixed duplicate and redundant rules for showcase-products-grid */
