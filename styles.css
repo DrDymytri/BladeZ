@@ -1223,9 +1223,11 @@ body main nav li p {
 
 .products-per-page-container select {
   font-size: 1em;
-  padding: 4px 8px;
+  padding: 8px 8px;
   border-radius: 5px;
   border: 1px solid #ccc;
+  height: 40px;
+  box-sizing: border-box;
 }
 
 .products-toolbar {
@@ -1241,22 +1243,69 @@ body main nav li p {
 
 .products-per-page-container {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   margin: 0;
-  /* Remain left-aligned */
+}
+
+.products-per-page-container label {
+  font-family: "MedievalSharp", serif;
+  font-size: 1.1em;
+}
+
+.products-per-page-container select {
+  font-size: 1em;
+  padding: 8px 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  height: 40px;
+  box-sizing: border-box;
 }
 
 #filter-form {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   margin: 0;
-  /* Center horizontally */
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  margin-top: 30px;
+}
+
+#filter-form select {
+  font-size: 1em;
+  padding: 8px 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  height: 40px;
+  box-sizing: border-box;
+  background: rgb(255, 255, 255);
+  font-family: "MedievalSharp", serif;
+  color: black;
+  cursor: pointer;
+  text-align: center;
+  max-width: 200px;
+}
+
+#filter-form button {
+  height: 40px;
+  padding: 0 16px;
+  font-size: 1em;
+  border-radius: 5px;
+  border: 1px solid black;
+  font-family: "MedievalSharp", serif;
+  font-weight: bold;
+  box-sizing: border-box;
+  background: rgba(75, 41, 3, 0.329);
+  color: rgb(24, 0, 0);
+  text-shadow: 0.125px 0.25px rgb(222, 194, 35), 0.25px 0.5px rgb(222, 194, 35);
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+#filter-form button:hover {
+  color: aliceblue;
+  text-decoration: underline;
 }
 
 /* Responsive: stack vertically on small screens */
@@ -1271,5 +1320,10 @@ body main nav li p {
     transform: none;
     justify-content: center;
     margin: 0 auto;
+  }
+  .products-per-page-container,
+  #filter-form {
+    width: 100%;
+    justify-content: center;
   }
 }
