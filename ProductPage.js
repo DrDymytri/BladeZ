@@ -172,6 +172,8 @@ async function populateSubcategoryFilter(categoryId) {
   try {
     const subcategories = await apiService.get(`/api/subcategories?categoryId=${categoryId}`);
     const subcategoryFilter = document.getElementById("subcategory-filter");
+    // Clear previous options before adding new ones
+    resetDropdown(subcategoryFilter, "All Subcategories");
 
     subcategories.forEach((subcategory) => {
       const option = document.createElement("option");
