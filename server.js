@@ -1369,6 +1369,124 @@ app.delete("/api/categories/:id", async (req, res) => {
     }
 });
 
+app.get("/api/events", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request().query(`
+            SELECT 
+                id,
+                title,
+                description,
+                event_start_date,
+                event_end_date,
+                location,
+                event_website,
+                created_at
+            FROM Events
+            WHERE event_end_date >= GETDATE()
+            ORDER BY event_start_date ASC
+        `);
+        
+        if (!result.recordset.length) {
+            return res.json([]); // Return empty array instead of 404 for better UX
+        }
+        
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching events:", error.message);
+        console.error("Stack trace:", error.stack);
+        res.status(500).json({ error: "Failed to fetch events." });
+    }
+});
+
+app.post("/api/events", async (req, res) => {
+    const { title, description, event_start_date, event_end_date, location, event_website } = req.body;
+
+    if (!title || !event_start_date || !event_end_date || !location) {
+        return res.status(400).json({ error: "Title, start date, end date, and location are required." });
+    }
+
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("title", sql.NVarChar, title)
+            .input("description", sql.NVarChar, description || "")
+            .input("event_start_date", sql.DateTime, new Date(event_start_date))
+            .input("event_end_date", sql.DateTime, new Date(event_end_date))
+            .input("location", sql.NVarChar, location)
+            .input("event_website", sql.NVarChar, event_website || null)
+            .query(`
+                INSERT INTO Events (title, description, event_start_date, event_end_date, location, event_website)
+                OUTPUT INSERTED.id, INSERTED.title, INSERTED.description, INSERTED.event_start_date, INSERTED.event_end_date, INSERTED.location, INSERTED.event_website
+                VALUES (@title, @description, @event_start_date, @event_end_date, @location, @event_website)
+            `);
+
+        res.status(201).json(result.recordset[0]);
+    } catch (error) {
+        console.error("Error creating event:", error.message);
+        res.status(500).json({ error: "Failed to create event." });
+    }
+});
+
+app.put("/api/events/:id", async (req, res) => {
+    const { id } = req.params;
+    const { title, description, event_start_date, event_end_date, location, event_website } = req.body;
+
+    if (!title || !event_start_date || !event_end_date || !location) {
+        return res.status(400).json({ error: "Title, start date, end date, and location are required." });
+    }
+
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("id", sql.Int, id)
+            .input("title", sql.NVarChar, title)
+            .input("description", sql.NVarChar, description || "")
+            .input("event_start_date", sql.DateTime, new Date(event_start_date))
+            .input("event_end_date", sql.DateTime, new Date(event_end_date))
+            .input("location", sql.NVarChar, location)
+            .input("event_website", sql.NVarChar, event_website || null)
+            .query(`
+                UPDATE Events
+                SET title = @title, description = @description, event_start_date = @event_start_date, 
+                    event_end_date = @event_end_date, location = @location, event_website = @event_website
+                WHERE id = @id
+            `);
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: "Event not found." });
+        }
+
+        res.json({ message: "Event updated successfully." });
+    } catch (error) {
+        console.error("Error updating event:", error.message);
+        res.status(500).json({ error: "Failed to update event." });
+    }
+});
+
+app.delete("/api/events/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input("id", sql.Int, id)
+            .query(`
+                DELETE FROM Events
+                WHERE id = @id
+            `);
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: "Event not found." });
+        }
+
+        res.json({ message: "Event deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting event:", error.message);
+        res.status(500).json({ error: "Failed to delete event." });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
