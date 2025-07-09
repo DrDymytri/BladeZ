@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.BACKEND_URL; // Use environment variable only
+const API_BASE_URL = "https://bladez-backend.onrender.com"; // Use direct URL instead of environment variable
 
 document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
@@ -58,10 +58,5 @@ document.addEventListener("DOMContentLoaded", () => {
       loginError.textContent = error.message;
       loginError.style.display = "block"; // Show error message
     }
-  });
-
-  // Close login dialog functionality
-  document.querySelector(".close").addEventListener("click", () => {
-    document.getElementById("login-dialog").style.display = "none";
   });
 });

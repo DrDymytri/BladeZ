@@ -137,9 +137,9 @@ main section h2 {
   width: 100%; /* Ensure the card fits within the grid */
   max-width: 250px; /* Limit the maximum width of each card */
   background-color: #fff;
-  border: 3px solid #a70000;
+  border: 3px solid black;
   border-radius: 8px;
-  box-shadow: 0 0 20px 5px rgb(225, 200, 13);
+  box-shadow: 0 0 20px 5px rgb(225, 13, 13);
   padding: 2px;
   text-align: center;
   transition: transform 0.2s ease-in-out;
@@ -256,17 +256,28 @@ main section h2 {
 
 .pagination-container {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  margin-top: 40px;
-  gap: 10px;
+  margin: 40px auto;
+  gap: 15px;
+  padding: 20px;
+  max-width: 800px;
 }
 
-#pagination-container {
+.pagination-info {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.pagination-buttons {
   display: flex;
   justify-content: center;
-  margin-top: 40px;
-  gap: 10px;
-  padding: 20px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .pagination-button {
@@ -279,6 +290,7 @@ main section h2 {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  min-width: 40px;
 }
 
 .pagination-button:hover {
@@ -290,6 +302,12 @@ main section h2 {
   box-shadow: goldenrod 0px 0px 30px 5px;
   color: black;
   cursor: default;
+}
+
+.pagination-ellipsis {
+  padding: 10px 5px;
+  color: #666;
+  font-weight: bold;
 }
 
 footer {
