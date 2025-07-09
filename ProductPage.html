@@ -43,28 +43,32 @@
     </header>
 
     <!-- Unified flex container for products per page and filter form -->
-    <div class="products-toolbar" style="display: flex; justify-content: flex-start; align-items: center; width: 100%; margin-top: 10px; margin-left: 10px;">
-      <div class="products-per-page-container" style="margin-right: 20px;">
-        <label for="products-per-page" style="font-family: 'MedievalSharp', serif; font-size: 1.1em; margin-right: 8px;">Products per page:</label>
-        <select id="products-per-page" style="font-size: 1em;">
+    <div class="products-toolbar">
+      <div class="products-per-page-container">
+        <label for="products-per-page">Products per page:</label>
+        <select id="products-per-page">
           <option value="10">10</option>
           <option value="20" selected>20</option>
           <option value="30">30</option>
           <option value="50">50</option>
         </select>
       </div>
-      <form id="filter-form" style="display: flex; gap: 10px;">
-        <select id="category-filter">
-          <option value="">All Categories</option>
-        </select>
-        <select id="subcategory-filter" disabled>
-          <option value="">All Subcategories</option>
-        </select>
-        <select id="descriptor-filter" disabled>
-          <option value="">All Descriptors</option>
-        </select>
-        <button type="button" id="apply-filters-btn">Apply Filters</button>
-        <button type="button" id="clear-filters-btn">Clear Filters</button>
+      <form id="filter-form">
+        <div class="filter-row">
+          <select id="category-filter">
+            <option value="">All Categories</option>
+          </select>
+          <select id="subcategory-filter" disabled>
+            <option value="">All Subcategories</option>
+          </select>
+          <select id="descriptor-filter" disabled>
+            <option value="">All Descriptors</option>
+          </select>
+        </div>
+        <div class="filter-buttons-row">
+          <button type="button" id="apply-filters-btn">Apply Filters</button>
+          <button type="button" id="clear-filters-btn">Clear Filters</button>
+        </div>
       </form>
     </div>
 
