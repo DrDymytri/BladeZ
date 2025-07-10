@@ -679,6 +679,27 @@ async function populateSubcategoryFilter(categoryId) {
   }
 }
 
+async function populateDescriptorFilter(subCategoryId) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/descriptors?subCategoryId=${subCategoryId}`);
+    if (!response.ok) throw new Error("Failed to fetch descriptors");
+
+    const descriptors = await response.json();
+    const descriptorFilter = document.getElementById("descriptor-filter");
+
+    resetDropdown(descriptorFilter, "All Descriptors");
+
+    descriptors.forEach((descriptor) => {
+      const option = document.createElement("option");
+      option.value = descriptor.id;
+      option.textContent = descriptor.name;
+      descriptorFilter.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error fetching descriptors:", error.message);
+  }
+}
+
 function resetDropdown(selectElement, placeholder) {
   selectElement.innerHTML = `<option value="">${placeholder}</option>`;
 }
@@ -698,16 +719,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const categoryFilter = document.getElementById("category-filter");
   const subcategoryFilter = document.getElementById("subcategory-filter");
+  const descriptorFilter = document.getElementById("descriptor-filter");
 
-  if (categoryFilter) {
-    categoryFilter.addEventListener("change", async (event) => {
-      const categoryId = event.target.value;
-      resetDropdown(subcategoryFilter, "All Subcategories");
-      if (categoryId) {
-        await populateSubcategoryFilter(categoryId);
-        subcategoryFilter.disabled = false;
+  if (subcategoryFilter) {
+    subcategoryFilter.addEventListener("change", async (event) => {
+      const subCategoryId = event.target.value;
+      resetDropdown(descriptorFilter, "All Descriptors");
+      if (subCategoryId) {
+        await populateDescriptorFilter(subCategoryId);
+        descriptorFilter.disabled = false;
       } else {
-        subcategoryFilter.disabled = true;
+        descriptorFilter.disabled = true;
       }
     });
   }
