@@ -1,76 +1,204 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const spinner = document.getElementById("loading-spinner"); // Add spinner reference
   try {
-    spinner.style.display = "block"; // Show spinner
+    if (spinner) spinner.style.display = "block"; // Show spinner if it exists
     await populateCategoryFilter();
     await loadProducts(1); // Load the first page of products on page load
-    // await loadShowcaseProducts(); // <-- REMOVE this line to prevent auto-loading showcase products
   } catch (error) {
     console.error("Error during initialization:", error.message);
   } finally {
-    spinner.style.display = "none"; // Hide spinner after loading
+    if (spinner) spinner.style.display = "none"; // Hide spinner if it exists
   }
 
-  document.getElementById("apply-filters-btn").addEventListener("click", applyFilters);
-  document.getElementById("clear-filters-btn").addEventListener("click", clearFilters);
-
-  document.getElementById("category-filter").addEventListener("change", async (event) => {
-    const categoryId = event.target.value;
-    const subcategoryFilter = document.getElementById("subcategory-filter");
-    resetDropdown(subcategoryFilter, "All Subcategories");
-    if (categoryId) {
-      await populateSubcategoryFilter(categoryId);
-      subcategoryFilter.disabled = false;
-    } else {
-      subcategoryFilter.disabled = true;
-    }
-  });
-
-  document.getElementById("subcategory-filter").addEventListener("change", async (event) => {
-    const subCategoryId = event.target.value;
-    const descriptorFilter = document.getElementById("descriptor-filter");
-    resetDropdown(descriptorFilter, "All Descriptors");
-    if (subCategoryId) {
-      await populateDescriptorFilter(subCategoryId);
-      descriptorFilter.disabled = false;
-    } else {
-      descriptorFilter.disabled = true;
-    }
-  });
-
-  document.getElementById("products-per-page").addEventListener("change", () => {
-    loadProducts(1); // Reload products with the first page when the selection changes
-  });
+  const showcaseModalBtn = document.getElementById("showcase-modal-btn");
+  if (showcaseModalBtn) {
+    showcaseModalBtn.addEventListener("click", () => {
+      openShowcaseModal(); // Open the showcase modal when the button is clicked
+    });
+  }
 
   updateCartCount();
+});
 
-  // Showcase modal logic
-  const showcaseModalBtn = document.getElementById("showcase-modal-btn");
-  const showcaseModal = document.getElementById("showcase-modal");
-  const closeShowcaseModal = document.getElementById("close-showcase-modal");
+function openShowcaseModal() {
+  const modal = document.createElement("div");
+  modal.classList.add("modal");
+  modal.innerHTML = `
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h1 class="businessName">Showcased Products</h1>
+      <div id="showcase-products-grid" class="showcase-products-grid"></div>
+      <div id="showcase-pagination" class="pagination-container"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
 
-  if (showcaseModalBtn && showcaseModal && closeShowcaseModal) {
-    showcaseModalBtn.addEventListener("click", () => {
-      loadShowcaseProducts(1); // Load showcase products page 1 when modal opens
-      showcaseModal.style.display = "flex";
+  const closeModal = modal.querySelector(".close-modal");
+  closeModal.addEventListener("click", () => {
+    modal.remove();
+  });
+
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      modal.remove();
+    }
+  });
+
+  loadShowcaseProducts(1); // Load the first page of showcased products
+}
+
+async function loadShowcaseProducts(page = 1) {
+  const showcaseGrid = document.getElementById("showcase-products-grid");
+  if (!showcaseGrid) return;
+
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/showcase-products?page=${page}`);
+    if (!response.ok) throw new Error(`Failed to fetch showcase products: ${response.statusText}`);
+
+    const data = await response.json();
+    const products = data.products || [];
+    const totalPages = data.totalPages || 1;
+
+    if (products.length === 0) {
+      showcaseGrid.innerHTML = `<p>No showcase products available.</p>`;
+      return;
+    }
+
+    showcaseGrid.innerHTML = products
+      .map(
+        (product) => `
+        <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">
+          <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" class="product-image" onerror="this.src='/images/Default1.png';" />
+          <h3>${product.name}</h3>
+          <p>${product.description}</p>
+          <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
+          <button class="add-to-cart-btn">Add to Cart</button>
+        </div>
+      `
+      )
+      .join("");
+
+    showcaseGrid.querySelectorAll(".add-to-cart-btn").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        const productCard = event.target.closest(".product-card");
+        const productId = parseInt(productCard.dataset.id, 10);
+        const productName = productCard.dataset.name;
+        const productPrice = parseFloat(productCard.dataset.price);
+        const productImage = productCard.dataset.image;
+        addToCart(productId, productName, productPrice, productImage);
+        alert(`${productName} has been added to your cart.`);
+      });
     });
 
-    closeShowcaseModal.addEventListener("click", () => {
-      showcaseModal.style.display = "none";
-    });
+    renderShowcasePagination(page, totalPages);
+  } catch (error) {
+    showcaseGrid.innerHTML = `<p>Error loading showcase products: ${error.message}</p>`;
+  }
+}
 
-    showcaseModal.addEventListener("click", (event) => {
-      if (event.target === showcaseModal) {
-        showcaseModal.style.display = "none";
+function renderShowcasePagination(currentPage, totalPages) {
+  const paginationContainer = document.getElementById("showcase-pagination");
+  if (!paginationContainer) return;
+
+  if (totalPages <= 1) {
+    paginationContainer.innerHTML = ""; // No pagination needed for a single page
+    return;
+  }
+
+  let paginationHTML = "";
+
+  if (currentPage > 1) {
+    paginationHTML += `<button class="pagination-button" data-page="${currentPage - 1}">Previous</button>`;
+  }
+
+  for (let i = 1; i <= totalPages; i++) {
+    paginationHTML += `
+      <button class="pagination-button ${i === currentPage ? "active" : ""}" data-page="${i}">
+        ${i}
+      </button>
+    `;
+  }
+
+  if (currentPage < totalPages) {
+    paginationHTML += `<button class="pagination-button" data-page="${currentPage + 1}">Next</button>`;
+  }
+
+  paginationContainer.innerHTML = paginationHTML;
+
+  paginationContainer.querySelectorAll(".pagination-button").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const page = parseInt(event.target.dataset.page, 10);
+      loadShowcaseProducts(page);
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const spinner = document.getElementById("loading-spinner"); // Add spinner reference
+  try {
+    if (spinner) spinner.style.display = "block"; // Show spinner if it exists
+    await populateCategoryFilter();
+    await loadProducts(1); // Load the first page of products on page load
+  } catch (error) {
+    console.error("Error during initialization:", error.message);
+  } finally {
+    if (spinner) spinner.style.display = "none"; // Hide spinner if it exists
+  }
+
+  const applyFiltersBtn = document.getElementById("apply-filters-btn");
+  const clearFiltersBtn = document.getElementById("clear-filters-btn");
+  const categoryFilter = document.getElementById("category-filter");
+  const subcategoryFilter = document.getElementById("subcategory-filter");
+  const descriptorFilter = document.getElementById("descriptor-filter");
+  const productsPerPageSelect = document.getElementById("products-per-page");
+
+  if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener("click", applyFilters);
+  }
+
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener("click", clearFilters);
+  }
+
+  if (categoryFilter) {
+    categoryFilter.addEventListener("change", async (event) => {
+      const categoryId = event.target.value;
+      resetDropdown(subcategoryFilter, "All Subcategories");
+      if (categoryId) {
+        await populateSubcategoryFilter(categoryId);
+        if (subcategoryFilter) subcategoryFilter.disabled = false;
+      } else {
+        if (subcategoryFilter) subcategoryFilter.disabled = true;
       }
     });
   }
+
+  if (subcategoryFilter) {
+    subcategoryFilter.addEventListener("change", async (event) => {
+      const subCategoryId = event.target.value;
+      resetDropdown(descriptorFilter, "All Descriptors");
+      if (subCategoryId) {
+        await populateDescriptorFilter(subCategoryId);
+        if (descriptorFilter) descriptorFilter.disabled = false;
+      } else {
+        if (descriptorFilter) descriptorFilter.disabled = true;
+      }
+    });
+  }
+
+  if (productsPerPageSelect) {
+    productsPerPageSelect.addEventListener("change", () => {
+      loadProducts(1); // Reload products with the first page when the selection changes
+    });
+  }
+
+  updateCartCount();
 });
 
 async function loadProducts(page = 1) {
   const spinner = document.getElementById("loading-spinner"); // Add spinner reference
   try {
-    spinner.style.display = "block"; // Show spinner
+    if (spinner) spinner.style.display = "block"; // Show spinner
     const categoryFilter = document.getElementById("category-filter");
     const subCategoryFilter = document.getElementById("subcategory-filter");
     const descriptorFilter = document.getElementById("descriptor-filter");
@@ -107,8 +235,52 @@ async function loadProducts(page = 1) {
     const productContainer = document.getElementById("product-container");
     productContainer.innerHTML = `<p>Error loading products: ${error.message}</p>`;
   } finally {
-    spinner.style.display = "none"; // Hide spinner after loading
+    if (spinner) spinner.style.display = "none"; // Hide spinner after loading
   }
+}
+
+function renderPaginationControls(currentPage, totalPages) {
+  const paginationContainer = document.getElementById("pagination-container");
+  if (!paginationContainer) {
+    console.error("Pagination container not found in the DOM.");
+    return;
+  }
+
+  if (totalPages <= 1) {
+    paginationContainer.innerHTML = ""; // No pagination needed for a single page
+    return;
+  }
+
+  let paginationHTML = "";
+
+  // Previous button
+  if (currentPage > 1) {
+    paginationHTML += `<button class="pagination-button" data-page="${currentPage - 1}">Previous</button>`;
+  }
+
+  // Page numbers
+  for (let i = 1; i <= totalPages; i++) {
+    paginationHTML += `
+      <button class="pagination-button ${i === currentPage ? "active" : ""}" data-page="${i}">
+        ${i}
+      </button>
+    `;
+  }
+
+  // Next button
+  if (currentPage < totalPages) {
+    paginationHTML += `<button class="pagination-button" data-page="${currentPage + 1}">Next</button>`;
+  }
+
+  paginationContainer.innerHTML = paginationHTML;
+
+  // Add event listeners to pagination buttons
+  paginationContainer.querySelectorAll(".pagination-button").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const page = parseInt(event.target.dataset.page, 10);
+      loadProducts(page); // Pass the selected page
+    });
+  });
 }
 
 async function loadShowcaseProducts(page = 1) {
@@ -116,39 +288,32 @@ async function loadShowcaseProducts(page = 1) {
   if (!showcaseGrid) return;
 
   try {
-    // Fetch all showcase products (or use backend pagination if available)
-    const response = await fetch(`${BACKEND_URL}/api/showcase-products`);
+    const response = await fetch(`${BACKEND_URL}/api/showcase-products?page=${page}`);
     if (!response.ok) throw new Error(`Failed to fetch showcase products: ${response.statusText}`);
 
-    const products = await response.json();
+    const data = await response.json();
+    const products = data.products || [];
+    const totalPages = data.totalPages || 1;
+
     if (products.length === 0) {
       showcaseGrid.innerHTML = `<p>No showcase products available.</p>`;
       return;
     }
 
-    const productsPerPage = 4;
-    const totalPages = Math.ceil(products.length / productsPerPage);
-
-    // Paginate
-    const start = (page - 1) * productsPerPage;
-    const end = start + productsPerPage;
-    const paginated = products.slice(start, end);
-
-    showcaseGrid.innerHTML = paginated
+    showcaseGrid.innerHTML = products
       .map(
         (product) => `
         <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">
-          <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" class="product-image" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" onerror="this.onerror=null;this.src='/images/Default1.png';" />
+          <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" class="product-image" onerror="this.src='/images/Default1.png';" />
           <h3>${product.name}</h3>
           <p>${product.description}</p>
-          <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
+          <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
           <button class="add-to-cart-btn">Add to Cart</button>
         </div>
       `
       )
       .join("");
 
-    // Add event listeners to Add to Cart buttons
     showcaseGrid.querySelectorAll(".add-to-cart-btn").forEach((button) => {
       button.addEventListener("click", (event) => {
         const productCard = event.target.closest(".product-card");
@@ -161,7 +326,6 @@ async function loadShowcaseProducts(page = 1) {
       });
     });
 
-    // Render pagination controls inside the modal
     renderShowcasePagination(page, totalPages);
   } catch (error) {
     showcaseGrid.innerHTML = `<p>Error loading showcase products: ${error.message}</p>`;
@@ -169,28 +333,35 @@ async function loadShowcaseProducts(page = 1) {
 }
 
 function renderShowcasePagination(currentPage, totalPages) {
-  let paginationHTML = "";
-  if (totalPages > 1) {
-    if (currentPage > 1) {
-      paginationHTML += `<button class="pagination-button" data-page="${currentPage - 1}">Previous</button>`;
-    }
-    for (let i = 1; i <= totalPages; i++) {
-      paginationHTML += `<button class="pagination-button${i === currentPage ? " active" : ""}" data-page="${i}">${i}</button>`;
-    }
-    if (currentPage < totalPages) {
-      paginationHTML += `<button class="pagination-button" data-page="${currentPage + 1}">Next</button>`;
-    }
-  }
-  let container = document.getElementById("showcase-pagination");
-  if (!container) {
-    container = document.createElement("div");
-    container.id = "showcase-pagination";
-    container.className = "pagination-container";
-    document.querySelector("#showcase-modal .modal-content").appendChild(container);
-  }
-  container.innerHTML = paginationHTML;
+  const paginationContainer = document.getElementById("showcase-pagination");
+  if (!paginationContainer) return;
 
-  container.querySelectorAll(".pagination-button").forEach((button) => {
+  if (totalPages <= 1) {
+    paginationContainer.innerHTML = ""; // No pagination needed for a single page
+    return;
+  }
+
+  let paginationHTML = "";
+
+  if (currentPage > 1) {
+    paginationHTML += `<button class="pagination-button" data-page="${currentPage - 1}">Previous</button>`;
+  }
+
+  for (let i = 1; i <= totalPages; i++) {
+    paginationHTML += `
+      <button class="pagination-button ${i === currentPage ? "active" : ""}" data-page="${i}">
+        ${i}
+      </button>
+    `;
+  }
+
+  if (currentPage < totalPages) {
+    paginationHTML += `<button class="pagination-button" data-page="${currentPage + 1}">Next</button>`;
+  }
+
+  paginationContainer.innerHTML = paginationHTML;
+
+  paginationContainer.querySelectorAll(".pagination-button").forEach((button) => {
     button.addEventListener("click", (event) => {
       const page = parseInt(event.target.dataset.page, 10);
       loadShowcaseProducts(page);
@@ -228,6 +399,8 @@ async function populateSubcategoryFilter(categoryId) {
     const subcategories = await response.json();
     const subcategoryFilter = document.getElementById("subcategory-filter");
 
+    resetDropdown(subcategoryFilter, "All Subcategories"); // Clear existing options
+
     subcategories.forEach((subcategory) => {
       const option = document.createElement("option");
       option.value = subcategory.id;
@@ -246,6 +419,8 @@ async function populateDescriptorFilter(subCategoryId) {
 
     const descriptors = await response.json();
     const descriptorFilter = document.getElementById("descriptor-filter");
+
+    resetDropdown(descriptorFilter, "All Descriptors"); // Clear existing options
 
     descriptors.forEach((descriptor) => {
       const option = document.createElement("option");

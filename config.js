@@ -5,6 +5,7 @@
 
 // Backend URL (Render)
 const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Ensure this matches your backend URL
+const DEBUG = false; // Set to true to enable detailed logging
 
 // API helper for consistent backend calls
 const apiService = {
@@ -12,7 +13,7 @@ const apiService = {
   async get(endpoint, options = {}) {
     try {
       const url = `${BACKEND_URL}${endpoint}`;
-      console.log(`Making GET request to: ${url}`);
+      if (DEBUG) console.log(`Making GET request to: ${url}`);
       const response = await fetch(url, options);
       if (!response.ok) {
         const errorDetails = await response.text(); // Capture response body for debugging
