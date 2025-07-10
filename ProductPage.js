@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function openShowcaseModal() {
   const modal = document.createElement("div");
-  modal.classList.add("modal");
+  modal.classList.add("modal-overlay"); // Add a class for modal overlay styling
   modal.innerHTML = `
     <div class="modal-content">
       <span class="close-modal">&times;</span>
