@@ -635,3 +635,80 @@ document.getElementById("subcategory-filter").addEventListener(
     }
   }, 300)
 );
+
+async function populateCategoryFilter() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/categories`);
+    if (!response.ok) throw new Error(`Failed to fetch categories: ${response.statusText}`);
+
+    const categories = await response.json();
+    const categoryFilter = document.getElementById("category-filter");
+    resetDropdown(categoryFilter, "All Categories");
+
+    categories.forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category.id;
+      option.textContent = category.name;
+      categoryFilter.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error fetching categories:", error.message);
+    const categoryFilter = document.getElementById("category-filter");
+    categoryFilter.innerHTML = `<option value="">Error loading categories</option>`;
+  }
+}
+
+async function populateSubcategoryFilter(categoryId) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/subcategories?categoryId=${categoryId}`);
+    if (!response.ok) throw new Error("Failed to fetch subcategories");
+
+    const subcategories = await response.json();
+    const subcategoryFilter = document.getElementById("subcategory-filter");
+
+    resetDropdown(subcategoryFilter, "All Subcategories");
+
+    subcategories.forEach((subcategory) => {
+      const option = document.createElement("option");
+      option.value = subcategory.id;
+      option.textContent = subcategory.name;
+      subcategoryFilter.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error fetching subcategories:", error.message);
+  }
+}
+
+function resetDropdown(selectElement, placeholder) {
+  selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+}
+
+// Ensure the functions are defined before calling them
+document.addEventListener("DOMContentLoaded", async () => {
+  const spinner = document.getElementById("loading-spinner");
+  try {
+    if (spinner) spinner.style.display = "block";
+    await populateCategoryFilter(); // Ensure this function is defined
+    await loadProducts(1);
+  } catch (error) {
+    console.error("Error during initialization:", error.message);
+  } finally {
+    if (spinner) spinner.style.display = "none";
+  }
+
+  const categoryFilter = document.getElementById("category-filter");
+  const subcategoryFilter = document.getElementById("subcategory-filter");
+
+  if (categoryFilter) {
+    categoryFilter.addEventListener("change", async (event) => {
+      const categoryId = event.target.value;
+      resetDropdown(subcategoryFilter, "All Subcategories");
+      if (categoryId) {
+        await populateSubcategoryFilter(categoryId);
+        subcategoryFilter.disabled = false;
+      } else {
+        subcategoryFilter.disabled = true;
+      }
+    });
+  }
+});
