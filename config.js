@@ -14,11 +14,15 @@ const apiService = {
       const url = `${BACKEND_URL}${endpoint}`;
       console.log(`Making GET request to: ${url}`);
       const response = await fetch(url, options);
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      if (!response.ok) {
+        const errorDetails = await response.text(); // Capture response body for debugging
+        console.error(`API error: ${response.status} - ${response.statusText}`, errorDetails);
+        throw new Error(`API error: ${response.status}`);
+      }
       return await response.json();
     } catch (error) {
-      console.error(`Failed to fetch ${endpoint}:`, error);
-      throw error;
+      console.error(`Failed to fetch ${endpoint}:`, error.message);
+      throw error; // Re-throw the error for the caller to handle
     }
   },
   

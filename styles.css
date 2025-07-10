@@ -501,14 +501,26 @@ nav ul li a:hover {
 }
 
 .products-per-page-container select {
-  font-size: 18px;
-  padding: 8px 8px;
+  font-size: 16px; /* Increase font size for better readability */
+  padding: 10px 12px; /* Add more padding to prevent text cutoff */
   border-radius: 5px;
   border: 1px solid #ccc;
-  height: 30px;
+  height: auto; /* Allow height to adjust based on content */
   box-sizing: border-box;
   background: #fff;
+  font-family: "MedievalSharp", serif;
+  color: black;
+  cursor: pointer;
+  text-align: center;
+  max-width: 200px;
   margin: 0;
+  line-height: 1.5; /* Ensure proper spacing between lines of text */
+}
+
+#filter-form select:focus {
+  border-color: #007bff; /* Highlight border on focus */
+  outline: none; /* Remove default outline */
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Add subtle glow effect */
 }
 
 /* Filter form: pulldowns in a row, buttons in a row below, left-aligned */
@@ -538,11 +550,11 @@ nav ul li a:hover {
 }
 
 #filter-form select {
-  font-size: 18px;
-  padding: 8px 8px;
+  font-size: 16px; /* Increase font size for better readability */
+  padding: 10px 12px; /* Add more padding to prevent text cutoff */
   border-radius: 5px;
   border: 1px solid #ccc;
-  height: 30px;
+  height: auto; /* Allow height to adjust based on content */
   box-sizing: border-box;
   background: #fff;
   font-family: "MedievalSharp", serif;
@@ -551,6 +563,7 @@ nav ul li a:hover {
   text-align: center;
   max-width: 200px;
   margin: 0;
+  line-height: 1.5; /* Ensure proper spacing between lines of text */
 }
 
 #apply-filters-btn,

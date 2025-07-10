@@ -1,5 +1,3 @@
-const BACKEND_URL = 'https://bladez-backend.onrender.com'; // Ensure this matches the backend URL
-
 document.addEventListener("DOMContentLoaded", async () => {
   const spinner = document.getElementById("loading-spinner"); // Add spinner reference
   try {
@@ -607,3 +605,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Error during initialization:', error.message);
   }
 });
+
+// Debounce utility to limit the frequency of function calls
+function debounce(func, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), delay);
+  };
+}
+
+// Apply debounce to event listeners
+document.getElementById("category-filter").addEventListener(
+  "change",
+  debounce(async (event) => {
+    const categoryId = event.target.value;
+    const subcategoryFilter = document.getElementById("subcategory-filter");
+    resetDropdown(subcategoryFilter, "All Subcategories");
+    if (categoryId) {
+      await populateSubcategoryFilter(categoryId);
+      subcategoryFilter.disabled = false;
+    } else {
+      subcategoryFilter.disabled = true;
+    }
+  }, 300)
+);
+
+document.getElementById("subcategory-filter").addEventListener(
+  "change",
+  debounce(async (event) => {
+    const subCategoryId = event.target.value;
+    const descriptorFilter = document.getElementById("descriptor-filter");
+    resetDropdown(descriptorFilter, "All Descriptors");
+    if (subCategoryId) {
+      await populateDescriptorFilter(subCategoryId);
+      descriptorFilter.disabled = false;
+    } else {
+      descriptorFilter.disabled = true;
+    }
+  }, 300)
+);
