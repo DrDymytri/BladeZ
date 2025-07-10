@@ -31,8 +31,11 @@ function openShowcaseModal() {
   modal.innerHTML = `
     <div class="modal-content">
       <span class="close-modal">&times;</span>
-      <h1 class="businessName">Showcased Products</h1>
-      <div id="showcase-products-grid" class="showcase-products-grid"></div>
+      <h1 class="businessName">Showcase Products</h1>
+      <p class="subTitle">Explore our premium products flagged for showcase!</p>
+      <div id="showcase-products-grid" class="showcase-products-grid">
+        <!-- Showcase products will be dynamically rendered here -->
+      </div>
       <div id="showcase-pagination" class="pagination-container"></div>
     </div>
   `;
