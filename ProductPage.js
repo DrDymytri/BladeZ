@@ -79,7 +79,7 @@ async function loadShowcaseProducts(page = 1) {
       .map(
         (product) => `
         <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || '/images/Default1.png'}">
-          <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" class="product-image" onerror="this.src='/images/Default1.png';" />
+          <img src="${product.image_url || 'https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png'}" alt="${product.name}" class="product-image" onclick="openImageInPopup('${product.image_url || '/images/Default1.png'}')" onerror="this.src='/images/Default1.png';" />
           <h3>${product.name}</h3>
           <p>${product.description}</p>
           <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
@@ -89,6 +89,7 @@ async function loadShowcaseProducts(page = 1) {
       )
       .join("");
 
+    // Add event listeners to "Add to Cart" buttons
     showcaseGrid.querySelectorAll(".add-to-cart-btn").forEach((button) => {
       button.addEventListener("click", (event) => {
         const productCard = event.target.closest(".product-card");
@@ -96,6 +97,7 @@ async function loadShowcaseProducts(page = 1) {
         const productName = productCard.dataset.name;
         const productPrice = parseFloat(productCard.dataset.price);
         const productImage = productCard.dataset.image;
+
         addToCart(productId, productName, productPrice, productImage);
         alert(`${productName} has been added to your cart.`);
       });
