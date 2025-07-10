@@ -21,6 +21,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function openShowcaseModal() {
+  // Check if a modal already exists and remove it to avoid duplicates
+  const existingModal = document.querySelector(".modal-overlay");
+  if (existingModal) existingModal.remove();
+
+  // Create the modal overlay
   const modal = document.createElement("div");
   modal.classList.add("modal-overlay"); // Add a class for modal overlay styling
   modal.innerHTML = `
@@ -31,20 +36,23 @@ function openShowcaseModal() {
       <div id="showcase-pagination" class="pagination-container"></div>
     </div>
   `;
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); // Append the modal to the body
 
+  // Add event listener to close the modal
   const closeModal = modal.querySelector(".close-modal");
   closeModal.addEventListener("click", () => {
     modal.remove();
   });
 
+  // Close the modal when clicking outside the modal content
   modal.addEventListener("click", (event) => {
     if (event.target === modal) {
       modal.remove();
     }
   });
 
-  loadShowcaseProducts(1); // Load the first page of showcased products
+  // Load the first page of showcased products
+  loadShowcaseProducts(1);
 }
 
 async function loadShowcaseProducts(page = 1) {
