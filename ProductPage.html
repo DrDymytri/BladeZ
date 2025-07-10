@@ -152,6 +152,23 @@
           });
         }
       });
+
+      function addToCart(productId) {
+        // Example logic to add the product to the cart
+        fetch(`${BACKEND_URL}/api/cart`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId }),
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error("Failed to add product to cart");
+            alert("Product added to cart successfully!");
+          })
+          .catch((error) => {
+            console.error("Error adding product to cart:", error);
+            alert("Failed to add product to cart. Please try again.");
+          });
+      }
     </script>
   </body>
 </html>

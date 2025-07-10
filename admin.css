@@ -15,13 +15,17 @@ input, select, button {
   font-size: 16px;
 }
 
-.AdminFunctions {
-  width: 100px;
-  height: 100px;
+img.AdminFunctions {
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   object-fit: cover;
   transition: transform 0.3s ease;
+  cursor: pointer;
+}
+img.adminFunctions:hover {
+  transform: scale(1.1);
 }
 
 /* Add styles for other admin cards if applicable */
