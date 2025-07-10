@@ -41,19 +41,45 @@
       <img src="https://bladezstorage.blob.core.windows.net/bladez-op-images/HeaderRedGoldDragon.png" alt="Header Dragon Mirrored" class="header-image-mirrored" />
     </div>
   </header>
+  <main>
+    <section id="images-section">
+      <h2>Our Collection of Images</h2>
+      <div id="images-container" class="images-grid">
+        <!-- Images will be dynamically loaded here -->
+      </div>
+    </section>
+  </main>
+  <footer>
+    <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
+    <p>Created By: <a href="https://www.mdoasolutions.com" target="_blank">MDOA Solutions</a></p>
+  </footer>
+  <script>
+    const BACKEND_URL = "https://your-render-backend-url.com"; // Replace with your Render backend URL
 
-    <main>
-      <section>
-        <h2 class="ImageCollects">Our Collection of Images</h2>
-        <div id="images-container" class="images-grid">
-          <!-- Images will be dynamically populated here -->
-        </div>
-      </section>
-    </main>
-    <footer>
-      <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
-      <p>Created By: <a href="https://www.mdoasolutions.com" target="_blank">MDOA Solutions</a></p>
-    </footer>
-    <script src="images.js"></script>
-  </body>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const imagesContainer = document.getElementById("images-container");
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/images`);
+        if (!response.ok) throw new Error("Failed to fetch images");
+
+        const images = await response.json();
+        imagesContainer.innerHTML = images
+          .map(
+            (image) => `
+            <div class="image-card">
+              <img src="${image.url}" alt="${image.title}" class="image" />
+              <h3>${image.title}</h3>
+              <p>${image.description}</p>
+            </div>
+          `
+          )
+          .join("");
+      } catch (error) {
+        console.error("Error loading images:", error.message);
+        imagesContainer.innerHTML = "<p>Error loading images. Please try again later.</p>";
+      }
+    });
+  </script>
+</body>
 </html>

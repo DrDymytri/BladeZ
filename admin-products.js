@@ -1,4 +1,4 @@
-const BACKEND_URL = process.env.BACKEND_URL; // Use environment variable only
+const BACKEND_URL = "https://bladez-backend.onrender.com"; // Public-facing Render URL
 
 let currentPage = 1; // Initialize current page for pagination
 const productsPerPage = 60;
@@ -237,7 +237,8 @@ function renderProducts(products) {
     const container = document.getElementById("admin-products-container");
     container.innerHTML = productsToDisplay.map(product => `
         <div class="product-card">
-            <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" class="product-image" />
+            <img src="${product.image_url || 'https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png'}" alt="${product.name}" class="product-image" />
+            <!-- Use public GitHub Pages URL for default image -->
             <h3>${product.name}</h3>
             <p>${product.description}</p>
             <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>

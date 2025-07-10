@@ -24,7 +24,7 @@ const paypal = require("@paypal/checkout-server-sdk");
 
 const SECRET_KEY = process.env.JWT_SECRET;
 const PORT = process.env.PORT || 5000;
-const BACKEND_URL = process.env.RENDER_EXTERNAL_URL; // Use Render's external URL
+const BACKEND_URL = process.env.RENDER_EXTERNAL_URL || "https://bladez-backend.onrender.com"; // Ensure public-facing URL
 
 if (!BACKEND_URL) {
   console.error("RENDER_EXTERNAL_URL is not defined. Check your Render configuration.");
@@ -44,10 +44,9 @@ const paypalClient = new paypal.core.PayPalHttpClient(
 const app = express();
 
 // Middleware
-const allowedOrigins = ['https://pointfxbladez.com']; // Add your frontend domain
-
 app.use(cors({
   origin: (origin, callback) => {
+    const allowedOrigins = ['https://pointfxbladez.com', 'https://wayne.github.io']; // Add GitHub Pages domain
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -91,7 +90,7 @@ function authenticateToken(req, res, next) {
     });
 }
 
-// Database configuration
+// Database configuration for Azure SQL
 const dbConfig = {
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
@@ -100,27 +99,21 @@ const dbConfig = {
     port: Number(process.env.DB_PORT) || 1433,
     options: {
         encrypt: true, // Azure SQL requires encryption
-        trustServerCertificate: false, // Set to false for secure connections
+        trustServerCertificate: false, // Ensure secure connections
     },
 };
 
-// Global connection pool
+// Ensure connection to Azure SQL Database
 let pool;
-
 async function getConnection() {
     try {
-        console.log("Attempting to connect to the database with config:", dbConfig);
         if (!pool || !pool.connected) {
             pool = await sql.connect(dbConfig);
-            console.log("✅ Database connection established.");
+            console.log("✅ Connected to Azure SQL Database.");
         }
         return pool;
     } catch (error) {
-        console.error("❌ Error establishing database connection:", error.message);
-        console.error("Stack trace:", error.stack);
-        if (error.message.includes("Client with IP address")) {
-            console.error("⚠️ Ensure the IP address is allowed in Azure SQL Firewall settings.");
-        }
+        console.error("❌ Database connection error:", error.message);
         throw error;
     }
 }
@@ -1484,6 +1477,48 @@ app.delete("/api/events/:id", async (req, res) => {
     } catch (error) {
         console.error("Error deleting event:", error.message);
         res.status(500).json({ error: "Failed to delete event." });
+    }
+});
+
+// Endpoint to fetch images
+app.get("/api/images", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .query(`
+                SELECT id, url, title, description 
+                FROM Media 
+                WHERE type = 'image'
+                ORDER BY title ASC
+            `);
+        if (!result.recordset.length) {
+            return res.status(404).json({ error: "No images found." });
+        }
+        res.json(result.recordset);
+    } catch (err) {
+        console.error("Error fetching images:", err.message);
+        res.status(500).json({ error: "Failed to fetch images." });
+    }
+});
+
+// Endpoint to fetch videos
+app.get("/api/videos", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .query(`
+                SELECT id, url, title, description 
+                FROM Media 
+                WHERE type = 'video'
+                ORDER BY title ASC
+            `);
+        if (!result.recordset.length) {
+            return res.status(404).json({ error: "No videos found." });
+        }
+        res.json(result.recordset);
+    } catch (err) {
+        console.error("Error fetching videos:", err.message);
+        res.status(500).json({ error: "Failed to fetch videos." });
     }
 });
 

@@ -41,22 +41,48 @@
       <img src="https://bladezstorage.blob.core.windows.net/bladez-op-images/HeaderRedGoldDragon.png?<SAS_TOKEN>" alt="Header Dragon Mirrored" class="header-image-mirrored" />
     </div>
   </header>
+  <main>
+    <section id="video-section">
+      <h2>Our Collection of Videos</h2>
+      <div id="videos-container" class="videos-grid">
+        <!-- Videos will be dynamically loaded here -->
+      </div>
+    </section>
+  </main>
+  <footer>
+    <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
+    <p>Created By: <a href="https://www.mdoasolutions.com" target="_blank">MDOA Solutions</a></p>
+  </footer>
+  <script>
+    const BACKEND_URL = "https://your-render-backend-url.com"; // Replace with your Render backend URL
 
+    document.addEventListener("DOMContentLoaded", async () => {
+      const videosContainer = document.getElementById("videos-container");
 
-    <main>
-      <section id="video-section">
-        <h2>Our Collection of Videos</h2>
-        <div id="videos-container" class="videos-grid">
-          <!-- Videos will be dynamically loaded here -->
-        </div>
-      </section>
-    </main>
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/videos`);
+        if (!response.ok) throw new Error("Failed to fetch videos");
 
-    <footer>
-      <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
-      <p>Created By: <a href="https://www.mdoasolutions.com" target="_blank">MDOA Solutions</a></p>
-    </footer>
-
-    <script src="./videos.js"></script>
-  </body>
+        const videos = await response.json();
+        videosContainer.innerHTML = videos
+          .map(
+            (video) => `
+            <div class="video-card">
+              <video controls>
+                <source src="${video.url}" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              <h3>${video.title}</h3>
+              <p>${video.description}</p>
+            </div>
+          `
+          )
+          .join("");
+      } catch (error) {
+        console.error("Error loading videos:", error.message);
+        videosContainer.innerHTML = "<p>Error loading videos. Please try again later.</p>";
+      }
+    });
+  </script>
+</body>
 </html>
