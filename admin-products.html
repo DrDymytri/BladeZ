@@ -113,24 +113,5 @@
       <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
     </footer>
     <script src="admin-products.js"></script>
-    <script>
-      const BACKEND_URL = "https://bladez-backend.onrender.com"; // Public-facing Render URL
-
-      async function updateStock(productId, stockChange) {
-        try {
-          const response = await fetch(`${BACKEND_URL}/api/products/${productId}/stock`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ stockChange }),
-          });
-          if (!response.ok) throw new Error("Failed to update stock");
-          alert("Stock updated successfully!");
-          loadProducts();
-        } catch (error) {
-          console.error("Error updating stock:", error);
-        }
-      }
-    </script>
-    <img src="https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png" alt="Default Image" style="display: none;" /> <!-- Preload default image -->
   </body>
 </html>

@@ -103,7 +103,7 @@ header nav ul li a:hover {
 }
 
 .responsive-nav img.AdminFunctions {
-  max-width: 500px; /* Limit image width */
+  max-width: 300px; /* Limit image width */
   width: 100%; /* Ensure responsiveness */
   height: auto; /* Maintain aspect ratio */
   border-radius: 8px; /* Add rounded corners */

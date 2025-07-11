@@ -372,15 +372,18 @@ function handleSortChange(field) {
 
 async function loadLowStockProducts() {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/low-stock-products`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-
+        const response = await fetch(`${BACKEND_URL}/api/low-stock-products`); // Ensure correct endpoint
+        if (response.status === 404) {
+            console.warn("Low-stock products endpoint not found. Please check the backend API.");
+            alert("Low-stock products feature is currently unavailable.");
+            return;
+        }
         if (!response.ok) throw new Error("Failed to fetch low-stock products");
 
         const lowStockProducts = await response.json();
         renderLowStockTable(lowStockProducts);
     } catch (error) {
+        console.error("Error loading low-stock products:", error); // Log error for debugging
         alert("Failed to load low-stock products.");
     }
 }
