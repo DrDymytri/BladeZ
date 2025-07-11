@@ -90,6 +90,38 @@ header nav ul li a:hover {
   color: #ffcc00;
 }
 
+.responsive-nav {
+        display: flex;
+        flex-wrap: wrap; /* Allow items to wrap */
+        justify-content: center; /* Center items */
+        gap: 20px; /* Add spacing between items */
+}
+
+.responsive-nav li {
+  list-style: none;
+  text-align: center; /* Center-align text below images */
+}
+
+.responsive-nav img.AdminFunctions {
+  max-width: 500px; /* Limit image width */
+  width: 100%; /* Ensure responsiveness */
+  height: auto; /* Maintain aspect ratio */
+  border-radius: 8px; /* Add rounded corners */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Add subtle shadow */
+  transition: transform 0.3s ease; /* Smooth hover effect */
+}
+
+.responsive-nav img.AdminFunctions:hover {
+  transform: scale(1.05); /* Slight zoom on hover */
+}
+
+.ImageName {
+  font-size: 18px; /* Adjust font size */
+  margin-top: 10px; /* Add spacing above text */
+  color: #333; /* Set text color */
+  font-weight: bold; /* Make text bold */
+}
+
 .header-image {
   width: 100%; /* Ensure the header image covers the full width */
   height: auto; /* Maintain aspect ratio */
