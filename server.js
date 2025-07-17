@@ -7,7 +7,6 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt"); // Replace bcryptjs with bcrypt
 const path = require("path");
-const multer = require("multer");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const nodemailer = require("nodemailer");
@@ -21,6 +20,8 @@ if (!stripeSecretKey) {
 const stripe = require("stripe")(stripeSecretKey);
 const jwt = require("jsonwebtoken");
 const paypal = require("@paypal/checkout-server-sdk");
+const { BlobServiceClient } = require("@azure/storage-blob");
+const formidable = require("formidable"); // For parsing form-data
 
 const SECRET_KEY = process.env.JWT_SECRET;
 const PORT = process.env.PORT || 5000;
@@ -119,18 +120,6 @@ async function getConnection() {
 ["uploads", "uploads/images", "uploads/videos"].forEach((folder) => {
     if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
 });
-
-// Multer for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadFolder = file.mimetype.startsWith("image/") ? "uploads/images" : "uploads/videos";
-        cb(null, uploadFolder);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    },
-});
-const upload = multer({ storage });
 
 // Routes
 app.get("/", (req, res) => {
@@ -1134,6 +1123,40 @@ app.post("/api/cart", async (req, res) => {
     console.error("Error adding product to cart:", error.message);
     res.status(500).json({ error: "Failed to add product to cart." });
   }
+});
+
+// Azure Blob Storage configuration
+const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+
+if (!AZURE_STORAGE_CONNECTION_STRING) {
+  throw new Error("Azure Storage connection string is not defined in the environment variables.");
+}
+
+const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+const containerName = "uploads"; // Replace with your container name
+
+app.post("/upload", (req, res) => {
+  const form = new formidable.IncomingForm();
+
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      console.error("Error parsing form data:", err);
+      return res.status(400).send("Failed to parse form data.");
+    }
+
+    const file = files.file; // Assuming the file input field is named "file"
+    const blobName = `${Date.now()}-${file.originalFilename}`;
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+    try {
+      await blockBlobClient.uploadFile(file.filepath); // Upload file directly to Azure Blob Storage
+      res.status(200).send({ message: "File uploaded successfully.", blobUrl: blockBlobClient.url });
+    } catch (uploadError) {
+      console.error("Error uploading file to Azure Blob Storage:", uploadError);
+      res.status(500).send("Failed to upload file.");
+    }
+  });
 });
 
 app.listen(PORT, () => {
