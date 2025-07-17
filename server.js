@@ -128,6 +128,7 @@ app.get("/", (req, res) => {
 
 app.get("/api/categories", async (req, res) => {
     try {
+        console.log("Fetching categories from the database...");
         const pool = await getConnection();
         const result = await pool.request().query(`
             SELECT CategoryID AS id, Name AS name 
@@ -135,12 +136,13 @@ app.get("/api/categories", async (req, res) => {
             ORDER BY Name ASC
         `);
         if (!result.recordset.length) {
+            console.warn("No categories found in the database.");
             return res.status(404).json({ error: "No categories found." });
         }
+        console.log("Categories fetched successfully:", result.recordset);
         res.json(result.recordset);
     } catch (error) {
         console.error("Error fetching categories:", error.message);
-        console.error("Stack trace:", error.stack); // Log stack trace for debugging
         res.status(500).json({ error: "Failed to fetch categories." });
     }
 });
@@ -476,34 +478,9 @@ app.get("/api/products", async (req, res) => {
     const { categoryId, subCategoryId, descriptorId, page = 1, limit = 20 } = req.query;
 
     try {
+        console.log("Fetching products with filters:", { categoryId, subCategoryId, descriptorId, page, limit });
         const pool = await getConnection();
-        
-        // First, get the total count of filtered products for pagination
-        let countQuery = `
-            SELECT COUNT(*) as total
-            FROM Products
-            WHERE 1=1
-        `;
-        const countRequest = pool.request();
 
-        if (categoryId) {
-            countQuery += " AND category_id = @categoryId";
-            countRequest.input("categoryId", sql.Int, parseInt(categoryId, 10));
-        }
-        if (subCategoryId) {
-            countQuery += " AND sub_category_id = @subCategoryId";
-            countRequest.input("subCategoryId", sql.Int, parseInt(subCategoryId, 10));
-        }
-        if (descriptorId) {
-            countQuery += " AND tag_id = @descriptorId";
-            countRequest.input("descriptorId", sql.Int, parseInt(descriptorId, 10));
-        }
-
-        const countResult = await countRequest.query(countQuery);
-        const totalProducts = countResult.recordset[0].total;
-        const totalPages = Math.ceil(totalProducts / parseInt(limit, 10));
-
-        // Now get the actual products for the current page
         let query = `
             SELECT id, name, description, price, stock_quantity, image_url, is_showcase
             FROM Products
@@ -512,16 +489,16 @@ app.get("/api/products", async (req, res) => {
         const request = pool.request();
 
         if (categoryId) {
-            query += " AND category_id = @categoryId";
-            request.input("categoryId", sql.Int, parseInt(categoryId, 10));
+            query += " AND CategoryID = @categoryId";
+            request.input("categoryId", sql.Int, categoryId);
         }
         if (subCategoryId) {
-            query += " AND sub_category_id = @subCategoryId";
-            request.input("subCategoryId", sql.Int, parseInt(subCategoryId, 10));
+            query += " AND SubCategoryID = @subCategoryId";
+            request.input("subCategoryId", sql.Int, subCategoryId);
         }
         if (descriptorId) {
-            query += " AND tag_id = @descriptorId";
-            request.input("descriptorId", sql.Int, parseInt(descriptorId, 10));
+            query += " AND DescriptorID = @descriptorId";
+            request.input("descriptorId", sql.Int, descriptorId);
         }
 
         query += " ORDER BY name ASC OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY";
@@ -530,16 +507,23 @@ app.get("/api/products", async (req, res) => {
         request.input("limit", sql.Int, parseInt(limit, 10));
 
         const result = await request.query(query);
-        
-        res.json({ 
-            products: result.recordset, 
-            totalPages: totalPages,
-            currentPage: parseInt(page, 10),
-            totalProducts: totalProducts
+        console.log("Products fetched successfully:", result.recordset);
+
+        const totalProductsQuery = `
+            SELECT COUNT(*) AS total
+            FROM Products
+            WHERE 1=1
+        `;
+        const totalProductsResult = await pool.request().query(totalProductsQuery);
+        const totalProducts = totalProductsResult.recordset[0].total;
+
+        res.json({
+            products: result.recordset,
+            totalPages: Math.ceil(totalProducts / limit),
+            totalProducts,
         });
     } catch (error) {
         console.error("Error fetching products:", error.message);
-        console.error("Stack trace:", error.stack); // Log stack trace for debugging
         res.status(500).json({ error: "Failed to fetch products." });
     }
 });
@@ -576,6 +560,7 @@ app.get("/api/showcase-products", async (req, res) => {
 
 app.get("/api/categories", async (req, res) => {
     try {
+        console.log("Fetching categories from the database...");
         const pool = await getConnection();
         const result = await pool.request().query(`
             SELECT CategoryID AS id, Name AS name 
@@ -583,12 +568,13 @@ app.get("/api/categories", async (req, res) => {
             ORDER BY Name ASC
         `);
         if (!result.recordset.length) {
+            console.warn("No categories found in the database.");
             return res.status(404).json({ error: "No categories found." });
         }
+        console.log("Categories fetched successfully:", result.recordset);
         res.json(result.recordset);
     } catch (error) {
         console.error("Error fetching categories:", error.message);
-        console.error("Stack trace:", error.stack); // Log stack trace for debugging
         res.status(500).json({ error: "Failed to fetch categories." });
     }
 });
