@@ -1522,6 +1522,27 @@ app.get("/api/videos", async (req, res) => {
     }
 });
 
+app.get("/api/low-stock-products", async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const result = await pool.request().query(`
+            SELECT id, name, stock_quantity, restock_threshold
+            FROM Products
+            WHERE stock_quantity <= restock_threshold
+            ORDER BY stock_quantity ASC
+        `);
+
+        if (!result.recordset.length) {
+            return res.status(404).json({ error: "No low-stock products found." });
+        }
+
+        res.json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching low-stock products:", error.message);
+        res.status(500).json({ error: "Failed to fetch low-stock products." });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

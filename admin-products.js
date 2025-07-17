@@ -10,6 +10,7 @@ let currentSortColumn = null;
 let currentSortOrder = "asc";
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Ensure all event listeners are correctly set up
     const productForm = document.getElementById("productForm");
     const updateProductBtn = document.getElementById("updateProductBtn");
     const categorySelect = document.getElementById("productCategory");
@@ -20,73 +21,49 @@ document.addEventListener("DOMContentLoaded", () => {
     const lowStockBtn = document.getElementById("lowStockBtn");
     const lowStockSection = document.querySelector(".low-stock-section");
 
-    if (!productForm) {
-        return; // Exit early if the form is not found
-    }
+    if (productForm) {
+        productForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const productId = document.getElementById("productId")?.value || null;
+            const newProduct = {
+                name: document.getElementById("productName").value.trim(),
+                description: document.getElementById("productDescription").value.trim(),
+                price: parseFloat(document.getElementById("productPrice").value),
+                stock_quantity: parseInt(document.getElementById("productStock").value),
+                category_id: parseInt(document.getElementById("productCategory").value),
+                sub_category_id: parseInt(document.getElementById("productSubCategory").value) || null,
+                tag_id: parseInt(document.getElementById("productTag").value) || null,
+                image_url: document.getElementById("productImageUrl").value.trim(),
+                is_showcase: document.getElementById("productShowcase").checked,
+                manufacturer_product_number: document.getElementById("manufacturerProductNumber").value.trim(),
+                restock_threshold: parseInt(document.getElementById("restockThreshold").value),
+            };
 
-    if (categorySelect) {
-        loadCategories();
-        categorySelect.addEventListener("change", async () => {
-            const categoryId = categorySelect.value;
-            resetDropdown(subcategorySelect, "Select a Subcategory");
-            resetDropdown(tagSelect, "Select a Tag");
-            if (categoryId) {
-                await loadSubcategories(categoryId);
+            try {
+                const url = productId
+                    ? `${BACKEND_URL}/api/products/${productId}`
+                    : `${BACKEND_URL}/api/products`;
+                const method = productId ? "PUT" : "POST";
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newProduct),
+                });
+
+                if (response.ok) {
+                    alert(productId ? "Product updated successfully!" : "Product added successfully!");
+                    resetForm();
+                    loadProducts();
+                } else {
+                    const errorData = await response.json();
+                    alert(`Failed to save product: ${errorData.error || "Unknown error occurred."}`);
+                }
+            } catch (error) {
+                alert("An error occurred while saving the product. Please try again later.");
             }
         });
     }
-
-    if (subcategorySelect) {
-        subcategorySelect.addEventListener("change", async () => {
-            const subCategoryId = subcategorySelect.value;
-            resetDropdown(tagSelect, "Select a Tag");
-            if (subCategoryId) {
-                await loadTags(subCategoryId);
-            }
-        });
-    }
-
-    productForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const productId = document.getElementById("productId")?.value || null;
-        const newProduct = {
-            name: document.getElementById("productName").value.trim(),
-            description: document.getElementById("productDescription").value.trim(),
-            price: parseFloat(document.getElementById("productPrice").value),
-            stock_quantity: parseInt(document.getElementById("productStock").value),
-            category_id: parseInt(document.getElementById("productCategory").value),
-            sub_category_id: parseInt(document.getElementById("productSubCategory").value) || null,
-            tag_id: parseInt(document.getElementById("productTag").value) || null,
-            image_url: document.getElementById("productImageUrl").value.trim(),
-            is_showcase: document.getElementById("productShowcase").checked,
-            manufacturer_product_number: document.getElementById("manufacturerProductNumber").value.trim(),
-            restock_threshold: parseInt(document.getElementById("restockThreshold").value),
-        };
-
-        try {
-            const url = productId
-                ? `${BACKEND_URL}/api/products/${productId}`
-                : `${BACKEND_URL}/api/products`;
-            const method = productId ? "PUT" : "POST";
-
-            const response = await fetch(url, {
-                method,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newProduct),
-            });
-
-            if (response.ok) {
-                alert(productId ? "Product updated successfully!" : "Product added successfully!");
-                resetForm();
-                loadProducts();
-            } else {
-                const errorData = await response.json();
-                alert(`Failed to save product: ${errorData.error || "Unknown error occurred."}`);
-            }
-        } catch (error) {
-            alert("An error occurred while saving the product. Please try again later.");
-        }
-    });
 
     if (updateProductBtn) {
         updateProductBtn.addEventListener("click", async () => {
@@ -121,7 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     alert("Product updated successfully!");
                     resetForm();
                     loadProducts();
-                    location.reload(); // Refresh the screen
                 } else {
                     const errorText = await response.text();
                     alert("Failed to update product. Please check your input.");
@@ -159,8 +135,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     loadProducts();
-
-    // Load low-stock products on page load
     loadLowStockProducts();
 });
 
@@ -231,14 +205,13 @@ function renderProducts(products) {
     });
 
     const startIndex = (currentPage - 1) * productsPerPage;
-    const endIndex = startIndex + productsPerPage;
+    const endIndex = Math.min(startIndex + productsPerPage, filteredProducts.length); // Ensure endIndex does not exceed the total products
     const productsToDisplay = filteredProducts.slice(startIndex, endIndex);
 
     const container = document.getElementById("admin-products-container");
     container.innerHTML = productsToDisplay.map(product => `
         <div class="product-card">
             <img src="${product.image_url || 'https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png'}" alt="${product.name}" class="product-image" />
-            <!-- Use public GitHub Pages URL for default image -->
             <h3>${product.name}</h3>
             <p>${product.description}</p>
             <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
@@ -374,7 +347,7 @@ async function loadLowStockProducts() {
     try {
         const response = await fetch(`${BACKEND_URL}/api/low-stock-products`); // Ensure correct endpoint
         if (response.status === 404) {
-            console.warn("Low-stock products endpoint not found. Please check the backend API.");
+            console.error("Low-stock products endpoint not found. Please check the backend API.");
             alert("Low-stock products feature is currently unavailable.");
             return;
         }
@@ -384,7 +357,7 @@ async function loadLowStockProducts() {
         renderLowStockTable(lowStockProducts);
     } catch (error) {
         console.error("Error loading low-stock products:", error); // Log error for debugging
-        alert("Failed to load low-stock products.");
+        alert("Failed to load low-stock products. Please try again later.");
     }
 }
 
@@ -496,3 +469,26 @@ function filterByProductId(productId) {
     const filteredProducts = allProducts.filter(product => product.id === productId);
     renderProducts(filteredProducts); // Render only the filtered product
 }
+
+async function updateStock(productId, stockChange) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/products/${productId}/stock`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stockChange }),
+        });
+        if (!response.ok) throw new Error("Failed to update stock");
+
+        alert("Stock updated successfully!");
+        loadProducts(); // Reload the product list
+        loadLowStockProducts(); // Refresh the low-stock table
+    } catch (error) {
+        console.error("Error updating stock:", error);
+    }
+}
+
+function filterByProductId(productId) {
+    const filteredProducts = allProducts.filter(product => product.id === productId);
+    renderProducts(filteredProducts); // Render only the filtered product
+}
+
