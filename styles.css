@@ -740,18 +740,18 @@ nav ul li a:hover {
 /* Product card styling */
 .product-card {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  max-width: 250px;
+  flex-direction: column; /* Stack elements vertically */
+  justify-content: space-between; /* Ensure space between content and buttons */
   background-color: #fff;
-  border: 3px solid black;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  box-shadow: 0 0 20px 5px rgba(0, 0, 0, 1);
-  padding: 10px;
+  padding: 15px;
   text-align: center;
-  transition: transform 0.2s ease-in-out;
+  box-shadow: 0 0 40px 5px rgb(30, 0, 0);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: auto; /* Allow auto height */
+  max-width: 400px; /* Limit maximum width */
+  margin: 0 auto; /* Center the card when it's the only one */
 }
 
 .product-card img {

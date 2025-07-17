@@ -31,6 +31,12 @@
         <form id="productForm">
           <div class="search-pagination-container">
             <input type="text" id="productSearch" placeholder="Search products..." />
+            <select id="productsPerPageSelect">
+              <option value="10">10 per page</option>
+              <option value="20" selected>20 per page</option>
+              <option value="50">50 per page</option>
+              <option value="100">100 per page</option>
+            </select>
           </div>
           <input type="hidden" id="productId" name="productId" />
           <div class="form-row">
@@ -105,11 +111,6 @@
       </div>
     </main>
     <footer>
-      <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
-    </footer>
-    <script src="admin-products.js"></script>
-  </body>
-</html>
       <p>&copy; 2025 Point FX BladeZ. All Rights Reserved.</p>
     </footer>
     <script src="admin-products.js"></script>

@@ -577,24 +577,16 @@ textarea {
 }
 
 #low-stock-table-body .ViewProduct {
-  width: auto;
-  font-family: "MedievalSharp", serif;
-  text-decoration: none;
-  padding: 5px;
-  margin-bottom: 5px;
-  margin-top: 5px;
-  border-top: 4px solid rgb(189, 209, 230);
-  border-bottom: 4px solid rgb(121, 141, 160);
-  border-right: 4px solid rgb(149, 172, 190);
-  border-left: 4px solid rgb(156, 175, 194);
-  box-shadow: inset 0 0 6px 1px rgba(145, 20, 20, 0.466);
-  outline: 1px solid black;
-  background: linear-gradient(to right, #ffa50088, #cc8400, #b37400, #cc8400, #ffa50088); /* Orange gradient */
-  box-sizing: border-box;
-  font-family: serif;
-  font-size: 20px;
-  font-weight: bold;
-  color: aliceblue;
-  text-shadow: 0.125px 0.25px black, 0.25px 0.5px black, 0.375px 0.75px black, 0.5px 1px black, 0.625px 1.25px black, 0.75px 1.5px black;
-  box-shadow: 0 0 15px 1px aliceblue;
+  color: #007bff;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#low-stock-table-body .ViewProduct:hover {
+  color: #0056b3;
+  text-decoration: underline;
 }

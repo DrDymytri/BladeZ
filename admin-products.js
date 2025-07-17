@@ -1,7 +1,7 @@
 const BACKEND_URL = "https://bladez-backend.onrender.com"; // Public-facing Render URL
 
 let currentPage = 1; // Initialize current page for pagination
-const productsPerPage = 60;
+let productsPerPage = 20; // Default products per page
 let allProducts = [];
 let currentSort = { field: "name", order: "asc" }; // Default sort by name in ascending order
 let showOnlyShowcased = false; // State to track if only showcased products should be displayed
@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggleShowcaseBtn = document.getElementById("toggleShowcaseBtn");
     const lowStockBtn = document.getElementById("lowStockBtn");
     const lowStockSection = document.querySelector(".low-stock-section");
+    const productsPerPageSelect = document.getElementById("productsPerPageSelect");
 
     if (productForm) {
         productForm.addEventListener("submit", async (e) => {
@@ -134,6 +135,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    if (productsPerPageSelect) {
+        productsPerPageSelect.addEventListener("change", () => {
+            productsPerPage = parseInt(productsPerPageSelect.value, 10);
+            currentPage = 1; // Reset to the first page
+            renderProducts(allProducts); // Re-render products with the new setting
+        });
+    }
+
     loadProducts();
     loadLowStockProducts();
 });
@@ -205,7 +214,7 @@ function renderProducts(products) {
     });
 
     const startIndex = (currentPage - 1) * productsPerPage;
-    const endIndex = Math.min(startIndex + productsPerPage, filteredProducts.length); // Ensure endIndex does not exceed the total products
+    const endIndex = Math.min(startIndex + productsPerPage, filteredProducts.length); // Ensure endIndex does not exceed total products
     const productsToDisplay = filteredProducts.slice(startIndex, endIndex);
 
     const container = document.getElementById("admin-products-container");
@@ -231,15 +240,17 @@ function renderPagination(totalProducts) {
     const paginationControls = document.getElementById("paginationControls");
     paginationControls.innerHTML = ""; // Clear existing buttons
 
-    const totalPages = Math.ceil(totalProducts / productsPerPage);
+    const totalPages = Math.ceil(totalProducts / productsPerPage); // Calculate total pages
+    if (totalPages <= 1) return; // Do not render pagination if there's only one page
+
     for (let i = 1; i <= totalPages; i++) {
         const button = document.createElement("button");
         button.textContent = i;
         button.classList.add(i === currentPage ? "active" : "");
-        button.disabled = i === currentPage;
+        button.disabled = i === currentPage; // Disable the button for the current page
         button.addEventListener("click", () => {
             currentPage = i;
-            renderProducts(allProducts);
+            renderProducts(allProducts); // Re-render products for the selected page
         });
         paginationControls.appendChild(button);
     }
@@ -253,25 +264,30 @@ function handleUpdateClick(event, productId) {
 async function editProduct(productId) {
     try {
         const response = await fetch(`${BACKEND_URL}/api/products/${productId}`);
-        if (!response.ok) throw new Error("Failed to fetch product details");
+        if (!response.ok) {
+            if (response.status === 404) {
+                alert("Product not found. It may have been deleted.");
+                return;
+            }
+            throw new Error("Failed to fetch product details");
+        }
 
         const product = await response.json();
-        console.log("Editing product:", product); // Debug log to verify the product data
 
         // Populate the form fields with the product details
         document.getElementById("productId").value = product.id;
-        document.getElementById("productName").value = product.name;
-        document.getElementById("productDescription").value = product.description;
-        document.getElementById("productPrice").value = product.price;
-        document.getElementById("productStock").value = product.stock_quantity;
+        document.getElementById("productName").value = product.name || "";
+        document.getElementById("productDescription").value = product.description || "";
+        document.getElementById("productPrice").value = product.price || 0;
+        document.getElementById("productStock").value = product.stock_quantity || 0;
         document.getElementById("productImageUrl").value = product.image_url || "";
-        document.getElementById("productShowcase").checked = !!product.is_showcase; // Default to false if missing
+        document.getElementById("productShowcase").checked = !!product.is_showcase;
         document.getElementById("manufacturerProductNumber").value = product.manufacturer_product_number || "";
         document.getElementById("restockThreshold").value = product.restock_threshold || 0;
 
         // Load categories and set the selected category
         await loadCategories();
-        document.getElementById("productCategory").value = product.category_id;
+        document.getElementById("productCategory").value = product.category_id || "";
 
         // Load subcategories and set the selected subcategory
         if (product.category_id) {
@@ -292,6 +308,7 @@ async function editProduct(productId) {
         // Scroll to the top of the page
         window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
+        console.error("Error fetching product details:", error.message);
         alert("Failed to load product details. Please try again.");
     }
 }
@@ -304,16 +321,23 @@ async function deleteProduct(productId) {
     try {
         const response = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
             method: "DELETE",
+            headers: { "Content-Type": "application/json" },
         });
 
-        if (response.ok) {
-            alert("Product deleted successfully!");
-            loadProducts(); // Reload the product list
-        } else {
-            const errorText = await response.text();
-            alert("Failed to delete product. Please try again.");
+        if (!response.ok) {
+            if (response.status === 404) {
+                alert("Product not found. It may have already been deleted.");
+                return;
+            }
+            throw new Error("Failed to delete product");
         }
+
+        alert("Product deleted successfully!");
+        allProducts = allProducts.filter(product => product.id !== productId); // Remove the deleted product from the local array
+        renderProducts(allProducts); // Re-render the product list
+        loadLowStockProducts(); // Refresh the low-stock table
     } catch (error) {
+        console.error("Error deleting product:", error.message);
         alert("An error occurred while deleting the product. Please try again later.");
     }
 }
@@ -345,18 +369,14 @@ function handleSortChange(field) {
 
 async function loadLowStockProducts() {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/low-stock-products`); // Ensure correct endpoint
-        if (response.status === 404) {
-            console.error("Low-stock products endpoint not found. Please check the backend API.");
-            alert("Low-stock products feature is currently unavailable.");
-            return;
-        }
+        const response = await fetch(`${BACKEND_URL}/api/low-stock-products`);
         if (!response.ok) throw new Error("Failed to fetch low-stock products");
 
         const lowStockProducts = await response.json();
-        renderLowStockTable(lowStockProducts);
+        const filteredProducts = lowStockProducts.filter(product => product.stock_quantity < product.restock_threshold); // Only show products below threshold
+        renderLowStockTable(filteredProducts);
     } catch (error) {
-        console.error("Error loading low-stock products:", error); // Log error for debugging
+        console.error("Error loading low-stock products:", error);
         alert("Failed to load low-stock products. Please try again later.");
     }
 }
@@ -365,9 +385,7 @@ function renderLowStockTable(products) {
     const lowStockTableBody = document.getElementById("low-stock-table-body");
     const rowCountElement = document.getElementById("row-count");
 
-    if (!lowStockTableBody) {
-        return;
-    }
+    if (!lowStockTableBody) return;
 
     if (products.length === 0) {
         lowStockTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No low-stock products</td></tr>`;
@@ -375,24 +393,19 @@ function renderLowStockTable(products) {
         return;
     }
 
-    // Update row count
     rowCountElement.textContent = `Total Rows: ${products.length}`;
-
-    // Populate table rows
     lowStockTableBody.innerHTML = products
-        .map(
-            (product) => `
+        .map(product => `
             <tr>
                 <td style="border: 1px solid #ddd; padding: 8px;">${product.id}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">${product.name}</td>
                 <td style="border: 1px solid #ddd; padding: 8px; color: ${product.stock_quantity < 0 ? 'red' : 'black'};">${product.stock_quantity}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">${product.restock_threshold}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">
-                    <button class="ViewProduct" onclick="filterByProductId(${product.id})">View Product</button>
+                    <a href="#" class="ViewProduct" onclick="filterByProductId(${product.id})">View Product</a>
                 </td>
             </tr>
-        `
-        )
+        `)
         .join("");
 }
 
