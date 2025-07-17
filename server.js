@@ -1128,6 +1128,8 @@ app.post("/api/cart", async (req, res) => {
 // Azure Blob Storage configuration
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
+console.log("Azure Storage Connection String:", AZURE_STORAGE_CONNECTION_STRING); // Debug log
+
 if (!AZURE_STORAGE_CONNECTION_STRING) {
   throw new Error("Azure Storage connection string is not defined in the environment variables.");
 }
