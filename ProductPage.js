@@ -307,14 +307,33 @@ function addToCart(productId, productName, productPrice, productImage) {
       id: productId,
       name: productName,
       price: productPrice,
-      image_url: productImage || 'https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png', // Updated path
+      image_url: productImage || 'https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png',
       quantity: 1,
     });
   }
 
+  // Save to localStorage
   localStorage.setItem("cart", JSON.stringify(cart));
-  alert(`${productName} has been added to your cart.`); // Notify the user
   updateCartCount();
+
+  // Attempt to sync with backend
+  fetch(`${BACKEND_URL}/api/cart`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ productId, quantity: 1 }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((error) => {
+          throw new Error(error.message || "Failed to sync with backend");
+        });
+      }
+      console.log("Cart synced with backend successfully.");
+    })
+    .catch((error) => {
+      console.warn("Error syncing cart with backend:", error.message);
+      alert("Failed to sync with the server. Product added to local cart.");
+    });
 }
 
 // Example usage in dynamically rendered product items
@@ -551,9 +570,7 @@ function renderProducts(products) {
         <p><strong class="price-label">Price:</strong> <span class="price">$${product.price.toFixed(2)}</span></p>
         <button class="add-to-cart-btn">Add to Cart</button>
       </div>
-    `
-    )
-    .join("");
+    `)
 
   productContainer.querySelectorAll(".add-to-cart-btn").forEach((button) => {
     button.addEventListener("click", (event) => {

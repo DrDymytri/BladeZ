@@ -556,461 +556,33 @@ app.get("/api/products", async (req, res) => {
 });
 
 app.get("/api/showcase-products", async (req, res) => {
-    try {
-        const pool = await getConnection();
-        const result = await pool.request()
-            .query(`
-                SELECT id, name, description, price, image_url, stock_quantity 
-                FROM Products 
-                WHERE is_showcase = 1
-            `);
-        if (!result.recordset.length) {
-            return res.status(404).json({ error: "No showcase products found." });
-        }
-        res.json(result.recordset);
-    } catch (error) {
-        console.error("Error fetching showcase products:", error.message);
-        console.error("Stack trace:", error.stack); // Log stack trace for debugging
-        res.status(500).json({ error: "Failed to fetch showcase products." });
-    }
-});
+  const { page = 1, limit = 20 } = req.query;
+  const offset = (page - 1) * limit;
 
-app.get("/api/categories", async (req, res) => {
-    try {
-        const pool = await getConnection();
-        const result = await pool.request().query(`
-            SELECT CategoryID AS id, Name AS name 
-            FROM Categories
-            ORDER BY Name ASC
-        `);
-        if (!result.recordset.length) {
-            return res.status(404).json({ error: "No categories found." });
-        }
-        res.json(result.recordset);
-    } catch (error) {
-        console.error("Error fetching categories:", error.message);
-        console.error("Stack trace:", error.stack); // Log stack trace for debugging
-        res.status(500).json({ error: "Failed to fetch categories." });
-    }
-});
+  try {
+    const pool = await getConnection();
+    const result = await pool.request()
+      .input("limit", sql.Int, parseInt(limit, 10))
+      .input("offset", sql.Int, parseInt(offset, 10))
+      .query(`
+        SELECT ProductID AS id, Name AS name, Description AS description, Price AS price, ImageURL AS image_url
+        FROM Products
+        WHERE IsShowcase = 1
+        ORDER BY Name ASC
+        OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
+      `);
 
-app.post("/api/login", async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const pool = await getConnection();
-        const result = await pool.request()
-            .input("email", sql.NVarChar, email)
-            .query("SELECT id, email, password FROM Users WHERE email = @Email");
+    const totalResult = await pool.request()
+      .query(`SELECT COUNT(*) AS total FROM Products WHERE IsShowcase = 1`);
 
-        const user = result.recordset[0];
-        if (!user) {
-            return res.status(401).json({ error: "Invalid email or password" });
-        }
+    const totalProducts = totalResult.recordset[0].total;
+    const totalPages = Math.ceil(totalProducts / limit);
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            return res.status(401).json({ error: "Invalid email or password" });
-        }
-
-        console.log("Generating token for user ID:", user.id); // Log user ID
-        const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "1h" });
-        res.json({ token });
-    } catch (error) {
-        console.error("Error during user login:", error.message);
-        res.status(500).json({ error: "Failed to login" });
-    }
-});
-
-app.post("/api/signup", async (req, res) => {
-    const { firstName, lastName, email, password, phone, address } = req.body;
-
-    if (!firstName || !lastName || !email || !password || !phone || !address) {
-        return res.status(400).json({ error: "All fields are required." });
-    }
-
-    try {
-        const pool = await getConnection();
-
-        // Check if the email is already registered
-        const existingUser = await pool.request()
-            .input("email", sql.NVarChar, email)
-            .query("SELECT id FROM Users WHERE email = @Email");
-
-        if (existingUser.recordset.length > 0) {
-            return res.status(409).json({ error: "Email is already registered." });
-        }
-
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Insert the new user into the database
-        const result = await pool.request()
-            .input("firstName", sql.NVarChar, firstName)
-            .input("lastName", sql.NVarChar, lastName)
-            .input("email", sql.NVarChar, email)
-            .input("password", sql.NVarChar, hashedPassword)
-            .input("phone", sql.NVarChar, phone)
-            .input("address", sql.NVarChar, address)
-            .query(`
-                INSERT INTO Users (first_name, last_name, email, password, phone, address)
-                OUTPUT INSERTED.id, INSERTED.first_name, INSERTED.last_name, INSERTED.email
-                VALUES (@firstName, @lastName, @Email, @Password, @Phone, @Address)
-            `);
-
-        const newUser = result.recordset[0];
-        res.status(201).json({ message: "User registered successfully.", user: newUser });
-    } catch (error) {
-        console.error("Error during user registration:", error.message);
-        res.status(500).json({ error: "Failed to register user." });
-    }
-});
-
-app.get("/api/subcategories", async (req, res) => {
-    const { categoryId } = req.query;
-    try {
-        const pool = await getConnection();
-        const result = await pool.request()
-            .input("categoryId", sql.Int, categoryId || null)
-            .query(`
-                SELECT SubCategoryID AS id, SubCategoryName AS name, CategoryID AS categoryId 
-                FROM SubCategories 
-                WHERE @categoryId IS NULL OR CategoryID = @categoryId
-                ORDER BY SubCategoryName ASC
-            `);
-        res.json(result.recordset);
-    } catch (error) {
-        console.error("Error fetching subcategories:", error.message);
-        res.status(500).send("Failed to fetch subcategories.");
-    }
-});
-
-app.post("/api/subcategories", async (req, res) => {
-    const { name, categoryId } = req.body;
-    if (!name || !categoryId) {
-        return res.status(400).json({ error: "Subcategory name and category ID are required." });
-    }
-    try {
-        const pool = await getConnection();
-        const result = await pool.request()
-            .input("name", sql.NVarChar, name)
-            .input("categoryId", sql.Int, categoryId)
-            .query(`
-                INSERT INTO SubCategories (SubCategoryName, CategoryID)
-                OUTPUT INSERTED.SubCategoryID AS id, INSERTED.SubCategoryName AS name, INSERTED.CategoryID AS categoryId
-                VALUES (@name, @categoryId)
-            `);
-        res.status(201).json(result.recordset[0]);
-    } catch (error) {
-        console.error("Error creating subcategory:", error.message);
-        res.status(500).json({ error: "Failed to create subcategory." });
-    }
-});
-
-app.put("/api/subcategories/:id", async (req, res) => {
-    const { id } = req.params;
-    const { name, categoryId } = req.body;
-
-    if (!name || !categoryId) {
-        return res.status(400).json({ error: "Subcategory name and category ID are required." });
-    }
-
-    try {
-        const pool = await getConnection();
-        const result = await pool.request()
-            .input("id", sql.Int, id)
-            .input("name", sql.NVarChar, name)
-            .input("categoryId", sql.Int, categoryId)
-            .query(`
-                UPDATE SubCategories
-                SET SubCategoryName = @name, CategoryID = @categoryId
-                WHERE SubCategoryID = @id
-            `);
-
-        if (result.rowsAffected[0] === 0) {
-            return res.status(404).json({ error: "Subcategory not found." });
-        }
-
-        res.json({ message: "Subcategory updated successfully." });
-    } catch (error) {
-        console.error("Error updating subcategory:", error.message);
-        res.status(500).json({ error: "Failed to update subcategory." });
-    }
-});
-
-app.get("/api/descriptors", async (req, res) => {
-    const { subCategoryId } = req.query;
-    try {
-        const pool = await getConnection();
-        const result = await pool.request()
-            .input("subCategoryId", sql.Int, subCategoryId || null)
-            .query(`
-                SELECT DescriptorID AS id, DescriptorName AS name, SubCategoryID AS subCategoryId 
-                FROM Descriptors 
-                WHERE @subCategoryId IS NULL OR SubCategoryID = @subCategoryId
-                ORDER BY DescriptorName ASC
-            `);
-        res.json(result.recordset);
-    } catch (error) {
-        console.error("Error fetching descriptors:", error.message);
-        res.status(500).send("Failed to fetch descriptors.");
-    }
-});
-
-app.post("/api/descriptors", async (req, res) => {
-    const { name, subCategoryId } = req.body;
-
-    if (!name || !subCategoryId) {
-        return res.status(400).json({ error: "Descriptor name and subcategory ID are required." });
-    }
-
-    try {
-        const pool = await getConnection();
-        const result = await pool.request()
-            .input("name", sql.NVarChar, name)
-            .input("subCategoryId", sql.Int, subCategoryId)
-            .query(`
-                INSERT INTO Descriptors (DescriptorName, SubCategoryID)
-                OUTPUT INSERTED.DescriptorID AS id, INSERTED.DescriptorName AS name, INSERTED.SubCategoryID AS subCategoryId
-                VALUES (@name, @subCategoryId)
-            `);
-
-        res.status(201).json(result.recordset[0]);
-    } catch (error) {
-        console.error("Error creating descriptor:", error.message);
-        res.status(500).json({ error: "Failed to create descriptor." });
-    }
-});
-
-app.put("/api/descriptors/:id", async (req, res) => {
-    const { id } = req.params;
-    const { name, subCategoryId } = req.body;
-
-    // Log the incoming request body for debugging
-    console.log("PUT /api/descriptors/:id - Request body:", req.body);
-
-    if (!name || !subCategoryId) {
-        return res.status(400).json({ error: "Descriptor name and subcategory ID are required." });
-    }
-
-    try {
-        const pool = await getConnection();
-        const result = await pool.request()
-            .input("id", sql.Int, id)
-            .input("name", sql.NVarChar, name)
-            .input("subCategoryId", sql.Int, subCategoryId)
-            .query(`
-                UPDATE Descriptors
-                SET DescriptorName = @name, SubCategoryID = @subCategoryId
-                WHERE DescriptorID = @id
-            `);
-
-        if (result.rowsAffected[0] === 0) {
-            return res.status(404).json({ error: "Descriptor not found." });
-        }
-
-        res.json({ message: "Descriptor updated successfully." });
-    } catch (error) {
-        console.error("Error updating descriptor:", error.message);
-        res.status(500).json({ error: "Failed to update descriptor." });
-    }
-});
-
-app.delete("/api/descriptors/:id", async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const pool = await getConnection();
-        const result = await pool.request()
-            .input("id", sql.Int, id)
-            .query(`
-                DELETE FROM Descriptors
-                WHERE DescriptorID = @id
-            `);
-
-        if (result.rowsAffected[0] === 0) {
-            return res.status(404).json({ error: "Descriptor not found." });
-        }
-
-        res.json({ message: "Descriptor deleted successfully." });
-    } catch (error) {
-        console.error("Error deleting descriptor:", error.message);
-        res.status(500).json({ error: "Failed to delete descriptor." });
-    }
-});
-
-app.delete("/api/subcategories/:id", async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const pool = await getConnection();
-
-        // Delete associated descriptors first
-        await pool.request()
-            .input("subCategoryId", sql.Int, id)
-            .query(`
-                DELETE FROM Descriptors
-                WHERE SubCategoryID = @subCategoryId
-            `);
-
-        // Delete the subcategory
-        const result = await pool.request()
-            .input("id", sql.Int, id)
-            .query(`
-                DELETE FROM SubCategories
-                WHERE SubCategoryID = @id
-            `);
-
-        if (result.rowsAffected[0] === 0) {
-            return res.status(404).json({ error: "Subcategory not found." });
-        }
-
-        res.json({ message: "Subcategory and its descriptors deleted successfully." });
-    } catch (error) {
-        console.error("Error deleting subcategory:", error.message);
-        res.status(500).json({ error: "Failed to delete subcategory." });
-    }
-});
-
-app.delete("/api/categories/:id", async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const pool = await getConnection();
-
-        // Delete associated subcategories and their descriptors first
-        const subcategories = await pool.request()
-            .input("categoryId", sql.Int, id)
-            .query(`
-                SELECT SubCategoryID
-                FROM SubCategories
-                WHERE CategoryID = @categoryId
-            `);
-
-        for (const subcategory of subcategories.recordset) {
-            await pool.request()
-                .input("subCategoryId", sql.Int, subcategory.SubCategoryID)
-                .query(`
-                    DELETE FROM Descriptors
-                    WHERE SubCategoryID = @subCategoryId
-                `);
-        }
-
-        await pool.request()
-            .input("categoryId", sql.Int, id)
-            .query(`
-                DELETE FROM SubCategories
-                WHERE CategoryID = @categoryId
-            `);
-
-        // Delete the category
-        const result = await pool.request()
-            .input("id", sql.Int, id)
-            .query(`
-                DELETE FROM Categories
-                WHERE CategoryID = @id
-            `);
-
-        if (result.rowsAffected[0] === 0) {
-            return res.status(404).json({ error: "Category not found." });
-        }
-
-        res.json({ message: "Category, its subcategories, and their descriptors deleted successfully." });
-    } catch (error) {
-        console.error("Error deleting category:", error.message);
-        res.status(500).json({ error: "Failed to delete category." });
-    }
-});
-
-app.get("/api/products", async (req, res) => {
-    const { categoryId, subCategoryId, descriptorId, page = 1, limit = 20 } = req.query;
-
-    try {
-        const pool = await getConnection();
-        
-        // First, get the total count of filtered products for pagination
-        let countQuery = `
-            SELECT COUNT(*) as total
-            FROM Products
-            WHERE 1=1
-        `;
-        const countRequest = pool.request();
-
-        if (categoryId) {
-            countQuery += " AND category_id = @categoryId";
-            countRequest.input("categoryId", sql.Int, parseInt(categoryId, 10));
-        }
-        if (subCategoryId) {
-            countQuery += " AND sub_category_id = @subCategoryId";
-            countRequest.input("subCategoryId", sql.Int, parseInt(subCategoryId, 10));
-        }
-        if (descriptorId) {
-            countQuery += " AND tag_id = @descriptorId";
-            countRequest.input("descriptorId", sql.Int, parseInt(descriptorId, 10));
-        }
-
-        const countResult = await countRequest.query(countQuery);
-        const totalProducts = countResult.recordset[0].total;
-        const totalPages = Math.ceil(totalProducts / parseInt(limit, 10));
-
-        // Now get the actual products for the current page
-        let query = `
-            SELECT id, name, description, price, stock_quantity, image_url, is_showcase
-            FROM Products
-            WHERE 1=1
-        `;
-        const request = pool.request();
-
-        if (categoryId) {
-            query += " AND category_id = @categoryId";
-            request.input("categoryId", sql.Int, parseInt(categoryId, 10));
-        }
-        if (subCategoryId) {
-            query += " AND sub_category_id = @subCategoryId";
-            request.input("subCategoryId", sql.Int, parseInt(subCategoryId, 10));
-        }
-        if (descriptorId) {
-            query += " AND tag_id = @descriptorId";
-            request.input("descriptorId", sql.Int, parseInt(descriptorId, 10));
-        }
-
-        query += " ORDER BY name ASC OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY";
-        const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-        request.input("offset", sql.Int, offset);
-        request.input("limit", sql.Int, parseInt(limit, 10));
-
-        const result = await request.query(query);
-        
-        res.json({ 
-            products: result.recordset, 
-            totalPages: totalPages,
-            currentPage: parseInt(page, 10),
-            totalProducts: totalProducts
-        });
-    } catch (error) {
-        console.error("Error fetching products:", error.message);
-        console.error("Stack trace:", error.stack); // Log stack trace for debugging
-        res.status(500).json({ error: "Failed to fetch products." });
-    }
-});
-
-app.get("/api/showcase-products", async (req, res) => {
-    try {
-        const pool = await getConnection();
-        const result = await pool.request()
-            .query(`
-                SELECT id, name, description, price, image_url, stock_quantity 
-                FROM Products 
-                WHERE is_showcase = 1
-            `);
-        if (!result.recordset.length) {
-            return res.status(404).json({ error: "No showcase products found." });
-        }
-        res.json(result.recordset);
-    } catch (error) {
-        console.error("Error fetching showcase products:", error.message);
-        console.error("Stack trace:", error.stack); // Log stack trace for debugging
-        res.status(500).json({ error: "Failed to fetch showcase products." });
-    }
+    res.json({ products: result.recordset, totalPages, totalProducts });
+  } catch (error) {
+    console.error("Error fetching showcase products:", error.message);
+    res.status(500).json({ error: "Failed to fetch showcase products." });
+  }
 });
 
 app.get("/api/categories", async (req, res) => {
@@ -1538,6 +1110,30 @@ app.get("/api/low-stock-products", async (req, res) => {
         console.error("Error fetching low-stock products:", error.message);
         res.status(500).json({ error: "Failed to fetch low-stock products." });
     }
+});
+
+app.post("/api/cart", async (req, res) => {
+  const { productId, quantity } = req.body;
+
+  if (!productId || !quantity) {
+    return res.status(400).json({ error: "Product ID and quantity are required." });
+  }
+
+  try {
+    const pool = await getConnection();
+    const result = await pool.request()
+      .input("productId", sql.Int, productId)
+      .input("quantity", sql.Int, quantity)
+      .query(`
+        INSERT INTO Cart (ProductID, Quantity)
+        VALUES (@productId, @quantity)
+      `);
+
+    res.status(201).json({ message: "Product added to cart successfully." });
+  } catch (error) {
+    console.error("Error adding product to cart:", error.message);
+    res.status(500).json({ error: "Failed to add product to cart." });
+  }
 });
 
 app.listen(PORT, () => {

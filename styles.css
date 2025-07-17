@@ -165,17 +165,16 @@ main section h2 {
   display: flex;
   flex-direction: column; /* Stack elements vertically */
   justify-content: space-between; /* Ensure space between content and buttons */
-  align-items: center;
-  width: 100%; /* Ensure the card fits within the grid */
-  max-width: 250px; /* Limit the maximum width of each card */
   background-color: #fff;
-  border: 3px solid black;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  box-shadow: 0 0 20px 5px rgba(0, 0, 0, 1) !important; /* Force black shadow with !important */
-  padding: 2px;
+  padding: 15px;
   text-align: center;
-  transition: transform 0.2s ease-in-out;
-  height: 100%; /* Ensure consistent height for all cards */
+  box-shadow: 0 0 40px 5px rgb(30, 0, 0);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: auto; /* Allow auto height */
+  max-width: 400px; /* Limit maximum width */
+  margin: 0 auto; /* Center the card when it's the only one */
 }
 
 .product-item img {
@@ -249,8 +248,8 @@ main section h2 {
 }
 
 .product-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0 25px 8px rgba(0, 0, 0, 1) !important; /* Ensure hover shadow is also black */
+  transform: translateY(-5px); /* Slight lift on hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Enhance shadow on hover */
 }
 
 /* Fixed duplicate and redundant rules for showcase-products-grid */
