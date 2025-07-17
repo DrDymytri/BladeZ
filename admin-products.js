@@ -179,17 +179,20 @@ async function loadTags(subCategoryId) {
 
 async function loadProducts() {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/products`);
+        const response = await fetch(`${BACKEND_URL}/api/products?page=${currentPage}&limit=${productsPerPage}`);
         if (!response.ok) {
             throw new Error("Failed to fetch products");
         }
 
         const data = await response.json();
-        const products = Array.isArray(data.products) ? data.products : data; // Ensure products is an array
-        allProducts = products; // Populate the global allProducts array
-        renderProducts(products);
+        allProducts = data.products; // Update the global allProducts array with the fetched products
+        renderProducts(allProducts);
+
+        // Update pagination controls based on the total number of products
+        renderPagination(data.totalProducts);
     } catch (error) {
-        console.error("Error loading products:", error);
+        console.error("Error loading products:", error.message);
+        alert("Failed to load products. Please try again later.");
     }
 }
 
@@ -246,11 +249,16 @@ function renderPagination(totalProducts) {
     for (let i = 1; i <= totalPages; i++) {
         const button = document.createElement("button");
         button.textContent = i;
-        button.classList.add(i === currentPage ? "active" : "");
+
+        // Ensure currentPage is valid and add the 'active' class only if it matches
+        if (i === currentPage) {
+            button.classList.add("active");
+        }
+
         button.disabled = i === currentPage; // Disable the button for the current page
         button.addEventListener("click", () => {
             currentPage = i;
-            renderProducts(allProducts); // Re-render products for the selected page
+            loadProducts(); // Fetch and render products for the selected page
         });
         paginationControls.appendChild(button);
     }
@@ -268,8 +276,11 @@ async function editProduct(productId) {
             if (response.status === 404) {
                 alert("Product not found. It may have been deleted.");
                 return;
+            } else if (response.status === 503) {
+                alert("The server is currently unavailable. Please try again later.");
+                return;
             }
-            throw new Error("Failed to fetch product details");
+            throw new Error(`Failed to fetch product details. Status: ${response.status}`);
         }
 
         const product = await response.json();
@@ -309,7 +320,7 @@ async function editProduct(productId) {
         window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
         console.error("Error fetching product details:", error.message);
-        alert("Failed to load product details. Please try again.");
+        alert("Failed to load product details. Please check your network connection or try again later.");
     }
 }
 
@@ -328,8 +339,11 @@ async function deleteProduct(productId) {
             if (response.status === 404) {
                 alert("Product not found. It may have already been deleted.");
                 return;
+            } else if (response.status === 503) {
+                alert("The server is currently unavailable. Please try again later.");
+                return;
             }
-            throw new Error("Failed to delete product");
+            throw new Error(`Failed to delete product. Status: ${response.status}`);
         }
 
         alert("Product deleted successfully!");
@@ -338,7 +352,7 @@ async function deleteProduct(productId) {
         loadLowStockProducts(); // Refresh the low-stock table
     } catch (error) {
         console.error("Error deleting product:", error.message);
-        alert("An error occurred while deleting the product. Please try again later.");
+        alert("An error occurred while deleting the product. Please check your network connection or try again later.");
     }
 }
 
@@ -370,14 +384,20 @@ function handleSortChange(field) {
 async function loadLowStockProducts() {
     try {
         const response = await fetch(`${BACKEND_URL}/api/low-stock-products`);
-        if (!response.ok) throw new Error("Failed to fetch low-stock products");
+        if (!response.ok) {
+            if (response.status === 503) {
+                alert("The server is currently unavailable. Please try again later.");
+                return;
+            }
+            throw new Error(`Failed to fetch low-stock products. Status: ${response.status}`);
+        }
 
         const lowStockProducts = await response.json();
         const filteredProducts = lowStockProducts.filter(product => product.stock_quantity < product.restock_threshold); // Only show products below threshold
         renderLowStockTable(filteredProducts);
     } catch (error) {
-        console.error("Error loading low-stock products:", error);
-        alert("Failed to load low-stock products. Please try again later.");
+        console.error("Error loading low-stock products:", error.message);
+        alert("Failed to load low-stock products. Please check your network connection or try again later.");
     }
 }
 

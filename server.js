@@ -45,23 +45,20 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = ['https://pointfxbladez.com', 'https://wayne.github.io']; // Add GitHub Pages domain
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow necessary methods
-  credentials: true, // Allow cookies and authorization headers
+    origin: ['https://pointfxbladez.com', 'https://wayne.github.io'], // Allow specific origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS for preflight requests
+    credentials: true, // Allow cookies and authorization headers
 }));
 
+// Ensure proper CORS headers for all responses
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://pointfxbladez.com'); // Ensure proper CORS headers
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
+    res.header('Access-Control-Allow-Origin', 'https://pointfxbladez.com'); // Allow the frontend origin
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(204); // Respond to preflight requests
+    }
+    next();
 });
 
 app.use(express.json());
