@@ -211,7 +211,7 @@ async function loadProducts(page = 1) {
     const filters = {
       categoryId: categoryFilter?.value || null,
       subCategoryId: subCategoryFilter?.value || null,
-      descriptorId: descriptorFilter?.value || null, // Ensure descriptor_id is used
+      descriptorId: descriptorFilter?.value || null,
       page,
       limit: parseInt(productsPerPage, 10),
     };
@@ -219,7 +219,7 @@ async function loadProducts(page = 1) {
     const queryParams = new URLSearchParams();
     if (filters.categoryId) queryParams.append("categoryId", filters.categoryId);
     if (filters.subCategoryId) queryParams.append("subCategoryId", filters.subCategoryId);
-    if (filters.descriptorId) queryParams.append("descriptorId", filters.descriptorId); // Ensure descriptor_id is used
+    if (filters.descriptorId) queryParams.append("descriptorId", filters.descriptorId);
     queryParams.append("page", filters.page);
     queryParams.append("limit", filters.limit);
 
@@ -235,6 +235,12 @@ async function loadProducts(page = 1) {
     renderProducts(data.products);
     const totalPages = Math.ceil(data.totalProducts / filters.limit); // Ensure correct totalPages calculation
     renderPaginationControls(filters.page, totalPages, document.getElementById("pagination-container"), loadProducts, data.totalProducts);
+
+    // Update total descriptors count
+    const descriptorCountLabel = document.getElementById("descriptor-count-label");
+    if (descriptorCountLabel) {
+      descriptorCountLabel.textContent = `Total Products: ${data.totalProducts}`;
+    }
   } catch (error) {
     console.error("Error loading products:", error.message);
     const productContainer = document.getElementById("product-container");
