@@ -10,40 +10,33 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function loadProducts(page = 1) {
-  const productsPerPageElement = document.getElementById("products-per-page");
-  const categoryElement = document.getElementById("category-filter");
-  const subCategoryElement = document.getElementById("subcategory-filter");
-  const descriptorElement = document.getElementById("descriptor-filter");
+    const productsPerPage = parseInt(document.getElementById("products-per-page").value, 10);
+    const categoryId = document.getElementById("category-filter")?.value || null;
+    const subCategoryId = document.getElementById("subcategory-filter")?.value || null;
+    const descriptorId = document.getElementById("descriptor-filter")?.value || null;
 
-  const productsPerPage = productsPerPageElement ? parseInt(productsPerPageElement.value, 10) : 20;
-  const categoryId = categoryElement?.value || "";
-  const subCategoryId = subCategoryElement?.value || "";
-  const descriptorId = descriptorElement?.value || ""; // Ensure descriptor_id is used
+    try {
+        const queryParams = new URLSearchParams({
+            page,
+            limit: productsPerPage,
+            ...(categoryId && { categoryId }),
+            ...(subCategoryId && { subCategoryId }),
+            ...(descriptorId && { descriptorId }),
+        });
 
-  try {
-    const queryParams = new URLSearchParams();
-    queryParams.set("page", page);
-    queryParams.set("limit", productsPerPage);
-    
-    if (categoryId) queryParams.set("categoryId", categoryId);
-    if (subCategoryId) queryParams.set("subCategoryId", subCategoryId);
-    if (descriptorId) queryParams.set("descriptorId", descriptorId); // Ensure descriptor_id is used
+        const response = await fetch(`${BACKEND_URL}/api/products?${queryParams.toString()}`);
+        if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
 
-    const response = await apiService.get(`/api/products?${queryParams.toString()}`);
-    
-    if (!response.products || response.products.length === 0) {
-      displayErrorMessage("No products found.");
-      renderPaginationControls(page, 0, 0);
-      return;
+        const data = await response.json();
+        const products = data.products || [];
+        const totalPages = Math.ceil(data.totalProducts / productsPerPage);
+
+        renderProducts(products);
+        renderPaginationControls(page, totalPages, document.getElementById("pagination-container"), loadProducts);
+    } catch (error) {
+        console.error("Error loading products:", error.message);
+        document.getElementById("product-container").innerHTML = `<p>Error loading products. Please try again later.</p>`;
     }
-
-    displayProducts(response.products);
-    renderPaginationControls(response.currentPage, response.totalPages, response.totalProducts);
-  } catch (error) {
-    console.error("Error loading products:", error.message);
-    displayErrorMessage("Failed to load products. Please try again later.");
-    renderPaginationControls(page, 0, 0);
-  }
 }
 
 async function loadShowcaseProducts() {

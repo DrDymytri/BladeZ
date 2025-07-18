@@ -537,33 +537,43 @@ app.get("/api/products", async (req, res) => {
 });
 
 app.get("/api/showcase-products", async (req, res) => {
-  const { page = 1, limit = 20 } = req.query;
-  const offset = (page - 1) * limit;
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
 
-  try {
-    const pool = await getConnection();
-    const result = await pool.request()
-      .input("limit", sql.Int, parseInt(limit, 10))
-      .input("offset", sql.Int, parseInt(offset, 10))
-      .query(`
-        SELECT ProductID AS id, Name AS name, Description AS description, Price AS price, ImageURL AS image_url
-        FROM Products
-        WHERE IsShowcase = 1
-        ORDER BY Name ASC
-        OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
-      `);
+    try {
+        const pool = await getConnection();
 
-    const totalResult = await pool.request()
-      .query(`SELECT COUNT(*) AS total FROM Products WHERE IsShowcase = 1`);
+        // Fetch showcase products
+        const productsQuery = `
+            SELECT id, name, description, price, stock_quantity, image_url, is_showcase
+            FROM Products
+            WHERE is_showcase = 1
+            ORDER BY name ASC
+            OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
+        `;
+        const productsRequest = pool.request();
+        productsRequest.input("offset", sql.Int, offset);
+        productsRequest.input("limit", sql.Int, parseInt(limit, 10));
+        const productsResult = await productsRequest.query(productsQuery);
 
-    const totalProducts = totalResult.recordset[0].total;
-    const totalPages = Math.ceil(totalProducts / limit);
+        // Fetch total count of showcase products
+        const totalCountQuery = `
+            SELECT COUNT(*) AS total
+            FROM Products
+            WHERE is_showcase = 1
+        `;
+        const totalCountResult = await pool.request().query(totalCountQuery);
+        const totalProducts = totalCountResult.recordset[0].total;
 
-    res.json({ products: result.recordset, totalPages, totalProducts });
-  } catch (error) {
-    console.error("Error fetching showcase products:", error.message);
-    res.status(500).json({ error: "Failed to fetch showcase products." });
-  }
+        res.json({
+            products: productsResult.recordset,
+            totalPages: Math.ceil(totalProducts / limit),
+            totalProducts,
+        });
+    } catch (error) {
+        console.error("Error fetching showcase products:", error.message);
+        res.status(500).json({ error: "Failed to fetch showcase products." });
+    }
 });
 
 app.get("/api/categories", async (req, res) => {

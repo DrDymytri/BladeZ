@@ -60,10 +60,11 @@ function openShowcaseModal() {
 
 async function loadShowcaseProducts(page = 1) {
   const showcaseGrid = document.getElementById("showcase-products-grid");
-  if (!showcaseGrid) return;
+  const showcasePagination = document.getElementById("showcase-pagination");
+  if (!showcaseGrid || !showcasePagination) return;
 
   try {
-    const response = await fetch(`${BACKEND_URL}/api/showcase-products?page=${page}`);
+    const response = await fetch(`${BACKEND_URL}/api/showcase-products?page=${page}&limit=4`);
     if (!response.ok) throw new Error(`Failed to fetch showcase products: ${response.statusText}`);
 
     const data = await response.json();
@@ -72,78 +73,62 @@ async function loadShowcaseProducts(page = 1) {
 
     if (products.length === 0) {
       showcaseGrid.innerHTML = `<p>No showcase products available.</p>`;
+      showcasePagination.innerHTML = "";
       return;
     }
 
     showcaseGrid.innerHTML = products
       .map(
         (product) => `
-        <div class="product-card" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-image="${product.image_url || 'https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png'}">
-          <img src="${product.image_url || 'https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png'}" alt="${product.name}" class="product-image" onclick="openImageInPopup('${product.image_url || 'https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png'}')" onerror="this.src='https://bladezstorage.blob.core.windows.net/bladez-op-images/Default1.png';" />
-          <h3>${product.name}</h3>
-          <p>${product.description}</p>
-          <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
-          <button class="add-to-cart-btn">Add to Cart</button>
-        </div>
-      `
+                <div class="product-card">
+                    <img src="${product.image_url || '/images/Default1.png'}" alt="${product.name}" />
+                    <h3>${product.name}</h3>
+                    <p>${product.description}</p>
+                    <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
+                    <button onclick="addToCart(${product.id}, '${product.name}', ${product.price})">Add to Cart</button>
+                </div>
+            `
       )
       .join("");
 
-    // Add event listeners to "Add to Cart" buttons
-    showcaseGrid.querySelectorAll(".add-to-cart-btn").forEach((button) => {
-      button.addEventListener("click", (event) => {
-        const productCard = event.target.closest(".product-card");
-        const productId = parseInt(productCard.dataset.id, 10);
-        const productName = productCard.dataset.name;
-        const productPrice = parseFloat(productCard.dataset.price);
-        const productImage = productCard.dataset.image;
-
-        addToCart(productId, productName, productPrice, productImage);
-        alert(`${productName} has been added to your cart.`);
-      });
-    });
-
-    renderShowcasePagination(page, totalPages);
+    renderPaginationControls(page, totalPages, showcasePagination, loadShowcaseProducts);
   } catch (error) {
-    showcaseGrid.innerHTML = `<p>Error loading showcase products: ${error.message}</p>`;
+    console.error("Error loading showcase products:", error.message);
+    showcaseGrid.innerHTML = `<p>Error loading showcase products. Please try again later.</p>`;
   }
 }
 
-function renderShowcasePagination(currentPage, totalPages) {
-  const paginationContainer = document.getElementById("showcase-pagination");
-  if (!paginationContainer) return;
+function renderPaginationControls(currentPage, totalPages, container, onPageChange) {
+  if (!container) return;
 
-  if (totalPages <= 1) {
-    paginationContainer.innerHTML = ""; // No pagination needed for a single page
-    return;
-  }
+  container.innerHTML = ""; // Clear existing pagination
 
-  let paginationHTML = "";
+  if (totalPages <= 1) return; // No pagination needed for a single page
 
+  // Previous button
   if (currentPage > 1) {
-    paginationHTML += `<button class="pagination-button" data-page="${currentPage - 1}">Previous</button>`;
+    const prevButton = document.createElement("button");
+    prevButton.textContent = "Previous";
+    prevButton.addEventListener("click", () => onPageChange(currentPage - 1));
+    container.appendChild(prevButton);
   }
 
+  // Page buttons
   for (let i = 1; i <= totalPages; i++) {
-    paginationHTML += `
-      <button class="pagination-button ${i === currentPage ? "active" : ""}" data-page="${i}">
-        ${i}
-      </button>
-    `;
+    const pageButton = document.createElement("button");
+    pageButton.textContent = i;
+    if (i === currentPage) pageButton.classList.add("active");
+    pageButton.addEventListener("click", () => onPageChange(i));
+    container.appendChild(pageButton);
   }
 
+  // Next button
   if (currentPage < totalPages) {
-    paginationHTML += `<button class="pagination-button" data-page="${currentPage + 1}">Next</button>`;
+    const nextButton = document.createElement("button");
+    nextButton.textContent = "Next";
+    nextButton.addEventListener("click", () => onPageChange(currentPage + 1));
+    container.appendChild(nextButton);
   }
-
-  paginationContainer.innerHTML = paginationHTML;
-
-  paginationContainer.querySelectorAll(".pagination-button").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const page = parseInt(event.target.dataset.page, 10);
-      loadShowcaseProducts(page);
-    });
-  });
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
