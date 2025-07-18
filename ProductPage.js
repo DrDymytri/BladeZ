@@ -220,7 +220,7 @@ async function loadProducts(page = 1) {
     const filters = {
       categoryId: categoryFilter?.value || null,
       subCategoryId: subCategoryFilter?.value || null,
-      descriptorId: descriptorFilter?.value || null,
+      descriptorId: descriptorFilter?.value || null, // Ensure descriptor_id is used
       page,
       limit: parseInt(productsPerPage, 10),
     };
@@ -228,7 +228,7 @@ async function loadProducts(page = 1) {
     const queryParams = new URLSearchParams();
     if (filters.categoryId) queryParams.append("categoryId", filters.categoryId);
     if (filters.subCategoryId) queryParams.append("subCategoryId", filters.subCategoryId);
-    if (filters.descriptorId) queryParams.append("descriptorId", filters.descriptorId);
+    if (filters.descriptorId) queryParams.append("descriptorId", filters.descriptorId); // Ensure descriptor_id is used
     queryParams.append("page", filters.page);
     queryParams.append("limit", filters.limit);
 

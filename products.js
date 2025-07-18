@@ -18,7 +18,7 @@ async function loadProducts(page = 1) {
   const productsPerPage = productsPerPageElement ? parseInt(productsPerPageElement.value, 10) : 20;
   const categoryId = categoryElement?.value || "";
   const subCategoryId = subCategoryElement?.value || "";
-  const descriptorId = descriptorElement?.value || "";
+  const descriptorId = descriptorElement?.value || ""; // Ensure descriptor_id is used
 
   try {
     const queryParams = new URLSearchParams();
@@ -27,7 +27,7 @@ async function loadProducts(page = 1) {
     
     if (categoryId) queryParams.set("categoryId", categoryId);
     if (subCategoryId) queryParams.set("subCategoryId", subCategoryId);
-    if (descriptorId) queryParams.set("descriptorId", descriptorId);
+    if (descriptorId) queryParams.set("descriptorId", descriptorId); // Ensure descriptor_id is used
 
     const response = await apiService.get(`/api/products?${queryParams.toString()}`);
     
@@ -2223,4 +2223,302 @@ async function loadFilterSubcategories(categoryId) {
   } catch (error) {
     console.error("Error loading subcategories:", error.message);
   }
+}
+
+async function loadFilterDescriptors(subCategoryId) {
+  try {
+    const descriptorSelect = document.getElementById("descriptor-filter");
+    const response = await apiService.get(`/api/descriptors?subCategoryId=${subCategoryId}`);
+    resetDropdown(descriptorSelect, "All Descriptors");
+    
+    response.forEach((descriptor) => {
+      const option = document.createElement("option");
+      option.value = descriptor.id;
+      option.textContent = descriptor.name;
+      descriptorSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error loading descriptors:", error.message);
+  }
+}
+
+function renderPaginationControls(currentPage, totalPages, totalProducts) {
+  const paginationContainer = document.getElementById("pagination-container");
+  if (!paginationContainer) {
+    console.error("Pagination container not found");
+    return;
+  }
+
+  paginationContainer.innerHTML = ""; // Clear existing pagination
+
+  if (totalPages <= 1) return; // No pagination needed for a single page
+
+  // Add pagination info
+  const paginationInfo = document.createElement("div");
+  paginationInfo.className = "pagination-info";
+  paginationInfo.innerHTML = `<p>Showing page ${currentPage} of ${totalPages} (${totalProducts} total products)</p>`;
+  paginationContainer.appendChild(paginationInfo);
+
+  // Create pagination buttons container
+  const buttonsContainer = document.createElement("div");
+  buttonsContainer.className = "pagination-buttons";
+  
+  // Previous button
+  if (currentPage > 1) {
+    const prevButton = document.createElement("button");
+    prevButton.textContent = "Previous";
+    prevButton.className = "pagination-button";
+    prevButton.addEventListener("click", () => loadProducts(currentPage - 1));
+    buttonsContainer.appendChild(prevButton);
+  }
+
+  // Page number buttons
+  const startPage = Math.max(1, currentPage - 2);
+  const endPage = Math.min(totalPages, currentPage + 2);
+
+  if (startPage > 1) {
+    const firstButton = document.createElement("button");
+    firstButton.textContent = "1";
+    firstButton.className = "pagination-button";
+    firstButton.addEventListener("click", () => loadProducts(1));
+    buttonsContainer.appendChild(firstButton);
+    
+    if (startPage > 2) {
+      const ellipsis = document.createElement("span");
+      ellipsis.textContent = "...";
+      ellipsis.className = "pagination-ellipsis";
+      buttonsContainer.appendChild(ellipsis);
+    }
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    const button = document.createElement("button");
+    button.textContent = i;
+    button.className = "pagination-button";
+    if (i === currentPage) button.classList.add("active");
+    button.addEventListener("click", () => loadProducts(i));
+    buttonsContainer.appendChild(button);
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      const ellipsis = document.createElement("span");
+      ellipsis.textContent = "...";
+      ellipsis.className = "pagination-ellipsis";
+      buttonsContainer.appendChild(ellipsis);
+    }
+    
+    const lastButton = document.createElement("button");
+    lastButton.textContent = totalPages;
+    lastButton.className = "pagination-button";
+    lastButton.addEventListener("click", () => loadProducts(totalPages));
+    buttonsContainer.appendChild(lastButton);
+  }
+
+  // Next button
+  if (currentPage < totalPages) {
+    const nextButton = document.createElement("button");
+    nextButton.textContent = "Next";
+    nextButton.className = "pagination-button";
+    nextButton.addEventListener("click", () => loadProducts(currentPage + 1));
+    buttonsContainer.appendChild(nextButton);
+  }
+
+  paginationContainer.appendChild(buttonsContainer);
+}
+
+
+function resetFilters() {
+  const categoryFilter = document.getElementById("category-filter");
+  const subcategoryFilter = document.getElementById("subcategory-filter");
+  const descriptorFilter = document.getElementById("descriptor-filter");
+  
+  if (categoryFilter) categoryFilter.value = "";
+  if (subcategoryFilter) {
+    subcategoryFilter.value = "";
+    subcategoryFilter.disabled = true;
+  }
+  if (descriptorFilter) {
+    descriptorFilter.value = "";
+    descriptorFilter.disabled = true;
+  }
+}
+
+// Initialize filtering system when DOM loads
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize filtering system
+  initializeFilters();
+  
+  // Load initial products
+  loadProducts(1);
+  
+  // Update cart count
+  updateCartCount();
+});
+
+async function initializeFilters() {
+  try {
+    const categorySelect = document.getElementById("category-filter");
+    if (!categorySelect) return;
+
+    const response = await apiService.get("/api/categories");
+    resetDropdown(categorySelect, "All Categories");
+    
+    response.forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category.id;
+      option.textContent = category.name;
+      categorySelect.appendChild(option);
+    });
+
+    categorySelect.addEventListener("change", async () => {
+      const categoryId = categorySelect.value;
+      const subcategorySelect = document.getElementById("subcategory-filter");
+      const descriptorSelect = document.getElementById("descriptor-filter");
+
+      resetDropdown(subcategorySelect, "All Subcategories");
+      resetDropdown(descriptorSelect, "All Descriptors");
+      subcategorySelect.disabled = true;
+      descriptorSelect.disabled = true;
+
+      if (categoryId) {
+        await loadFilterSubcategories(categoryId);
+        subcategorySelect.disabled = false;
+      }
+    });
+  } catch (error) {
+    console.error("Error initializing filters:", error.message);
+  }
+}
+
+async function loadFilterSubcategories(categoryId) {
+  try {
+    const subcategorySelect = document.getElementById("subcategory-filter");
+    const response = await apiService.get(`/api/subcategories?categoryId=${categoryId}`);
+    resetDropdown(subcategorySelect, "All Subcategories");
+    
+    response.forEach((subcategory) => {
+      const option = document.createElement("option");
+      option.value = subcategory.id;
+      option.textContent = subcategory.name;
+      subcategorySelect.appendChild(option);
+    });
+
+    subcategorySelect.addEventListener("change", async () => {
+      const subCategoryId = subcategorySelect.value;
+      const descriptorSelect = document.getElementById("descriptor-filter");
+
+      resetDropdown(descriptorSelect, "All Descriptors");
+      descriptorSelect.disabled = true;
+
+      if (subCategoryId) {
+        await loadFilterDescriptors(subCategoryId);
+        descriptorSelect.disabled = false;
+      }
+    });
+  } catch (error) {
+    console.error("Error loading subcategories:", error.message);
+  }
+}
+
+async function loadFilterDescriptors(subCategoryId) {
+  try {
+    const descriptorSelect = document.getElementById("descriptor-filter");
+    const response = await apiService.get(`/api/descriptors?subCategoryId=${subCategoryId}`);
+    resetDropdown(descriptorSelect, "All Descriptors");
+    
+    response.forEach((descriptor) => {
+      const option = document.createElement("option");
+      option.value = descriptor.id;
+      option.textContent = descriptor.name;
+      descriptorSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error loading descriptors:", error.message);
+  }
+}
+
+function renderPaginationControls(currentPage, totalPages, totalProducts) {
+  const paginationContainer = document.getElementById("pagination-container");
+  if (!paginationContainer) {
+    console.error("Pagination container not found");
+    return;
+  }
+
+  paginationContainer.innerHTML = ""; // Clear existing pagination
+
+  if (totalPages <= 1) return; // No pagination needed for a single page
+
+  // Add pagination info
+  const paginationInfo = document.createElement("div");
+  paginationInfo.className = "pagination-info";
+  paginationInfo.innerHTML = `<p>Showing page ${currentPage} of ${totalPages} (${totalProducts} total products)</p>`;
+  paginationContainer.appendChild(paginationInfo);
+
+  // Create pagination buttons container
+  const buttonsContainer = document.createElement("div");
+  buttonsContainer.className = "pagination-buttons";
+  
+  // Previous button
+  if (currentPage > 1) {
+    const prevButton = document.createElement("button");
+    prevButton.textContent = "Previous";
+    prevButton.className = "pagination-button";
+    prevButton.addEventListener("click", () => loadProducts(currentPage - 1));
+    buttonsContainer.appendChild(prevButton);
+  }
+
+  // Page number buttons
+  const startPage = Math.max(1, currentPage - 2);
+  const endPage = Math.min(totalPages, currentPage + 2);
+
+  if (startPage > 1) {
+    const firstButton = document.createElement("button");
+    firstButton.textContent = "1";
+    firstButton.className = "pagination-button";
+    firstButton.addEventListener("click", () => loadProducts(1));
+    buttonsContainer.appendChild(firstButton);
+    
+    if (startPage > 2) {
+      const ellipsis = document.createElement("span");
+      ellipsis.textContent = "...";
+      ellipsis.className = "pagination-ellipsis";
+      buttonsContainer.appendChild(ellipsis);
+    }
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    const button = document.createElement("button");
+    button.textContent = i;
+    button.className = "pagination-button";
+    if (i === currentPage) button.classList.add("active");
+    button.addEventListener("click", () => loadProducts(i));
+    buttonsContainer.appendChild(button);
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      const ellipsis = document.createElement("span");
+      ellipsis.textContent = "...";
+      ellipsis.className = "pagination-ellipsis";
+      buttonsContainer.appendChild(ellipsis);
+    }
+    
+    const lastButton = document.createElement("button");
+    lastButton.textContent = totalPages;
+    lastButton.className = "pagination-button";
+    lastButton.addEventListener("click", () => loadProducts(totalPages));
+    buttonsContainer.appendChild(lastButton);
+  }
+
+  // Next button
+  if (currentPage < totalPages) {
+    const nextButton = document.createElement("button");
+    nextButton.textContent = "Next";
+    nextButton.className = "pagination-button";
+    nextButton.addEventListener("click", () => loadProducts(currentPage + 1));
+    buttonsContainer.appendChild(nextButton);
+  }
+
+  paginationContainer.appendChild(buttonsContainer);
 }

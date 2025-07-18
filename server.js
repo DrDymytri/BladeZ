@@ -482,22 +482,22 @@ app.get("/api/products", async (req, res) => {
         const pool = await getConnection();
 
         let query = `
-            SELECT id, name, description, price, stock_quantity, image_url, is_showcase
+            SELECT id, name, description, price, stock_quantity, image_url, is_showcase, descriptor_id
             FROM Products
             WHERE 1=1
         `;
         const request = pool.request();
 
         if (categoryId) {
-            query += " AND CategoryID = @categoryId";
+            query += " AND category_id = @categoryId";
             request.input("categoryId", sql.Int, categoryId);
         }
         if (subCategoryId) {
-            query += " AND SubCategoryID = @subCategoryId";
+            query += " AND sub_category_id = @subCategoryId";
             request.input("subCategoryId", sql.Int, subCategoryId);
         }
         if (descriptorId) {
-            query += " AND DescriptorID = @descriptorId";
+            query += " AND descriptor_id = @descriptorId";
             request.input("descriptorId", sql.Int, descriptorId);
         }
 
