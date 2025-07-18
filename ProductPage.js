@@ -98,12 +98,18 @@ async function loadShowcaseProducts(page = 1) {
   }
 }
 
-function renderPaginationControls(currentPage, totalPages, container, onPageChange) {
+function renderPaginationControls(currentPage, totalPages, container, onPageChange, totalProducts) {
   if (!container) return;
 
   container.innerHTML = ""; // Clear existing pagination
 
   if (totalPages <= 1) return; // No pagination needed for a single page
+
+  // Add pagination info
+  const paginationInfo = document.createElement("div");
+  paginationInfo.className = "pagination-info";
+  paginationInfo.innerHTML = `<p>Showing page ${currentPage} of ${totalPages} (${totalProducts} total products)</p>`;
+  container.appendChild(paginationInfo);
 
   // Previous button
   if (currentPage > 1) {
@@ -227,7 +233,8 @@ async function loadProducts(page = 1) {
     console.log("Products fetched successfully:", data);
 
     renderProducts(data.products);
-    renderPaginationControls(filters.page, data.totalPages);
+    const totalPages = Math.ceil(data.totalProducts / filters.limit); // Ensure correct totalPages calculation
+    renderPaginationControls(filters.page, totalPages, document.getElementById("pagination-container"), loadProducts, data.totalProducts);
   } catch (error) {
     console.error("Error loading products:", error.message);
     const productContainer = document.getElementById("product-container");
