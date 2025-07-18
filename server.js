@@ -53,12 +53,21 @@ app.use(cors({
 
 // Ensure proper CORS headers for all responses
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://pointfxbladez.com'); // Allow the frontend origin
+    const allowedOrigins = ['https://pointfxbladez.com', 'https://wayne.github.io'];
+    const origin = req.headers.origin;
+
+    if (allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin); // Dynamically set the allowed origin
+    }
+
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true'); // Allow credentials
+
     if (req.method === 'OPTIONS') {
         return res.sendStatus(204); // Respond to preflight requests
     }
+
     next();
 });
 
